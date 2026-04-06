@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="park-night" data-view-mode="grid">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="csrf-token" content={get_csrf_token()} />
+    <.live_title
+      suffix=" — icons.pureadmin.io"
+      default="icons.pureadmin.io — Search 7000+ Icons from 4 Icon Sets"
+    >
+      {assigns[:page_title]}
+    </.live_title>
+    <meta property="og:title" content="icons.pureadmin.io — Search 7000+ Icons from 4 Icon Sets" />
+    <meta property="og:description" content="Search icons from FluentUI, Heroicons, Lucide & Tabler. Platform identifiers for iOS, Android, React & Svelte." />
+    <meta property="og:url" content="https://icons.pureadmin.io" />
+    <meta property="og:site_name" content="icons.pureadmin.io" />
+    <meta property="og:type" content="website" />
+    <meta name="description" content="Search 7000+ icons from FluentUI, Heroicons, Lucide & Tabler with platform identifiers for iOS, Android, React & Svelte. Filter by style and size, copy code snippets instantly." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link phx-track-static rel="stylesheet" href={~p"/assets/css/app.css"} />
+    <!-- Privacy-friendly analytics by Plausible -->
+    <script async src="https://stats.keenmate.services/js/pa-B3VgdIMAsfLGeFIV2rAdT.js"></script>
+    <script>
+      window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
+      plausible.init()
+    </script>
+    <script>
+      // FOWT prevention: apply theme before first paint
+      (function() {
+        var themes = {morning:"park-morning",day:"park-day",evening:"park-evening",night:"park-night"};
+        var ov = null;
+        try { ov = localStorage.getItem("theme-override"); } catch(e) {}
+        if (ov && themes[ov]) {
+          document.documentElement.setAttribute("data-theme", themes[ov]);
+        } else {
+          var h = new Date().getHours();
+          var t = h >= 6 && h < 11 ? "park-morning" : h >= 11 && h < 16 ? "park-day" : h >= 16 && h < 20 ? "park-evening" : "park-night";
+          document.documentElement.setAttribute("data-theme", t);
+        }
+        // View mode
+        var mode = localStorage.getItem('icon_view_mode') || 'grid';
+        document.documentElement.setAttribute('data-view-mode', mode);
+      })();
+    </script>
+    <script defer phx-track-static type="text/javascript" src={~p"/assets/js/app.js"}></script>
+    <style>body { font-family: 'Inter', system-ui, sans-serif; }</style>
+  </head>
+  <body class="min-h-screen">
+    {@inner_content}
+
+    <!-- Floating time-of-day theme switcher -->
+    <div
+      id="theme-switcher"
+      class="fixed bottom-4 right-4 z-50 flex items-center gap-1 rounded-full bg-base-200 border border-base-300 shadow-lg px-1 py-1"
+      data-theme-toggle
+    >
+      <button class="theme-sw-btn" data-phx-theme="auto" title="Auto (time-based)">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-4">
+          <path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm.75-13a.75.75 0 0 0-1.5 0v5c0 .414.336.75.75.75h4a.75.75 0 0 0 0-1.5h-3.25V5Z" clip-rule="evenodd" />
+        </svg>
+        <span>Auto</span>
+      </button>
+      <button class="theme-sw-btn" data-phx-theme="morning" title="Morning (6-11)">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-4">
+          <path d="M10 2a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0v-1.5A.75.75 0 0 1 10 2ZM10 15a5 5 0 1 0 0-10 5 5 0 0 0 0 10ZM15.657 5.404a.75.75 0 1 0-1.06-1.06l-1.061 1.06a.75.75 0 0 0 1.06 1.06l1.06-1.06ZM18 10a.75.75 0 0 1-.75.75h-1.5a.75.75 0 0 1 0-1.5h1.5A.75.75 0 0 1 18 10ZM5.404 4.343a.75.75 0 0 0-1.06 1.06l1.06 1.061a.75.75 0 1 0 1.06-1.06l-1.06-1.06ZM4.25 10a.75.75 0 0 1-.75.75h-1.5a.75.75 0 0 1 0-1.5h1.5a.75.75 0 0 1 .75.75ZM5.404 15.657a.75.75 0 0 1-1.06 0l-1.06-1.06a.75.75 0 0 1 1.06-1.061l1.06 1.06a.75.75 0 0 1 0 1.06ZM15.657 15.657a.75.75 0 0 1-1.06 0l-1.061-1.06a.75.75 0 1 1 1.06-1.061l1.06 1.06a.75.75 0 0 1 0 1.06Z" />
+        </svg>
+        <span>Morning</span>
+      </button>
+      <button class="theme-sw-btn" data-phx-theme="day" title="Day (11-16)">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-4">
+          <path d="M10 2a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0v-1.5A.75.75 0 0 1 10 2ZM10 15a5 5 0 1 0 0-10 5 5 0 0 0 0 10ZM15.657 5.404a.75.75 0 1 0-1.06-1.06l-1.061 1.06a.75.75 0 0 0 1.06 1.06l1.06-1.06ZM18 10a.75.75 0 0 1-.75.75h-1.5a.75.75 0 0 1 0-1.5h1.5A.75.75 0 0 1 18 10ZM5.404 4.343a.75.75 0 0 0-1.06 1.06l1.06 1.061a.75.75 0 1 0 1.06-1.06l-1.06-1.06ZM4.25 10a.75.75 0 0 1-.75.75h-1.5a.75.75 0 0 1 0-1.5h1.5a.75.75 0 0 1 .75.75ZM5.404 15.657a.75.75 0 0 1-1.06 0l-1.06-1.06a.75.75 0 0 1 1.06-1.061l1.06 1.06a.75.75 0 0 1 0 1.06ZM15.657 15.657a.75.75 0 0 1-1.06 0l-1.061-1.06a.75.75 0 1 1 1.06-1.061l1.06 1.06a.75.75 0 0 1 0 1.06Z" />
+        </svg>
+        <span>Day</span>
+      </button>
+      <button class="theme-sw-btn" data-phx-theme="evening" title="Evening (16-20)">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-4">
+          <path fill-rule="evenodd" d="M7.455 2.004a.75.75 0 0 1 .26.77 7 7 0 0 0 9.958 7.967.75.75 0 0 1 1.067.853A8.5 8.5 0 1 1 6.647 1.921a.75.75 0 0 1 .808.083Z" clip-rule="evenodd" />
+        </svg>
+        <span>Evening</span>
+      </button>
+      <button class="theme-sw-btn" data-phx-theme="night" title="Night (20-6)">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-4">
+          <path fill-rule="evenodd" d="M7.455 2.004a.75.75 0 0 1 .26.77 7 7 0 0 0 9.958 7.967.75.75 0 0 1 1.067.853A8.5 8.5 0 1 1 6.647 1.921a.75.75 0 0 1 .808.083Z" clip-rule="evenodd" />
+        </svg>
+        <span>Night</span>
+      </button>
+    </div>
+  </body>
+</html>

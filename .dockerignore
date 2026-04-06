@@ -1,0 +1,11 @@
+_build/
+deps/
+.icons/
+.cache/
+.git/
+.elixir_ls/
+.vscode/
+config/dev.local.exs
+tmp/
+cover/
+doc/
