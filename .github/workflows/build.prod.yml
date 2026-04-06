@@ -1,0 +1,14 @@
+name: PROD (Rex) build
+on:
+  push:
+    branches:
+      - prod
+jobs:
+  build:
+    uses: KeenMate/gha-shared/.github/workflows/deploy-docker-image.yml@master
+    secrets: inherit
+    with:
+      image-name: pureadmin-io-icons
+      image-tag: prod
+      deployment-host: web-01.km8.vm
+      deployment-dir: pureadmin-io-icons
