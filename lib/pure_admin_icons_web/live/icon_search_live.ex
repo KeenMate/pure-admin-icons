@@ -532,7 +532,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
             Showing <%= (@page - 1) * 30 + 1 %>-<%= min(@page * 30, @total_count) %> of <%= @total_count %> icons
           </div>
           <div class="flex items-center gap-3">
-            <div class="flex items-center gap-2" id="icon-size-slider" phx-hook="IconSizeSlider">
+            <div class={["flex items-center gap-2", if(@view_mode != "list", do: "hidden")]} id="icon-size-slider" phx-hook="IconSizeSlider">
               <svg class="w-4 h-4 text-base-content/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0H8M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
               </svg>
