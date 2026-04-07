@@ -23,6 +23,7 @@ defmodule PureAdminIconsWeb.SyncDiscrepanciesLive do
 
     socket =
       socket
+      |> assign(:page_title, "Sync Discrepancies")
       |> assign(:sync_run, latest_sync)
       |> assign(:discrepancies, discrepancies)
       |> assign(:grouped, group_discrepancies(discrepancies))

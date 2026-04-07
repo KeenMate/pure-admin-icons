@@ -93,8 +93,11 @@ defmodule PureAdminIconsWeb.IconSearchLive do
           }
       end
 
+    page_title = if query != "", do: "#{query} — Icon Search", else: nil
+
     {:noreply,
      assign(socket,
+       page_title: page_title,
        query: query,
        selected_styles: styles,
        selected_sizes: sizes,
@@ -354,7 +357,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="min-h-screen">
+    <div class="min-h-screen flex flex-col">
       <!-- Hidden element for metrics tracking from JS -->
       <div id="metrics-tracker" phx-hook="MetricsTracker" class="hidden"></div>
 
@@ -547,7 +550,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
       </div>
 
       <%!-- Content --%>
-      <main class="px-4 py-6 sm:px-6 lg:px-8">
+      <main class="px-4 py-6 sm:px-6 lg:px-8 flex-1">
         <div class="mx-auto max-w-7xl">
         <!-- Icon Display (Grid or List) - Both rendered, CSS controls visibility -->
         <div id="icon-display" phx-hook="IconColorFilter">
@@ -577,14 +580,56 @@ defmodule PureAdminIconsWeb.IconSearchLive do
           </div>
         <% end %>
 
-        <!-- Footer -->
-        <footer class="mt-12 py-6 border-t border-base-300 text-sm text-base-content/70">
-          <div class="flex flex-col sm:flex-row justify-between items-center gap-2">
+        </div>
+      </main>
+
+      <!-- Footer -->
+      <footer class="border-t border-base-300 bg-base-200/50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            <!-- Branding -->
             <div>
-              Made by <a href="https://keenmate.com" rel="noreferrer" referrerpolicy="origin" class="text-primary hover:underline">Keenmate</a>
+              <Layouts.logo class="text-lg" />
+              <p class="text-xs text-base-content/50 mt-2">
+                Search <%= @icon_count %> open-source SVG icons from <%= length(@icon_sets) %> icon sets.
+              </p>
+              <p class="text-xs text-base-content/40 mt-1">
+                Made by <a href="https://keenmate.com" rel="noreferrer" referrerpolicy="origin" class="text-primary hover:underline">KeenMate</a>
+              </p>
             </div>
+
+            <!-- Links -->
+            <div>
+              <h4 class="text-sm font-semibold text-base-content mb-2">Resources</h4>
+              <ul class="space-y-1 text-xs text-base-content/60">
+                <li><a href="/docs/api" class="hover:text-primary">API Documentation</a></li>
+                <li><a href="/docs/mcp" class="hover:text-primary">MCP Server</a></li>
+                <li><a href="/docs/llms" class="hover:text-primary">LLM Integration</a></li>
+                <li><a href="/api/health" class="hover:text-primary">Health Check</a></li>
+              </ul>
+            </div>
+
+            <!-- Icon Sets -->
+            <div>
+              <h4 class="text-sm font-semibold text-base-content mb-2">Icon Sets</h4>
+              <ul class="space-y-1 text-xs text-base-content/60">
+                <%= for icon_set <- @icon_sets do %>
+                  <li>
+                    <a href={icon_set.homepage_url} target="_blank" rel="noreferrer" class="hover:text-primary">
+                      <%= icon_set.title %>
+                    </a>
+                    <span class="text-base-content/30">(<%= icon_set.icon_count %>)</span>
+                  </li>
+                <% end %>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Bottom bar -->
+          <div class="mt-6 pt-4 border-t border-base-300/50 flex flex-col sm:flex-row justify-between items-center gap-2 text-xs text-base-content/40">
+            <span>Icon SVGs retain their original licenses.</span>
             <%= if @last_sync_at do %>
-              <div class="text-xs text-base-content/50 flex items-center gap-2">
+              <div class="flex items-center gap-2">
                 <span>Last synced: <%= format_sync_time(@last_sync_at) %></span>
                 <%= if @discrepancy_count > 0 do %>
                   <a href="/sync/discrepancies" class="text-warning hover:opacity-80 hover:underline">
@@ -594,9 +639,8 @@ defmodule PureAdminIconsWeb.IconSearchLive do
               </div>
             <% end %>
           </div>
-        </footer>
         </div>
-      </main>
+      </footer>
 
       <!-- Icon Detail Modal -->
       <%= if @selected_icon do %>
@@ -1052,7 +1096,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
                         type="button"
                         class={"p-2.5 rounded cursor-pointer hover:bg-base-300 hover:scale-110 active:scale-95 transition-transform #{platform_color(platform)}"}
                         title={"Copy #{platform} identifier for size #{size}"}
-                        phx-click={JS.dispatch("phx:copy_text", detail: %{text: get_platform_id_for_size(icon, platform, size)})}
+                        phx-click={JS.dispatch("phx:copy_text", detail: copy_detail(icon, platform, size))}
                       >
                         <.platform_icon name={to_string(platform)} class="w-5 h-5" />
                       </button>
@@ -1145,7 +1189,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
                               type="button"
                               class={"p-1.5 rounded cursor-pointer hover:bg-base-300 hover:scale-110 active:scale-95 transition-transform #{platform_color(platform)}"}
                               title={"Copy #{platform} identifier for size #{size}"}
-                              phx-click={JS.dispatch("phx:copy_text", detail: %{text: get_platform_id_for_size(icon, platform, size)})}
+                              phx-click={JS.dispatch("phx:copy_text", detail: copy_detail(icon, platform, size))}
                               phx-value-stop-propagation="true"
                             >
                               <.platform_icon name={to_string(platform)} class="w-4 h-4" />
@@ -1205,6 +1249,22 @@ defmodule PureAdminIconsWeb.IconSearchLive do
   defp get_platform_id(_, _), do: "N/A"
 
   # Get platform identifier for a specific size
+  defp copy_detail(icon, :filename, size) do
+    filename = Icon.svg_filename(icon, size) || ""
+    %{
+      text: filename,
+      platform: "filename",
+      filename: filename,
+      name: icon.name,
+      style: icon.style_code,
+      size: size
+    }
+  end
+
+  defp copy_detail(icon, platform, size) do
+    %{text: get_platform_id_for_size(icon, platform, size)}
+  end
+
   defp get_platform_id_for_size(icon, :ios, size) do
     Map.get(icon.ios_identifiers, to_string(size), "N/A")
   end

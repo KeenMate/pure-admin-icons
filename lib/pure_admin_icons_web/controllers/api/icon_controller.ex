@@ -10,9 +10,9 @@ defmodule PureAdminIconsWeb.API.IconController do
 
   ## Query Parameters
     * `q` - Search query (required)
-    * `set` - Filter by icon set (optional, e.g., "fluentui", "lucide", "tabler", "heroicons")
+    * `set` - Filter by icon set (optional, repeatable, e.g., "fluentui", "lucide", "tabler", "heroicons", "fontawesome")
     * `size` - Filter by size (optional, e.g., "24", "48")
-    * `style` - Filter by style (optional, e.g., "regular", "filled", "outline", "solid")
+    * `style` - Filter by style (optional, e.g., "regular", "filled", "outline", "solid", "brands")
     * `limit` - Max results (optional, default: 50, max: 100)
     * `format` - Response format (optional, default: "json")
       * "json" - Full response with all fields
@@ -55,6 +55,32 @@ defmodule PureAdminIconsWeb.API.IconController do
   end
 
   @doc """
+  Get a single icon by ID.
+
+  ## Examples
+
+      GET /api/icons/123
+  """
+  def show(conn, %{"id" => id}) do
+    case Integer.parse(id) do
+      {icon_id, _} ->
+        case Icons.get_icon(icon_id) do
+          {:ok, icon} ->
+            json(conn, %{icon: format_icon_detail(icon)})
+
+          {:error, :not_found} ->
+            conn |> put_status(404) |> json(%{error: "Icon not found"})
+
+          {:error, _} ->
+            conn |> put_status(500) |> json(%{error: "Internal error"})
+        end
+
+      :error ->
+        conn |> put_status(400) |> json(%{error: "Invalid icon ID"})
+    end
+  end
+
+  @doc """
   List all available icon sets with metadata.
 
   ## Examples
@@ -63,7 +89,23 @@ defmodule PureAdminIconsWeb.API.IconController do
   """
   def icon_sets(conn, _params) do
     sets = Icons.list_icon_sets()
-    json(conn, %{icon_sets: sets})
+
+    formatted = Enum.map(sets, fn set ->
+      %{
+        code: set.code,
+        title: set.title,
+        license: set.license,
+        homepage_url: set.homepage_url,
+        github_url: set.github_url,
+        styles: set.styles,
+        sizes: set.sizes,
+        default_size: set.default_size,
+        style_color_methods: set.style_color_methods,
+        icon_count: set.icon_count
+      }
+    end)
+
+    json(conn, %{icon_sets: formatted})
   end
 
   defp parse_icon_sets(nil), do: []
@@ -91,12 +133,14 @@ defmodule PureAdminIconsWeb.API.IconController do
     end
   end
 
+  # Full format for search results
   defp format_icon(icon) do
     %{
       id: icon.icon_id,
       icon_set: icon.icon_set_code,
       name: icon.name,
       style: icon.style_code,
+      style_color_method: icon.style_color_method,
       sizes: icon.sizes,
       ios: icon.ios_identifiers,
       android: icon.android_identifiers,
@@ -104,8 +148,28 @@ defmodule PureAdminIconsWeb.API.IconController do
     }
   end
 
+  # Full format for icon detail
+  defp format_icon_detail(icon) do
+    %{
+      id: icon.icon_id,
+      icon_set: icon.icon_set_code,
+      icon_set_title: icon.icon_set_title,
+      name: icon.name,
+      style: icon.style_code,
+      style_color_method: icon.style_color_method,
+      sizes: icon.sizes,
+      filenames: icon.filenames,
+      ios: icon.ios_identifiers,
+      android: icon.android_identifiers,
+      categories: icon.categories,
+      phrases: icon.phrases,
+      svg_urls: Enum.map(icon.sizes, fn size ->
+        %{size: size, url: Icon.svg_url(icon, size)}
+      end)
+    }
+  end
+
   defp default_size(sizes) when is_list(sizes) do
-    # Prefer 24px if available, otherwise use the first size
     if 24 in sizes, do: 24, else: hd(sizes)
   end
 

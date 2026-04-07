@@ -35,8 +35,11 @@ defmodule PureAdminIconsWeb.Router do
     pipe_through :api
 
     get "/icons/search", IconController, :search
+    get "/icons/:id", IconController, :show
+    get "/icon-sets", IconController, :icon_sets
     get "/health", HealthController, :index
     post "/maintenance/:task", MaintenanceController, :run
+    post "/maintenance/:task/:icon_set", MaintenanceController, :run
   end
 
   # Other scopes may use custom stacks.

@@ -1,5 +1,38 @@
 # Changelog
 
+## 2026-04-07 — API endpoints, docs, footer, SEO
+
+### API
+- `GET /api/icons/:id` — single icon detail with full metadata (filenames, categories, phrases, svg_urls per size)
+- `GET /api/icon-sets` — all icon sets with styles, sizes, license, `style_color_methods`, icon count
+- `POST /api/maintenance/sync/:icon_set` — per-set sync (e.g., `fontawesome`, `fluentui`)
+- Search response now includes `style_color_method` per icon
+- Icon sets response includes `style_color_methods` jsonb map
+- API docs page updated with all new endpoints, response fields, and examples
+
+### Footer
+- Proper 3-column footer: branding + icon count, resource links, icon sets with homepage links
+- Bottom bar with license note and last sync time
+- Sticky to viewport bottom when content is short
+
+### SEO
+- Updated meta tags: "16,000+ icons from 5 icon sets", Font Awesome and Vue mentioned
+- Added keywords meta tag
+- Dynamic page titles: search query in title (e.g., "calendar — Icon Search — icons.pureadmin.io")
+- Page titles for all LiveViews (search, docs, discrepancies)
+- Updated README with project overview, icon set table, API examples, stack info
+
+### Fixes
+- Discrepancies page now collects from all sync runs (was only showing latest, missing FluentUI's 783)
+- Discrepancies page uses shared site nav and DaisyUI theme (was hardcoded light colors)
+- Sync worker now stores full discrepancies list in `success_data` (was only storing count)
+- Maintenance controller route added (was missing from router)
+- Icon size slider hidden in grid mode (only relevant in list view)
+- HEEx compilation error in API docs (JSON curly braces needed `phx-no-curly-interpolation`)
+- Filename copy in grid/list hover buttons now applies the saved filename template from the detail modal (was copying raw filename only)
+
+---
+
 ## 2026-04-07 19:50 — Font Awesome, dynamic filters, color method, UI polish ✅ PUBLISHED
 
 ### UI polish

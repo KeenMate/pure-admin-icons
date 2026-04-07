@@ -17,9 +17,9 @@ defmodule PureAdminIconsWeb.Docs.ApiDocsLive do
           Search icons programmatically. All endpoints return JSON. No authentication required.
         </p>
 
-        <%!-- Search --%>
+        <%!-- Icons --%>
         <div class="space-y-8">
-          <h2 class="text-xl font-bold border-b border-base-300/50 pb-2">Search</h2>
+          <h2 class="text-xl font-bold border-b border-base-300/50 pb-2">Icons</h2>
 
           <.endpoint
             method="GET"
@@ -27,13 +27,34 @@ defmodule PureAdminIconsWeb.Docs.ApiDocsLive do
             description="Search icons by name across all icon sets. Supports full-text search, trigram similarity, and synonym matching."
             params={[
               {"q", "Search query (required)"},
-              {"set", "Filter by icon set: fluentui, lucide, tabler, heroicons"},
+              {"set", "Filter by icon set: fluentui, fontawesome, heroicons, lucide, tabler (repeatable)"},
               {"size", "Filter by size: 16, 20, 24, 28, 32, 48"},
-              {"style", "Filter by style: regular, filled, outline, solid, color, light"},
+              {"style", "Filter by style: regular, filled, outline, solid, color, light, brands"},
               {"limit", "Max results (default: 50, max: 100)"},
               {"format", "Response format: json (default), compact, text"}
             ]}
             example_url="/api/icons/search?q=calendar&set=fluentui&size=24"
+          />
+
+          <.endpoint
+            method="GET"
+            path="/api/icons/:id"
+            description="Get a single icon by ID. Returns full metadata including filenames, platform identifiers, categories, phrases, and SVG URLs for all sizes."
+            params={[]}
+            example_url="/api/icons/5403"
+          />
+        </div>
+
+        <%!-- Icon Sets --%>
+        <div class="space-y-8 mt-10">
+          <h2 class="text-xl font-bold border-b border-base-300/50 pb-2">Icon Sets</h2>
+
+          <.endpoint
+            method="GET"
+            path="/api/icon-sets"
+            description="List all available icon sets with metadata: styles, sizes, license, color methods, and icon count."
+            params={[]}
+            example_url="/api/icon-sets"
           />
         </div>
 
@@ -41,21 +62,56 @@ defmodule PureAdminIconsWeb.Docs.ApiDocsLive do
         <div class="space-y-8 mt-10">
           <h2 class="text-xl font-bold border-b border-base-300/50 pb-2">Response Formats</h2>
 
+          <p class="text-sm text-base-content/60 mb-4">
+            The <code class="text-xs font-mono text-primary/80">format</code> parameter on <code class="text-xs font-mono text-primary/80">/api/icons/search</code> controls the response shape:
+          </p>
+
           <div class="space-y-4 text-sm text-base-content/70">
             <div class="flex gap-2">
               <code class="text-primary/80 font-mono">json</code>
               <span class="text-base-content/50">&mdash;</span>
-              <span>Full response with all metadata, platform identifiers, sizes, filenames</span>
+              <span>Full response: id, icon_set, name, style, style_color_method, sizes, ios/android identifiers, svg_url</span>
             </div>
             <div class="flex gap-2">
               <code class="text-primary/80 font-mono">compact</code>
               <span class="text-base-content/50">&mdash;</span>
-              <span>Minimal JSON: name, style, url</span>
+              <span>Minimal JSON: icon_set, name, style, url</span>
             </div>
             <div class="flex gap-2">
               <code class="text-primary/80 font-mono">text</code>
               <span class="text-base-content/50">&mdash;</span>
               <span>Plain text, one icon per line (most token-efficient for AI/LLMs)</span>
+            </div>
+          </div>
+        </div>
+
+        <%!-- Response fields --%>
+        <div class="space-y-8 mt-10">
+          <h2 class="text-xl font-bold border-b border-base-300/50 pb-2">Response Fields</h2>
+
+          <div class="space-y-4 text-sm">
+            <p class="text-base-content/60">Key fields in the JSON response:</p>
+            <div class="space-y-2 text-base-content/70">
+              <div class="flex gap-2">
+                <code class="text-primary/80 font-mono min-w-40">style_color_method</code>
+                <span class="text-base-content/50">&mdash;</span>
+                <span>How to set icon color via CSS: <code class="text-xs font-mono">"fill"</code>, <code class="text-xs font-mono">"stroke"</code>, or <code class="text-xs font-mono">"multicolor"</code> (not recolorable)</span>
+              </div>
+              <div class="flex gap-2">
+                <code class="text-primary/80 font-mono min-w-40">svg_url</code>
+                <span class="text-base-content/50">&mdash;</span>
+                <span>Relative URL to the SVG file (e.g., <code class="text-xs font-mono">/icons/fluentui/regular/ic_fluent_calendar_24_regular.svg</code>)</span>
+              </div>
+              <div class="flex gap-2">
+                <code class="text-primary/80 font-mono min-w-40">ios</code>
+                <span class="text-base-content/50">&mdash;</span>
+                <span>iOS/Swift identifier per size (e.g., <code class="text-xs font-mono" phx-no-curly-interpolation>{"24": "calendar24Solid"}</code>)</span>
+              </div>
+              <div class="flex gap-2">
+                <code class="text-primary/80 font-mono min-w-40">android</code>
+                <span class="text-base-content/50">&mdash;</span>
+                <span>Android/Kotlin identifier per size (e.g., <code class="text-xs font-mono" phx-no-curly-interpolation>{"24": "ic_heroicons_calendar_24_solid"}</code>)</span>
+              </div>
             </div>
           </div>
         </div>
@@ -79,6 +135,17 @@ defmodule PureAdminIconsWeb.Docs.ApiDocsLive do
             params={[]}
             example_url="/icons/fluentui/regular/ic_fluent_calendar_24_regular.svg"
             response_type="image/svg+xml"
+          />
+
+          <.endpoint
+            method="POST"
+            path="/api/maintenance/:task"
+            description="Trigger a maintenance task. Requires X-API-Key header. Rate limited to 5 requests per 5 minutes."
+            params={[
+              {"task", "Task to run: sync, clean, cube"},
+              {"X-API-Key", "API key (header, required)"}
+            ]}
+            note="Use POST /api/maintenance/sync/:icon_set to sync a specific set (e.g., fontawesome, fluentui)."
           />
         </div>
 
@@ -125,23 +192,44 @@ defmodule PureAdminIconsWeb.Docs.ApiDocsLive do
           <div class="space-y-6">
             <div>
               <h3 class="text-sm font-semibold uppercase tracking-wider text-base-content/60 mb-2">
-                Search icons (cURL)
+                Search icons
               </h3>
               <.code_block code="curl 'https://icons.pureadmin.io/api/icons/search?q=pen&size=24&limit=5'" />
             </div>
 
             <div>
               <h3 class="text-sm font-semibold uppercase tracking-wider text-base-content/60 mb-2">
-                Search icons (JavaScript)
+                Filter by multiple icon sets
               </h3>
-              <.code_block code={~s|const res = await fetch('https://icons.pureadmin.io/api/icons/search?q=calendar&format=compact');\nconst { icons } = await res.json();\nconsole.log(icons.map(i => i.name));|} lang="javascript" />
+              <.code_block code="curl 'https://icons.pureadmin.io/api/icons/search?q=arrow&set=heroicons&set=lucide&set=fontawesome'" />
             </div>
 
             <div>
               <h3 class="text-sm font-semibold uppercase tracking-wider text-base-content/60 mb-2">
-                Filter by icon set
+                Get icon detail
               </h3>
-              <.code_block code="curl 'https://icons.pureadmin.io/api/icons/search?q=arrow&set=heroicons&set=lucide'" />
+              <.code_block code="curl 'https://icons.pureadmin.io/api/icons/5403'" />
+            </div>
+
+            <div>
+              <h3 class="text-sm font-semibold uppercase tracking-wider text-base-content/60 mb-2">
+                List icon sets
+              </h3>
+              <.code_block code="curl 'https://icons.pureadmin.io/api/icon-sets'" />
+            </div>
+
+            <div>
+              <h3 class="text-sm font-semibold uppercase tracking-wider text-base-content/60 mb-2">
+                JavaScript
+              </h3>
+              <.code_block code={~s|const res = await fetch('https://icons.pureadmin.io/api/icons/search?q=calendar&format=compact');\nconst { results } = await res.json();\nconsole.log(results.map(i => `${i.icon_set}/${i.name}`));|} lang="javascript" />
+            </div>
+
+            <div>
+              <h3 class="text-sm font-semibold uppercase tracking-wider text-base-content/60 mb-2">
+                Trigger sync (authenticated)
+              </h3>
+              <.code_block code={~s|curl -X POST -H "X-API-Key: your-key" 'https://icons.pureadmin.io/api/maintenance/sync/fontawesome'|} />
             </div>
           </div>
         </div>

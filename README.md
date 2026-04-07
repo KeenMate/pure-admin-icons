@@ -1,18 +1,83 @@
-# IconsPureadminIo
+# icons.pureadmin.io
 
-To start your Phoenix server:
+Search engine for open-source SVG icons. Aggregates multiple icon libraries into a single searchable catalog with platform-specific identifiers for iOS, Android, React, Vue, and Svelte.
 
-* Run `mix setup` to install and setup dependencies
-* Start Phoenix endpoint with `mix phx.server` or inside IEx with `iex -S mix phx.server`
+**Live:** [icons.pureadmin.io](https://icons.pureadmin.io)
 
-Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
+## Icon Sets
 
-Ready to run in production? Please [check our deployment guides](https://hexdocs.pm/phoenix/deployment.html).
+| Set | Icons | Styles | Sizes | License |
+|-----|-------|--------|-------|---------|
+| [FluentUI System Icons](https://github.com/microsoft/fluentui-system-icons) | ~5400 | regular, filled, color, light | 16, 20, 24, 28, 32, 48 | MIT |
+| [Font Awesome Free](https://fontawesome.com/) | ~2850 | solid, regular, brands | 24 | CC BY 4.0 / MIT |
+| [Heroicons](https://heroicons.com/) | ~650 | outline, solid | 16, 20, 24 | MIT |
+| [Lucide](https://lucide.dev/) | ~1500 | regular | 24 | ISC |
+| [Tabler Icons](https://tabler.io/icons) | ~5300 | outline, filled | 24 | MIT |
 
-## Learn more
+## API
 
-* Official website: https://www.phoenixframework.org/
-* Guides: https://hexdocs.pm/phoenix/overview.html
-* Docs: https://hexdocs.pm/phoenix
-* Forum: https://elixirforum.com/c/phoenix-forum
-* Source: https://github.com/phoenixframework/phoenix
+All endpoints return JSON. No authentication required (except maintenance).
+
+```bash
+# Search icons
+curl 'https://icons.pureadmin.io/api/icons/search?q=calendar&limit=5'
+
+# Filter by icon set and style
+curl 'https://icons.pureadmin.io/api/icons/search?q=arrow&set=heroicons&style=outline'
+
+# Get icon detail
+curl 'https://icons.pureadmin.io/api/icons/5403'
+
+# List all icon sets
+curl 'https://icons.pureadmin.io/api/icon-sets'
+
+# Plain text format (token-efficient for AI)
+curl 'https://icons.pureadmin.io/api/icons/search?q=pen&format=text'
+```
+
+**Endpoints:**
+- `GET /api/icons/search` — search with filters (q, set, size, style, limit, format)
+- `GET /api/icons/:id` — icon detail with filenames, identifiers, categories, phrases
+- `GET /api/icon-sets` — all sets with styles, sizes, color methods, icon count
+- `GET /api/health` — health check
+- `GET /icons/:set/:style/:filename` — SVG file serving
+- `POST /api/maintenance/:task` — sync, clean, cube (requires X-API-Key)
+- `POST /api/maintenance/sync/:icon_set` — sync a specific icon set
+
+**Docs:** [icons.pureadmin.io/docs/api](https://icons.pureadmin.io/docs/api)
+
+## Stack
+
+- Phoenix 1.8 + LiveView 1.1
+- Tailwind CSS v4 + DaisyUI
+- PostgreSQL with full-text search + trigram matching
+- Quantum scheduler (daily sync at 3 AM)
+- Bandit HTTP server
+
+## Development
+
+```bash
+mix setup              # Install deps, build assets
+iex -S mix phx.server  # Start dev server at localhost:4020
+mix test               # Run tests
+mix format             # Format code
+make db-gen            # Regenerate DB context from stored procedures
+```
+
+## Deployment
+
+```bash
+docker build -t pure-admin-icons:latest .
+docker run -p 8888:8888 \
+  -e SECRET_KEY_BASE=$(mix phx.gen.secret) \
+  -e DB_USERNAME=... -e DB_PASSWORD=... \
+  -e DB_HOSTNAME=... -e DB_DATABASE=pure_admin_icons \
+  -e PHX_HOST=icons.pureadmin.io \
+  pure-admin-icons:latest
+```
+
+## License
+
+Application code: MIT. Icon SVGs retain their original licenses (see icon set table above).
+
+Built by [KeenMate](https://keenmate.com).

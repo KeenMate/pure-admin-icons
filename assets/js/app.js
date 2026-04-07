@@ -377,7 +377,22 @@ Hooks.FilenameTemplate = {
 
 // Copy text handler
 window.addEventListener("phx:copy_text", (event) => {
-  const { text, icon_id, platform } = event.detail
+  let { text, platform, filename, name, style, size } = event.detail
+  // For filename platform, apply the saved template
+  if (platform === 'filename' && filename) {
+    const template = localStorage.getItem('filename_template') || '{filename}'
+    const toSnake = s => s.toLowerCase().replace(/\s+/g, '_')
+    const toPascal = s => s.split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join('')
+    const toKebab = s => s.toLowerCase().replace(/\s+/g, '-')
+    text = template
+      .replace(/{filename}/g, filename)
+      .replace(/{name}/g, name)
+      .replace(/{name_snake}/g, toSnake(name))
+      .replace(/{name_pascal}/g, toPascal(name))
+      .replace(/{name_kebab}/g, toKebab(name))
+      .replace(/{size}/g, size)
+      .replace(/{style}/g, style)
+  }
   if (text) {
     navigator.clipboard.writeText(text).then(() => {
       const button = event.target

@@ -63,12 +63,26 @@ defmodule PureAdminIconsWeb.API.MaintenanceController do
 
   # Task execution (async - returns immediately)
   defp execute_task(conn, "sync") do
-    Task.start(fn -> PureAdminIcons.Sync.Worker.sync_all() end)
-    json(conn, %{status: "started", task: "sync"})
+    icon_set = conn.params["icon_set"]
+
+    if icon_set do
+      available = PureAdminIcons.Sync.Adapter.available_icon_sets()
+
+      if icon_set in available do
+        Task.start(fn -> PureAdminIcons.Sync.Worker.sync_icon_set(icon_set) end)
+        json(conn, %{status: "started", task: "sync", icon_set: icon_set})
+      else
+        conn
+        |> put_status(400)
+        |> json(%{error: "Unknown icon set", icon_set: icon_set, available: available})
+      end
+    else
+      Task.start(fn -> PureAdminIcons.Sync.Worker.sync_all() end)
+      json(conn, %{status: "started", task: "sync"})
+    end
   end
 
   defp execute_task(conn, "clean") do
-    # Clean task - truncate icons table via raw SQL
     Task.start(fn ->
       PureAdminIcons.Repo.query!("TRUNCATE public.icon CASCADE")
     end)
@@ -83,6 +97,6 @@ defmodule PureAdminIconsWeb.API.MaintenanceController do
   defp execute_task(conn, unknown) do
     conn
     |> put_status(400)
-    |> json(%{error: "Unknown task", task: unknown, available: ["sync", "clean", "cube"]})
+    |> json(%{error: "Unknown task", task: unknown, available: ["sync", "sync/:icon_set", "clean", "cube"]})
   end
 end
