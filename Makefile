@@ -1,4 +1,17 @@
-.PHONY: help setup deps compile build server clean test format lint release docker-build docker-run docker-stop sync
+# Detect operating system
+ifeq ($(OS),Windows_NT)
+	DETECTED_OS := Windows
+	DB_GEN_CMD := db-gen-win.exe
+else
+	DETECTED_OS := $(shell uname -s)
+	ifeq ($(DETECTED_OS),Linux)
+		DB_GEN_CMD := ./db-gen-linux
+	else
+		$(error Unsupported operating system: $(DETECTED_OS))
+	endif
+endif
+
+.PHONY: help setup deps compile build server clean test format lint release docker-build docker-run docker-stop sync db-gen
 
 help: ## Show this help message
 	@echo "Available targets:"
@@ -41,6 +54,17 @@ lint: ## Check code formatting
 
 release: ## Build production release
 	MIX_ENV=prod mix do compile, assets.deploy, release
+
+db-gen: ## Regenerate database context from DB schema
+	@echo "Generating Elixir code from PostgreSQL stored procedures..."
+	@echo "Using: $(DB_GEN_CMD)"
+	@if [ -f "$(DB_GEN_CMD)" ]; then \
+		./$(DB_GEN_CMD) generate; \
+	else \
+		echo "Error: $(DB_GEN_CMD) not found. Please ensure the database code generator is available."; \
+		exit 1; \
+	fi
+	@echo "Code generation completed."
 
 sync: ## Download and sync all icon sets
 	mix icons.download

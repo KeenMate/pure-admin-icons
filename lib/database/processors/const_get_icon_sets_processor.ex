@@ -31,7 +31,7 @@ defmodule Database.Processors.ConstGetIconSetsProcessor do
   Parse a single result row into a ConstGetIconSetsModel struct
   """
   @spec parse_result_row(list()) :: {:ok, %ConstGetIconSetsModel{}} | {:error, any()}
-  def parse_result_row([code, title, license, homepage_url, github_url, styles, sizes, default_size, icon_count]) do
+  def parse_result_row([code, title, license, homepage_url, github_url, styles, sizes, default_size, style_color_methods, icon_count]) do
     {:ok, %ConstGetIconSetsModel{
       code: code,
       title: title,
@@ -41,6 +41,7 @@ defmodule Database.Processors.ConstGetIconSetsProcessor do
       styles: styles,
       sizes: sizes,
       default_size: default_size,
+      style_color_methods: style_color_methods,
       icon_count: icon_count
     }}
   end

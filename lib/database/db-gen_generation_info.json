@@ -1,6 +1,6 @@
 {
   "version": "LOCAL",
-  "time": "2026-04-06T11:16:19.1212939+02:00",
+  "time": "2026-04-07T18:17:08.0840034+02:00",
   "routines": [
     {
       "RowNumber": 1,
@@ -563,7 +563,7 @@
       "DataType": "record",
       "UdtTypeScheme": "pg_catalog",
       "UdtTypeName": "record",
-      "ParamCount": 10,
+      "ParamCount": 11,
       "FuncType": "function",
       "InParameters": [
         {
@@ -642,6 +642,14 @@
         },
         {
           "OrdinalPosition": 10,
+          "Name": "__style_color_methods",
+          "Mode": "OUT",
+          "UDTName": "jsonb",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 11,
           "Name": "__icon_count",
           "Mode": "OUT",
           "UDTName": "int8",
@@ -2111,7 +2119,7 @@
       "DataType": "record",
       "UdtTypeScheme": "pg_catalog",
       "UdtTypeName": "record",
-      "ParamCount": 12,
+      "ParamCount": 13,
       "FuncType": "function",
       "InParameters": [
         {
@@ -2166,6 +2174,14 @@
         },
         {
           "OrdinalPosition": 7,
+          "Name": "__style_color_method",
+          "Mode": "OUT",
+          "UDTName": "text",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 8,
           "Name": "__sizes",
           "Mode": "OUT",
           "UDTName": "_int4",
@@ -2173,7 +2189,7 @@
           "IsOptional": false
         },
         {
-          "OrdinalPosition": 8,
+          "OrdinalPosition": 9,
           "Name": "__filenames",
           "Mode": "OUT",
           "UDTName": "jsonb",
@@ -2181,7 +2197,7 @@
           "IsOptional": false
         },
         {
-          "OrdinalPosition": 9,
+          "OrdinalPosition": 10,
           "Name": "__ios_identifiers",
           "Mode": "OUT",
           "UDTName": "jsonb",
@@ -2189,7 +2205,7 @@
           "IsOptional": false
         },
         {
-          "OrdinalPosition": 10,
+          "OrdinalPosition": 11,
           "Name": "__android_identifiers",
           "Mode": "OUT",
           "UDTName": "jsonb",
@@ -2197,7 +2213,7 @@
           "IsOptional": false
         },
         {
-          "OrdinalPosition": 11,
+          "OrdinalPosition": 12,
           "Name": "__categories",
           "Mode": "OUT",
           "UDTName": "jsonb",
@@ -2205,7 +2221,7 @@
           "IsOptional": false
         },
         {
-          "OrdinalPosition": 12,
+          "OrdinalPosition": 13,
           "Name": "__phrases",
           "Mode": "OUT",
           "UDTName": "jsonb",
@@ -2604,7 +2620,7 @@
       "DataType": "record",
       "UdtTypeScheme": "pg_catalog",
       "UdtTypeName": "record",
-      "ParamCount": 16,
+      "ParamCount": 17,
       "FuncType": "function",
       "InParameters": [
         {
@@ -2691,6 +2707,14 @@
         },
         {
           "OrdinalPosition": 11,
+          "Name": "__style_color_method",
+          "Mode": "OUT",
+          "UDTName": "text",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 12,
           "Name": "__sizes",
           "Mode": "OUT",
           "UDTName": "_int4",
@@ -2698,7 +2722,7 @@
           "IsOptional": false
         },
         {
-          "OrdinalPosition": 12,
+          "OrdinalPosition": 13,
           "Name": "__filenames",
           "Mode": "OUT",
           "UDTName": "jsonb",
@@ -2706,7 +2730,7 @@
           "IsOptional": false
         },
         {
-          "OrdinalPosition": 13,
+          "OrdinalPosition": 14,
           "Name": "__ios_identifiers",
           "Mode": "OUT",
           "UDTName": "jsonb",
@@ -2714,7 +2738,7 @@
           "IsOptional": false
         },
         {
-          "OrdinalPosition": 14,
+          "OrdinalPosition": 15,
           "Name": "__android_identifiers",
           "Mode": "OUT",
           "UDTName": "jsonb",
@@ -2722,7 +2746,7 @@
           "IsOptional": false
         },
         {
-          "OrdinalPosition": 15,
+          "OrdinalPosition": 16,
           "Name": "__categories",
           "Mode": "OUT",
           "UDTName": "jsonb",
@@ -2730,7 +2754,7 @@
           "IsOptional": false
         },
         {
-          "OrdinalPosition": 16,
+          "OrdinalPosition": 17,
           "Name": "__total_items",
           "Mode": "OUT",
           "UDTName": "int8",

@@ -1,5 +1,63 @@
 # Changelog
 
+## 2026-04-07 — Font Awesome, dynamic filters, color method, UI polish
+
+### UI polish
+- **Page loader** — full-screen themed loader while LiveView connects, prevents layout flash
+- **Collapsible filters** — filters hidden behind a toggle button next to Grid/List; highlighted when active
+- **Grid/List toggle** moved to search bar line with active state highlighting
+- **Icon size slider** — adjustable icon preview size in list view (24–64px), persists to localStorage
+- **Preview presets** — combined color+background presets in detail modal (Classic Light/Dark, Neon Dark, Blueprint, Warm, Transparent)
+- **Responsive list view** — stacked cards on mobile, table on desktop
+- **Icon set badge colors** — unique color per set across grid, list, active filters, and detail modal
+- **Hover-to-copy on grid sizes** — hovering size badges shows platform copy buttons (same as list view)
+- **Range slider** uses DaisyUI `range` component for dark theme visibility
+- **Icon preview backgrounds** sync across grid, list, and detail modal from presets
+
+### Bug fixes
+- **Filter pruning** — switching icon sets now clears incompatible style/size selections (e.g., "filled" removed when switching from FluentUI to Font Awesome)
+- **Filter persistence** — saved filters only restore on initial page load, not on every navigation (fixed loop bug)
+- **SVG color replacement** — now handles `stroke`, `fill`, and `currentColor` (fixes invisible Lucide/Tabler outline icons)
+- **db-gen template** — fixed hardcoded `FluentuiIcons.Repo` → `PureAdminIcons.Repo`
+
+---
+
+## 2026-04-07 — Font Awesome, dynamic filters, color method, UI improvements
+
+### Font Awesome Free
+- New sync adapter downloading from npm registry (auto-fetches latest version)
+- 3 styles: solid, regular, brands (~2855 icons after alias dedup)
+- Platform identifiers for React (`@fortawesome/react-fontawesome`), Vue (`@fortawesome/vue-fontawesome`), Svelte (`svelte-fa`)
+- Alias deduplication: `thumbtack`/`thumb-tack`, `eyedropper`/`eye-dropper`, etc. — identical SVGs, keep canonical name
+
+### Dynamic filters
+- Styles and sizes filters now adapt to selected icon sets (e.g., selecting Heroicons shows only outline/solid and 16/20/24)
+- Filter order: Sets → Styles → Sizes (each on its own row)
+- Filter selections persist to localStorage and restore on next visit
+- Active filter badges match icon set colors; "Clear all" moved inline with active filters
+
+### Color method
+- New `style_color_method` from DB: `"fill"`, `"stroke"`, or `"multicolor"` per icon
+- Detail modal shows CSS hint (`CSS: fill / color` or `CSS: stroke / color`)
+- Multicolor icons hide the color picker with "not recolorable" message
+- SVG color replacement now handles both `fill` and `stroke` attributes, including `currentColor`
+- Icon previews use light background (`bg-white/80`) instead of theme-dependent recoloring
+
+### UI improvements
+- Grid/List toggle moved next to search bar with active state highlighting
+- Icon set badges colored per set (FluentUI blue, Heroicons violet, Lucide orange, Tabler cyan, Font Awesome yellow)
+- Set column added to list view
+- List view: responsive cards on mobile, table on desktop
+- Vue platform section added to icon detail modal (Lucide, Tabler, Heroicons, Font Awesome)
+- All non-FluentUI identifiers include import statements
+- Package names in section headers link to npmjs
+
+### Tooling
+- `make db-gen` command (cross-platform, uses `db-gen-win.exe` / `db-gen-linux`)
+- db-gen files, templates, and config added to project
+
+---
+
 ## 2026-04-07 — Mobile-responsive nav, spring time schedule
 
 ### Added

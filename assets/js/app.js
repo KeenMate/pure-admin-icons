@@ -10,13 +10,35 @@ let Hooks = {}
 // Inline SVG loader with lazy loading, caching, and color support
 Hooks.IconColorFilter = {
   mounted() {
+    console.time('[hook] IconColorFilter.mounted')
     this.svgCache = new Map()
+    this.applyPreviewBg()
     this.loadAllSvgs()
-    window.addEventListener('iconColorChanged', () => this.updateAllColors())
+    console.timeEnd('[hook] IconColorFilter.mounted')
+    window.addEventListener('iconColorChanged', () => {
+      this.updateAllColors()
+      this.applyPreviewBg()
+    })
   },
   updated() {
     this.updateAllColors()
+    this.applyPreviewBg()
     this.loadAllSvgs()
+  },
+  applyPreviewBg() {
+    let bg = '#ffffff'
+    try { bg = JSON.parse(localStorage.getItem('icon_preview_bg') || '"#ffffff"') } catch { bg = localStorage.getItem('icon_preview_bg') || '#ffffff' }
+    this.el.querySelectorAll('.icon-preview-bg').forEach(el => {
+      el.style.removeProperty('background-image')
+      el.style.removeProperty('background-size')
+      if (bg === 'checker') {
+        el.style.backgroundImage = 'repeating-conic-gradient(#d1d5db 0% 25%, #fff 0% 50%)'
+        el.style.backgroundSize = '8px 8px'
+        el.style.backgroundColor = ''
+      } else {
+        el.style.backgroundColor = bg
+      }
+    })
   },
   async loadAllSvgs() {
     const icons = this.el.querySelectorAll('.inline-svg-icon')
@@ -50,7 +72,11 @@ Hooks.IconColorFilter = {
         svgText = await response.text()
         this.svgCache.set(url, svgText)
       }
-      const coloredSvg = svgText.replace(/fill="#[0-9A-Fa-f]{6}"/g, `fill="${color}"`)
+      const coloredSvg = svgText
+        .replace(/fill="#[0-9A-Fa-f]{3,6}"/g, `fill="${color}"`)
+        .replace(/fill="currentColor"/g, `fill="${color}"`)
+        .replace(/stroke="#[0-9A-Fa-f]{3,6}"/g, `stroke="${color}"`)
+        .replace(/stroke="currentColor"/g, `stroke="${color}"`)
       container.innerHTML = coloredSvg
       const svg = container.querySelector('svg')
       if (svg) {
@@ -65,20 +91,27 @@ Hooks.IconColorFilter = {
   updateAllColors() {
     const color = localStorage.getItem('icon_preview_color') || '#212121'
     this.el.querySelectorAll('.inline-svg-icon').forEach(icon => {
-      icon.querySelectorAll('svg path[fill], svg circle[fill], svg rect[fill]').forEach(el => {
+      icon.querySelectorAll('svg path, svg circle, svg rect, svg line, svg polyline, svg polygon').forEach(el => {
         const currentFill = el.getAttribute('fill')
         if (currentFill && currentFill !== 'none') el.setAttribute('fill', color)
+        const currentStroke = el.getAttribute('stroke')
+        if (currentStroke && currentStroke !== 'none') el.setAttribute('stroke', color)
       })
     })
   }
 }
 
-// Metrics tracker — exposes pushEvent for JS
+// Metrics tracker — exposes pushEvent for JS + filter persistence
 Hooks.MetricsTracker = {
   mounted() {
     this.el._pushEvent = (event, params) => {
       this.pushEvent(event, params)
     }
+    this.handleEvent("save_filters", ({styles, sizes, icon_sets}) => {
+      localStorage.setItem("icon_filter_styles", JSON.stringify(styles))
+      localStorage.setItem("icon_filter_sizes", JSON.stringify(sizes))
+      localStorage.setItem("icon_filter_icon_sets", JSON.stringify(icon_sets))
+    })
   }
 }
 
@@ -101,15 +134,43 @@ Hooks.PlatformPrefs = {
   }
 }
 
-// ColorPicker hook — modal icon color preview
+// ColorPicker hook — modal icon color preview with presets
 Hooks.ColorPicker = {
+  presets: {
+    'classic-light': { color: '#212121', bg: '#ffffff' },
+    'classic-dark': { color: '#ffffff', bg: '#1f2937' },
+    'neon-dark': { color: '#4ade80', bg: '#000000' },
+    'blueprint': { color: '#bfdbfe', bg: '#1e3a5f' },
+    'warm': { color: '#92400e', bg: '#fffbeb' },
+    'checker': { color: '#374151', bg: 'checker' }
+  },
   mounted() {
     this.colorInput = this.el.querySelector('.color-input')
     this.textInput = this.el.querySelector('.color-text')
-    this.applySavedColor()
+    this.applySaved()
+
+    // Preset buttons
+    this.el.querySelectorAll('.preview-preset').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const preset = this.presets[btn.dataset.preset]
+        if (!preset) return
+        localStorage.setItem('icon_preview_color', preset.color)
+        localStorage.setItem('icon_preview_bg', JSON.stringify(preset.bg))
+        localStorage.setItem('icon_preview_preset', btn.dataset.preset)
+        if (this.colorInput) this.colorInput.value = preset.color
+        if (this.textInput) this.textInput.value = preset.color
+        this.applyBg(preset.bg)
+        this.updateSvgColors(preset.color)
+        this.highlightPreset(btn.dataset.preset)
+      })
+    })
+
+    // Custom color inputs
     if (this.colorInput) {
       this.colorInput.addEventListener('input', (e) => {
         if (this.textInput) this.textInput.value = e.target.value
+        localStorage.removeItem('icon_preview_preset')
+        this.highlightPreset(null)
         this.updateSvgColors(e.target.value)
       })
     }
@@ -119,6 +180,8 @@ Hooks.ColorPicker = {
         if (color && !color.startsWith('#')) { color = '#' + color; this.textInput.value = color }
         if (/^#[0-9A-Fa-f]{6}$/.test(color)) {
           if (this.colorInput) this.colorInput.value = color
+          localStorage.removeItem('icon_preview_preset')
+          this.highlightPreset(null)
           this.updateSvgColors(color)
         }
       })
@@ -127,13 +190,41 @@ Hooks.ColorPicker = {
   updated() {
     this.colorInput = this.el.querySelector('.color-input')
     this.textInput = this.el.querySelector('.color-text')
-    this.applySavedColor()
+    this.applySaved()
   },
-  applySavedColor() {
+  applySaved() {
     const savedColor = localStorage.getItem('icon_preview_color') || '#212121'
+    let savedBg = '#ffffff'
+    try { savedBg = JSON.parse(localStorage.getItem('icon_preview_bg') || '"#ffffff"') } catch { savedBg = localStorage.getItem('icon_preview_bg') || '#ffffff' }
+    const savedPreset = localStorage.getItem('icon_preview_preset')
     requestAnimationFrame(() => {
       if (this.colorInput) this.colorInput.value = savedColor
       if (this.textInput) this.textInput.value = savedColor
+      this.applyBg(savedBg)
+      this.highlightPreset(savedPreset)
+    })
+  },
+  applyBg(bg) {
+    document.querySelectorAll('.svg-container').forEach(c => {
+      c.style.removeProperty('background-image')
+      c.style.removeProperty('background-size')
+      c.className = c.className.replace(/bg-\S+/g, '')
+      c.classList.add('rounded-lg', 'p-3', 'border', 'border-base-300', 'flex', 'items-center', 'justify-center')
+      if (bg === 'checker') {
+        c.style.backgroundImage = 'repeating-conic-gradient(#d1d5db 0% 25%, #fff 0% 50%)'
+        c.style.backgroundSize = '12px 12px'
+      } else {
+        c.style.backgroundColor = bg
+      }
+    })
+  },
+  highlightPreset(active) {
+    this.el.querySelectorAll('.preview-preset').forEach(btn => {
+      if (btn.dataset.preset === active) {
+        btn.classList.add('ring-2', 'ring-primary', 'ring-offset-1')
+      } else {
+        btn.classList.remove('ring-2', 'ring-primary', 'ring-offset-1')
+      }
     })
   },
   updateSvgColors(color) {
@@ -141,9 +232,11 @@ Hooks.ColorPicker = {
     const svgContainer = document.querySelector('[phx-hook="InlineSvg"]')
     if (svgContainer) {
       svgContainer.dataset.color = color
-      svgContainer.querySelectorAll('svg path[fill], svg circle[fill], svg rect[fill]').forEach(el => {
+      svgContainer.querySelectorAll('svg path, svg circle, svg rect, svg line, svg polyline, svg polygon').forEach(el => {
         const currentFill = el.getAttribute('fill')
         if (currentFill && currentFill !== 'none') el.setAttribute('fill', color)
+        const currentStroke = el.getAttribute('stroke')
+        if (currentStroke && currentStroke !== 'none') el.setAttribute('stroke', color)
       })
     }
     window.dispatchEvent(new CustomEvent('iconColorChanged'))
@@ -162,7 +255,11 @@ Hooks.InlineSvg = {
       try {
         const response = await fetch(urls[i])
         const svgText = await response.text()
-        const coloredSvg = svgText.replace(/fill="#[0-9A-Fa-f]{6}"/g, `fill="${color}"`)
+        const coloredSvg = svgText
+          .replace(/fill="#[0-9A-Fa-f]{3,6}"/g, `fill="${color}"`)
+          .replace(/fill="currentColor"/g, `fill="${color}"`)
+          .replace(/stroke="#[0-9A-Fa-f]{3,6}"/g, `stroke="${color}"`)
+          .replace(/stroke="currentColor"/g, `stroke="${color}"`)
         containers[i].innerHTML = coloredSvg
         const svg = containers[i].querySelector('svg')
         if (svg) { svg.style.width = `${containers[i].dataset.size}px`; svg.style.height = `${containers[i].dataset.size}px` }
@@ -171,11 +268,13 @@ Hooks.InlineSvg = {
   }
 }
 
-// SvelteColor hook — toggles color in generated Svelte code
+// SvelteColor hook — toggles color in generated Svelte code (fluentui only)
 Hooks.SvelteColor = {
   mounted() {
+    const iconSet = this.el.dataset.iconSet
     const checkbox = this.el.querySelector('.svelte-include-color')
-    if (!checkbox) return
+    // Color toggle only applies to fluentui's svelte-fluentui package
+    if (!checkbox || iconSet !== 'fluentui') return
     const name = this.el.dataset.name, style = this.el.dataset.style
     const sizes = JSON.parse(this.el.dataset.sizes || '[]')
     const savedPref = localStorage.getItem('svelte_include_color') === 'true'
@@ -194,6 +293,41 @@ Hooks.SvelteColor = {
       code.textContent = includeColor
         ? `<Icon name="${name}" size={${size}} variant="${style}" color="custom" customColor="${color}" />`
         : `<Icon name="${name}" size={${size}} variant="${style}" />`
+    })
+  }
+}
+
+// IconSizeSlider hook — adjusts icon preview size in list/grid
+Hooks.IconSizeSlider = {
+  mounted() {
+    console.time('[hook] IconSizeSlider.mounted')
+    this.range = this.el.querySelector('.icon-size-range')
+    this.label = this.el.querySelector('.icon-size-label')
+    const saved = parseInt(localStorage.getItem('icon_list_size') || '32', 10)
+    this.range.value = saved
+    this.apply(saved)
+    console.timeEnd('[hook] IconSizeSlider.mounted')
+    this.range.addEventListener('input', () => {
+      const size = parseInt(this.range.value, 10)
+      localStorage.setItem('icon_list_size', size)
+      this.apply(size)
+    })
+  },
+  updated() {
+    const saved = parseInt(localStorage.getItem('icon_list_size') || '32', 10)
+    this.apply(saved)
+  },
+  apply(size) {
+    if (this.label) this.label.textContent = size + 'px'
+    // Update list view (desktop table)
+    document.querySelectorAll('.icon-list-preview').forEach(el => {
+      el.style.width = size + 'px'
+      el.style.height = size + 'px'
+    })
+    // Update list view (mobile cards)
+    document.querySelectorAll('.icon-card-preview').forEach(el => {
+      el.style.width = (size * 1.5) + 'px'
+      el.style.height = (size * 1.5) + 'px'
     })
   }
 }
@@ -298,18 +432,43 @@ window.copyFromButton = function(button) {
   }
 }
 
+console.time('[prefs] LiveSocket init')
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
-  params: {_csrf_token: csrfToken},
+  params: {
+    _csrf_token: csrfToken,
+    view_mode: localStorage.getItem("icon_view_mode") || "grid",
+    icon_list_size: parseInt(localStorage.getItem("icon_list_size") || "32", 10),
+    platform_prefs: JSON.parse(localStorage.getItem("icon_platform_prefs") || "{}"),
+    filter_styles: JSON.parse(localStorage.getItem("icon_filter_styles") || "[]"),
+    filter_sizes: JSON.parse(localStorage.getItem("icon_filter_sizes") || "[]"),
+    filter_icon_sets: JSON.parse(localStorage.getItem("icon_filter_icon_sets") || "[]")
+  },
   hooks: Hooks
+})
+console.timeEnd('[prefs] LiveSocket init')
+console.log('[prefs] connect_params:', {
+  view_mode: localStorage.getItem("icon_view_mode"),
+  icon_list_size: localStorage.getItem("icon_list_size"),
+  filter_icon_sets: localStorage.getItem("icon_filter_icon_sets")
 })
 
 topbar.config({barColors: {0: "#29d"}, shadowColor: "rgba(0, 0, 0, .3)"})
-window.addEventListener("phx:page-loading-start", _info => topbar.show(300))
-window.addEventListener("phx:page-loading-stop", _info => topbar.hide())
+window.addEventListener("phx:page-loading-start", _info => { console.time('[phx] page-load'); topbar.show(300) })
+window.addEventListener("phx:page-loading-stop", _info => {
+  console.timeEnd('[phx] page-load')
+  topbar.hide()
+  // Hide loader after first LiveView connect
+  const loader = document.getElementById('app-loader')
+  if (loader) {
+    loader.style.opacity = '0'
+    setTimeout(() => loader.remove(), 300)
+  }
+})
 
 liveSocket.connect()
 window.liveSocket = liveSocket
+
 
 // Time-of-day theme manager
 import { startAutoUpdate, initThemeEvents } from "./theme-manager"

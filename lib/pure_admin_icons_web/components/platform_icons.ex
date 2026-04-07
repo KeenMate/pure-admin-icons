@@ -49,6 +49,14 @@ defmodule PureAdminIconsWeb.Components.PlatformIcons do
     """
   end
 
+  def platform_icon(%{name: "vue"} = assigns) do
+    ~H"""
+    <svg class={@class} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M2 3h3.5L12 14.5 18.5 3H22L12 21 2 3zm7 0h2.5L12 4.5 12.5 3H17l-5 8.5L7 3z"/>
+    </svg>
+    """
+  end
+
   def platform_icon(%{name: "filename"} = assigns) do
     ~H"""
     <svg class={@class} viewBox="0 0 20 20" fill="currentColor">

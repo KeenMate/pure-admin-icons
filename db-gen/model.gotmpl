@@ -1,0 +1,25 @@
+# This code has been auto-generated
+# Changes to this file will be lost on next generation
+
+defmodule Database.Models.{{.Routine.ModelName}} do
+  @moduledoc """
+  Model representing the result of {{.Routine.DbFullFunctionName}}
+  """
+
+  @fields [
+{{range $idx, $property := .Routine.ReturnProperties}}{{if $idx}},
+{{end}}    :{{normalizeStr $property.DbColumnName}}{{end}}
+  ]
+
+  @enforce_keys @fields
+
+  @derive Jason.Encoder
+  defstruct @fields
+
+  @type t() :: %__MODULE__{
+{{range $idx, $property := .Routine.ReturnProperties}}{{if $idx}},
+{{end}}    {{normalizeStr $property.DbColumnName}}: {{$property.PropertyType}}{{if $property.Nullable}} | nil{{end}}{{end}}
+  }
+
+  use Accessible
+end

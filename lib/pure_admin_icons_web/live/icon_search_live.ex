@@ -11,10 +11,14 @@ defmodule PureAdminIconsWeb.IconSearchLive do
 
   @impl true
   def mount(_params, _session, socket) do
+    require Logger
+    Logger.debug("[timing] mount start, connected=#{connected?(socket)}")
     # Get preferences from connect params (passed from JS localStorage)
     # get_connect_params returns nil during static render, so we use defaults
     connect_params = get_connect_params(socket) || %{}
+    Logger.debug("[timing] connect_params: view_mode=#{connect_params["view_mode"]}, icon_list_size=#{connect_params["icon_list_size"]}")
     view_mode = connect_params["view_mode"] || "grid"
+    icon_list_size = connect_params["icon_list_size"] || 32
     platform_prefs = connect_params["platform_prefs"] || %{}
     platform_prefs = atomize_keys(platform_prefs)
     default_prefs = %{ios: true, android: true, react: true, vue: true, svelte: true, filename: true}
@@ -43,6 +47,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
      |> assign(all_sizes: all_sizes)
      |> assign(platform_prefs: platform_prefs)
      |> assign(view_mode: view_mode)
+     |> assign(icon_list_size: icon_list_size)
      |> assign(last_sync_at: last_sync_at)
      |> assign(discrepancy_count: discrepancy_count)}
   end
@@ -180,7 +185,23 @@ defmodule PureAdminIconsWeb.IconSearchLive do
   def handle_event("toggle_icon_set", %{"set" => icon_set}, socket) do
     sets = socket.assigns.selected_icon_sets
     new_sets = if icon_set in sets, do: List.delete(sets, icon_set), else: [icon_set | sets]
-    {:noreply, push_patch(socket, to: build_path(socket, icon_sets: new_sets, page: 1))}
+
+    # Prune styles/sizes that aren't available in the new icon set selection
+    {new_styles, new_sizes} =
+      case new_sets do
+        [] ->
+          {socket.assigns.selected_styles, socket.assigns.selected_sizes}
+        selected ->
+          filtered = Enum.filter(socket.assigns.icon_sets, &(&1.code in selected))
+          avail_styles = filtered |> Enum.flat_map(& &1.styles) |> Enum.uniq()
+          avail_sizes = filtered |> Enum.flat_map(& &1.sizes) |> Enum.uniq()
+          {
+            Enum.filter(socket.assigns.selected_styles, &(&1 in avail_styles)),
+            Enum.filter(socket.assigns.selected_sizes, &(&1 in avail_sizes))
+          }
+      end
+
+    {:noreply, push_patch(socket, to: build_path(socket, icon_sets: new_sets, styles: new_styles, sizes: new_sizes, page: 1))}
   end
 
   def handle_event("clear_filters", _params, socket) do
@@ -349,30 +370,65 @@ defmodule PureAdminIconsWeb.IconSearchLive do
         </div>
 
         <div class="max-w-5xl mx-auto">
-        <!-- Search Bar -->
-        <form phx-change="search" phx-submit="search" class="mb-6">
-          <div class="relative">
-            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <svg class="h-5 w-5 text-base-content/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
+        <!-- Search Bar + View Toggle -->
+        <div class="flex gap-3 mb-6 items-center">
+          <form phx-change="search" phx-submit="search" class="flex-1">
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg class="h-5 w-5 text-base-content/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+              <input
+                type="text"
+                name="query"
+                value={@query}
+                placeholder="Search icons (e.g., 'pen', 'calendar', 'add')..."
+                phx-debounce="300"
+                class="w-full pl-10 pr-4 py-3 rounded-lg border border-base-content/25 bg-base-content/10 shadow-sm search-glow text-base-content text-lg"
+                autofocus
+              />
             </div>
-            <input
-              type="text"
-              name="query"
-              value={@query}
-              placeholder="Search icons (e.g., 'pen', 'calendar', 'add')..."
-              phx-debounce="300"
-              class="w-full pl-10 pr-4 py-3 rounded-lg border border-base-content/25 bg-base-content/10 shadow-sm search-glow text-base-content text-lg"
-              autofocus
-            />
+          </form>
+          <div class="flex items-center gap-2">
+            <button
+              phx-click={JS.toggle(to: "#filters-panel", in: "fade-in-scale", out: "fade-out-scale")}
+              class={["px-3 py-2 rounded text-sm flex items-center gap-1.5 cursor-pointer transition-colors border", if(@selected_styles != [] || @selected_sizes != [] || @selected_icon_sets != [], do: "bg-primary text-primary-content border-primary", else: "bg-base-200 text-base-content/70 hover:text-base-content border-base-300")]}
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+              </svg>
+              Filters
+            </button>
+            <div class="flex items-center gap-1 bg-base-200 rounded-lg p-1" id="view-mode" phx-hook="ViewMode">
+              <button
+                phx-click="toggle_view"
+                phx-value-mode="grid"
+                class={["px-3 py-2 rounded text-sm flex items-center gap-1.5 cursor-pointer transition-colors", if(@view_mode == "grid", do: "bg-primary text-primary-content", else: "text-base-content/70 hover:text-base-content")]}
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                </svg>
+                Grid
+              </button>
+              <button
+                phx-click="toggle_view"
+                phx-value-mode="list"
+                class={["px-3 py-2 rounded text-sm flex items-center gap-1.5 cursor-pointer transition-colors", if(@view_mode == "list", do: "bg-primary text-primary-content", else: "text-base-content/70 hover:text-base-content")]}
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                </svg>
+                List
+              </button>
+            </div>
           </div>
-        </form>
+        </div>
 
-        <!-- Filters -->
-        <div class="flex flex-col gap-3 mb-6">
+        <!-- Filters (collapsible) -->
+        <div id="filters-panel" class="mb-6 p-4 bg-base-200/50 rounded-lg border border-base-300 space-y-4" style="display: none;">
           <!-- Icon Set Filter -->
-          <div class="flex flex-wrap items-center gap-3">
+          <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
             <span class="text-base font-medium text-base-content min-w-14">Sets:</span>
             <%= for icon_set <- @icon_sets do %>
               <label class="inline-flex items-center cursor-pointer gap-1.5">
@@ -389,7 +445,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
           </div>
 
           <!-- Style Filter -->
-          <div class="flex flex-wrap items-center gap-3">
+          <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
             <span class="text-base font-medium text-base-content min-w-14">Styles:</span>
             <%= for style <- @available_styles do %>
               <label class="inline-flex items-center cursor-pointer gap-1.5">
@@ -406,7 +462,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
           </div>
 
           <!-- Size Filters -->
-          <div class="flex flex-wrap items-center gap-3">
+          <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
             <span class="text-base font-medium text-base-content min-w-14">Sizes:</span>
             <%= for size <- @available_sizes do %>
               <label class="inline-flex items-center cursor-pointer gap-1.5">
@@ -470,34 +526,19 @@ defmodule PureAdminIconsWeb.IconSearchLive do
           </div>
         <% end %>
 
-        <!-- Results Count, View Toggle & Pager -->
-        <div class="flex justify-between items-center mb-4">
+        <!-- Results Count, Icon Size Slider & Pager -->
+        <div class="flex flex-wrap justify-between items-center mb-4 gap-3">
           <div class="text-sm text-base-content/70">
             Showing <%= (@page - 1) * 30 + 1 %>-<%= min(@page * 30, @total_count) %> of <%= @total_count %> icons
           </div>
-          <div class="flex items-center gap-4">
-            <!-- View Toggle - CSS controls active state based on data-view-mode -->
-            <div class="flex items-center gap-1 bg-base-200 rounded-lg p-1" id="view-mode" phx-hook="ViewMode">
-              <button
-                phx-click="toggle_view"
-                phx-value-mode="grid"
-                class="btn-grid px-3 py-1.5 rounded text-sm flex items-center gap-1.5"
-              >
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-                </svg>
-                Grid
-              </button>
-              <button
-                phx-click="toggle_view"
-                phx-value-mode="list"
-                class="btn-list px-3 py-1.5 rounded text-sm flex items-center gap-1.5"
-              >
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-                </svg>
-                List
-              </button>
+          <div class="flex items-center gap-3">
+            <div class="flex items-center gap-2" id="icon-size-slider" phx-hook="IconSizeSlider">
+              <svg class="w-4 h-4 text-base-content/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0H8M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+              </svg>
+              <input type="range" min="24" max="64" value={@icon_list_size} step="4"
+                     class="icon-size-range range range-xs range-primary w-20 cursor-pointer" />
+              <span class="icon-size-label text-xs text-base-content/50 w-8"><%= @icon_list_size %>px</span>
             </div>
             <.pager current_page={@page} total_pages={@total_pages} />
           </div>
@@ -514,7 +555,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
             <.icon_grid icons={@icons} selected_styles={@selected_styles} selected_sizes={@selected_sizes} selected_icon_sets={@selected_icon_sets} platform_prefs={@platform_prefs} />
           </div>
           <div class="view-list">
-            <.icon_list icons={@icons} platform_prefs={@platform_prefs} selected_sizes={@selected_sizes} available_sizes={@available_sizes} />
+            <.icon_list icons={@icons} platform_prefs={@platform_prefs} selected_sizes={@selected_sizes} available_sizes={@available_sizes} icon_list_size={@icon_list_size} />
           </div>
         </div>
 
@@ -567,7 +608,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
 
   defp icon_modal(assigns) do
     ~H"""
-    <div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true" phx-window-keydown="close_modal" phx-key="Escape">
       <!-- Backdrop -->
       <div class="fixed inset-0 bg-black/60 transition-opacity" phx-click="close_modal"></div>
 
@@ -615,21 +656,35 @@ defmodule PureAdminIconsWeb.IconSearchLive do
               <% end %>
             </div>
 
-            <!-- Color Picker -->
-            <div class="mb-4 flex items-center gap-3" id={"color-picker-#{@icon.icon_id}"} phx-hook="ColorPicker"
+            <!-- Preview Presets & Custom Color -->
+            <div class="mb-4" id={"color-picker-#{@icon.icon_id}"} phx-hook="ColorPicker"
                  data-update-trigger={:erlang.phash2(@platform_prefs)}>
-              <label class="text-sm font-medium text-base-content">Preview Color:</label>
               <%= if @icon.style_color_method == "multicolor" do %>
-                <span class="text-sm text-base-content/50 italic">Multicolor icon — not recolorable</span>
+                <div class="flex items-center gap-3">
+                  <label class="text-sm font-medium text-base-content">Preview:</label>
+                  <span class="text-sm text-base-content/50 italic">Multicolor icon — not recolorable</span>
+                </div>
               <% else %>
-                <input type="color" value="#212121"
-                       class="color-input w-10 h-10 rounded cursor-pointer border border-base-300" />
-                <input type="text" value="#212121"
-                       class="color-text w-24 px-2 py-1 text-sm font-mono border border-base-300 rounded search-glow"
-                       maxlength="7" placeholder="#000000" />
-                <span class={["text-xs px-2 py-0.5 rounded", color_method_class(@icon.style_color_method)]}>
-                  <%= color_method_label(@icon.style_color_method) %>
-                </span>
+                <div class="flex flex-wrap items-center gap-2 mb-2">
+                  <label class="text-sm font-medium text-base-content">Preview:</label>
+                  <button type="button" data-preset="classic-light" class="preview-preset px-2.5 py-1 rounded text-xs font-medium cursor-pointer border border-base-300 hover:scale-105 transition-transform bg-white text-gray-800">Classic Light</button>
+                  <button type="button" data-preset="classic-dark" class="preview-preset px-2.5 py-1 rounded text-xs font-medium cursor-pointer border border-base-300 hover:scale-105 transition-transform bg-gray-800 text-white">Classic Dark</button>
+                  <button type="button" data-preset="neon-dark" class="preview-preset px-2.5 py-1 rounded text-xs font-medium cursor-pointer border border-base-300 hover:scale-105 transition-transform bg-black text-green-400">Neon Dark</button>
+                  <button type="button" data-preset="blueprint" class="preview-preset px-2.5 py-1 rounded text-xs font-medium cursor-pointer border border-base-300 hover:scale-105 transition-transform bg-blue-900 text-blue-200">Blueprint</button>
+                  <button type="button" data-preset="warm" class="preview-preset px-2.5 py-1 rounded text-xs font-medium cursor-pointer border border-base-300 hover:scale-105 transition-transform bg-amber-50 text-amber-800">Warm</button>
+                  <button type="button" data-preset="checker" class="preview-preset px-2.5 py-1 rounded text-xs font-medium cursor-pointer border border-base-300 hover:scale-105 transition-transform text-gray-600" style="background-image: repeating-conic-gradient(#e5e7eb 0% 25%, #fff 0% 50%); background-size: 8px 8px;">Transparent</button>
+                </div>
+                <div class="flex items-center gap-3">
+                  <label class="text-sm text-base-content/70">Custom:</label>
+                  <input type="color" value="#212121"
+                         class="color-input w-8 h-8 rounded cursor-pointer border border-base-300" />
+                  <input type="text" value="#212121"
+                         class="color-text w-20 px-2 py-1 text-xs font-mono border border-base-300 rounded"
+                         maxlength="7" placeholder="#000000" />
+                  <span class={["text-xs px-2 py-0.5 rounded", color_method_class(@icon.style_color_method)]}>
+                    <%= color_method_label(@icon.style_color_method) %>
+                  </span>
+                </div>
               <% end %>
             </div>
 
@@ -643,7 +698,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
                    data-urls={Jason.encode!(Enum.map(@icon.sizes, &Icon.svg_url(@icon, &1)))}>
                 <%= for size <- @icon.sizes do %>
                   <div class="flex flex-col items-center">
-                    <div class="svg-container bg-white/80 rounded-lg p-3 border border-base-300 flex items-center justify-center"
+                    <div class="svg-container bg-white rounded-lg p-3 border border-base-300 flex items-center justify-center"
                          data-size={size}
                          style={"width: #{min(size + 24, 96)}px; height: #{min(size + 24, 96)}px;"}>
                       <!-- SVG loaded by JavaScript -->
@@ -695,39 +750,48 @@ defmodule PureAdminIconsWeb.IconSearchLive do
                   <.platform_icon name="android" class="w-4 h-4 text-base-content/70" />
                   <span class="text-sm text-base-content/70">Android</span>
                 </label>
-                <label class="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={@platform_prefs.react}
-                    phx-click="toggle_platform"
-                    phx-value-platform="react"
-                    class="w-4 h-4 rounded border-base-300 focus:ring-primary"
-                  />
-                  <.platform_icon name="react" class="w-4 h-4 text-base-content/70" />
-                  <span class="text-sm text-base-content/70">React</span>
-                </label>
-                <label class="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={@platform_prefs.vue}
-                    phx-click="toggle_platform"
-                    phx-value-platform="vue"
-                    class="w-4 h-4 rounded border-base-300 focus:ring-primary"
-                  />
-                  <.platform_icon name="vue" class="w-4 h-4 text-base-content/70" />
-                  <span class="text-sm text-base-content/70">Vue</span>
-                </label>
-                <label class="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={@platform_prefs.svelte}
-                    phx-click="toggle_platform"
-                    phx-value-platform="svelte"
-                    class="w-4 h-4 rounded border-base-300 focus:ring-primary"
-                  />
-                  <.platform_icon name="svelte" class="w-4 h-4 text-base-content/70" />
-                  <span class="text-sm text-base-content/70">Svelte</span>
-                </label>
+                <% {react_pkg, _} = react_package(@icon) %>
+                <% {vue_pkg, _} = vue_package(@icon) %>
+                <% {svelte_pkg, _} = svelte_package(@icon) %>
+                <%= if react_pkg do %>
+                  <label class="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={@platform_prefs.react}
+                      phx-click="toggle_platform"
+                      phx-value-platform="react"
+                      class="w-4 h-4 rounded border-base-300 focus:ring-primary"
+                    />
+                    <.platform_icon name="react" class="w-4 h-4 text-base-content/70" />
+                    <span class="text-sm text-base-content/70">React</span>
+                  </label>
+                <% end %>
+                <%= if vue_pkg do %>
+                  <label class="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={@platform_prefs.vue}
+                      phx-click="toggle_platform"
+                      phx-value-platform="vue"
+                      class="w-4 h-4 rounded border-base-300 focus:ring-primary"
+                    />
+                    <.platform_icon name="vue" class="w-4 h-4 text-base-content/70" />
+                    <span class="text-sm text-base-content/70">Vue</span>
+                  </label>
+                <% end %>
+                <%= if svelte_pkg do %>
+                  <label class="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={@platform_prefs.svelte}
+                      phx-click="toggle_platform"
+                      phx-value-platform="svelte"
+                      class="w-4 h-4 rounded border-base-300 focus:ring-primary"
+                    />
+                    <.platform_icon name="svelte" class="w-4 h-4 text-base-content/70" />
+                    <span class="text-sm text-base-content/70">Svelte</span>
+                  </label>
+                <% end %>
                 <label class="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
@@ -961,7 +1025,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
           class="icon-card bg-base-200 rounded-lg p-4 cursor-pointer group flex flex-col"
         >
           <!-- Icon Preview -->
-          <div class="w-16 h-16 mx-auto mb-3 flex items-center justify-center flex-shrink-0 rounded-lg bg-white/80">
+          <div class="icon-preview-bg w-16 h-16 mx-auto mb-3 flex items-center justify-center flex-shrink-0 rounded-lg bg-white/80">
             <span class="inline-svg-icon inline-flex items-center justify-center w-10 h-10" data-svg-url={Icon.svg_url(icon, default_size(icon.sizes))}></span>
           </div>
 
@@ -977,10 +1041,24 @@ defmodule PureAdminIconsWeb.IconSearchLive do
               <span class={["badge badge-sm", icon_set_color(icon.icon_set_code)]}><%= icon.icon_set_code %></span>
               <span class="badge badge-sm badge-neutral"><%= icon.style_code %></span>
             </div>
-            <!-- Sizes -->
+            <!-- Sizes with hover-to-copy -->
             <div class="flex flex-wrap justify-center gap-1">
               <%= for size <- icon.sizes do %>
-                <span class="badge badge-sm badge-ghost"><%= size %>px</span>
+                <div class="relative group/size">
+                  <span class="badge badge-sm badge-ghost"><%= size %>px</span>
+                  <div class="absolute bottom-full left-1/2 -translate-x-1/2 -mb-0.5 hidden group-hover/size:flex gap-1 bg-base-100 rounded-lg p-1.5 shadow-xl border-2 border-base-content/20 z-10">
+                    <%= for platform <- preferred_platforms(@platform_prefs, 2) do %>
+                      <button
+                        type="button"
+                        class={"p-2.5 rounded cursor-pointer hover:bg-base-300 hover:scale-110 active:scale-95 transition-transform #{platform_color(platform)}"}
+                        title={"Copy #{platform} identifier for size #{size}"}
+                        phx-click={JS.dispatch("phx:copy_text", detail: %{text: get_platform_id_for_size(icon, platform, size)})}
+                      >
+                        <.platform_icon name={to_string(platform)} class="w-5 h-5" />
+                      </button>
+                    <% end %>
+                  </div>
+                </div>
               <% end %>
             </div>
           </div>
@@ -993,7 +1071,37 @@ defmodule PureAdminIconsWeb.IconSearchLive do
   defp icon_list(assigns) do
     assigns = assign(assigns, :display_sizes, if(assigns.selected_sizes == [], do: assigns.available_sizes, else: Enum.sort(assigns.selected_sizes)))
     ~H"""
-    <div class="bg-base-200 rounded-lg border border-base-300">
+    <%!-- Mobile: card layout --%>
+    <div class="md:hidden space-y-3">
+      <%= for icon <- @icons do %>
+        <div
+          phx-click="select_icon"
+          phx-value-id={icon.icon_id}
+          class="bg-base-200 rounded-lg p-3 cursor-pointer hover:bg-base-300 transition-colors border border-base-300"
+        >
+          <div class="flex items-center gap-2">
+            <span class="icon-card-preview icon-preview-bg inline-svg-icon inline-flex items-center justify-center rounded bg-white/80 p-1.5 flex-shrink-0"
+                  style={"width: #{trunc(@icon_list_size * 1.5)}px; height: #{trunc(@icon_list_size * 1.5)}px;"}
+                  data-svg-url={Icon.svg_url(icon, default_size(icon.sizes))}></span>
+            <div class="flex-1 min-w-0">
+              <div class="font-medium text-base-content truncate mb-1"><%= icon.name %></div>
+              <div class="flex flex-wrap gap-1 mt-0.5">
+                <span class={["badge badge-sm", icon_set_color(icon.icon_set_code)]}><%= icon.icon_set_code %></span>
+                <span class="badge badge-sm badge-neutral capitalize"><%= icon.style_code %></span>
+              </div>
+            </div>
+          </div>
+          <div class="flex flex-wrap gap-1 mt-1">
+            <%= for size <- icon.sizes do %>
+              <span class="badge badge-sm badge-ghost"><%= size %>px</span>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+
+    <%!-- Desktop: table layout --%>
+    <div class="hidden md:block bg-base-200 rounded-lg border border-base-300">
       <div>
         <table class="w-full text-sm">
           <thead class="bg-base-200 border-b-2 border-base-300 sticky-table-header">
@@ -1015,7 +1123,9 @@ defmodule PureAdminIconsWeb.IconSearchLive do
                 class="hover:bg-base-200 cursor-pointer transition-colors group"
               >
                 <td class="px-4 py-3">
-                  <span class="inline-svg-icon inline-flex items-center justify-center w-8 h-8 rounded bg-white/80 p-1" data-svg-url={Icon.svg_url(icon, default_size(icon.sizes))}></span>
+                  <span class="icon-list-preview icon-preview-bg inline-svg-icon inline-flex items-center justify-center rounded bg-white/80 p-1"
+                        style={"width: #{@icon_list_size}px; height: #{@icon_list_size}px;"}
+                        data-svg-url={Icon.svg_url(icon, default_size(icon.sizes))}></span>
                 </td>
                 <td class="px-4 py-3">
                   <span class={["badge badge-sm", icon_set_color(icon.icon_set_code)]}><%= icon.icon_set_code %></span>
@@ -1073,7 +1183,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
 
   # Get the first N enabled platforms from user preferences
   defp preferred_platforms(prefs, count) do
-    [:ios, :android, :react, :svelte, :filename]
+    [:ios, :android, :react, :vue, :svelte, :filename]
     |> Enum.filter(&Map.get(prefs, &1, false))
     |> Enum.take(count)
   end
@@ -1081,6 +1191,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
   defp platform_color(:ios), do: "text-primary"
   defp platform_color(:android), do: "text-success"
   defp platform_color(:react), do: "text-cyan-600"
+  defp platform_color(:vue), do: "text-emerald-600"
   defp platform_color(:svelte), do: "text-orange-600"
   defp platform_color(:filename), do: "text-base-content/70"
   defp platform_color(_), do: "text-base-content/70"
@@ -1088,6 +1199,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
   defp get_platform_id(icon, :ios), do: get_ios_id(icon)
   defp get_platform_id(icon, :android), do: get_android_id(icon)
   defp get_platform_id(icon, :react), do: react_identifier(icon, default_size(icon.sizes))
+  defp get_platform_id(icon, :vue), do: vue_identifier(icon, default_size(icon.sizes))
   defp get_platform_id(icon, :svelte), do: svelte_identifier(icon, default_size(icon.sizes))
   defp get_platform_id(icon, :filename), do: Icon.svg_filename(icon, default_size(icon.sizes))
   defp get_platform_id(_, _), do: "N/A"
@@ -1100,6 +1212,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
     Map.get(icon.android_identifiers, to_string(size), "N/A")
   end
   defp get_platform_id_for_size(icon, :react, size), do: react_identifier(icon, size)
+  defp get_platform_id_for_size(icon, :vue, size), do: vue_identifier(icon, size)
   defp get_platform_id_for_size(icon, :svelte, size), do: svelte_identifier(icon, size)
   defp get_platform_id_for_size(icon, :filename, size), do: Icon.svg_filename(icon, size)
   defp get_platform_id_for_size(_, _, _), do: "N/A"

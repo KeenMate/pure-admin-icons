@@ -85,7 +85,8 @@ defmodule PureAdminIcons.Sync.Adapter do
     "fluentui" => PureAdminIcons.Sync.Adapters.Fluentui,
     "lucide" => PureAdminIcons.Sync.Adapters.Lucide,
     "tabler" => PureAdminIcons.Sync.Adapters.Tabler,
-    "heroicons" => PureAdminIcons.Sync.Adapters.Heroicons
+    "heroicons" => PureAdminIcons.Sync.Adapters.Heroicons,
+    "fontawesome" => PureAdminIcons.Sync.Adapters.Fontawesome
   }
 
   @doc """

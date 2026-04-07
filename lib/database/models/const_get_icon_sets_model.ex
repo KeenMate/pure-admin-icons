@@ -15,6 +15,7 @@ defmodule Database.Models.ConstGetIconSetsModel do
     :styles,
     :sizes,
     :default_size,
+    :style_color_methods,
     :icon_count
   ]
 
@@ -32,6 +33,7 @@ defmodule Database.Models.ConstGetIconSetsModel do
     styles: list(String.t()),
     sizes: list(integer()),
     default_size: integer(),
+    style_color_methods: map() | list(),
     icon_count: integer()
   }
 

@@ -1,0 +1,239 @@
+{
+  "ConnectionString": "postgresql://ovalenta:Nocnijezdec!@db-01.km8.local:5432/pure_admin_icons",
+  "OutputFolder": "./lib/database/",
+  "OutputNamespace": "Database",
+  "RepoModule": "PureAdminIcons.Repo",
+  "GenerateModels": true,
+  "GenerateProcessors": true,
+  "SkipModelGenForVoidReturns": true,
+  "ClearOutputFolder": true,
+  "RemoveOrphanedFiles": true,
+  "DbContextTemplate": "./db-gen/dbcontext.gotmpl",
+  "ModelTemplate": "./db-gen/model.gotmpl",
+  "ProcessorTemplate": "./db-gen/processor.gotmpl",
+  "GeneratedFileExtension": ".ex",
+  "GeneratedFileCase": "snakeCase",
+  "ModelsFolderName": "models",
+  "ProcessorsFolderName": "processors",
+
+  "Generate": [
+    {
+      "Schema": "const",
+      "Functions": {
+        "get_icon_sets": true,
+        "get_categories": true
+      }
+    },
+    {
+      "Schema": "public",
+      "Functions": {
+        "search_icons": true,
+        "get_icon_detail": true,
+        "get_icon_primary_name": true,
+        "get_last_sync": true,
+        "track_icon_action": true,
+        "track_search": true,
+        "refresh_icon_metrics_cube": true,
+        "get_icon_metrics": true,
+        "get_popular_icons": true,
+        "create_job_run": true,
+        "update_job_run": true,
+        "get_icon_count": true,
+        "get_icon_counts_by_set": true
+      }
+    },
+    {
+      "Schema": "stage",
+      "Functions": {
+        "process_icon_import": true
+      }
+    }
+  ],
+
+  "Mappings": [
+    {
+      "DatabaseTypes": ["boolean", "bool"],
+      "MappedType": "boolean()",
+      "MappingFunction": "elem",
+      "NullableReturnType": "boolean() | nil",
+      "NullableParameterType": "boolean() | nil",
+      "OptionalParameterType": "boolean()"
+    },
+    {
+      "DatabaseTypes": ["_bool"],
+      "MappedType": "list(boolean())",
+      "MappingFunction": "elem",
+      "NullableReturnType": "list(boolean()) | nil",
+      "NullableParameterType": "list(boolean()) | nil",
+      "OptionalParameterType": "list(boolean())"
+    },
+    {
+      "DatabaseTypes": ["smallint", "int2"],
+      "MappedType": "integer()",
+      "MappingFunction": "elem",
+      "NullableReturnType": "integer() | nil",
+      "NullableParameterType": "integer() | nil",
+      "OptionalParameterType": "integer()"
+    },
+    {
+      "DatabaseTypes": ["integer", "int4"],
+      "MappedType": "integer()",
+      "MappingFunction": "elem",
+      "NullableReturnType": "integer() | nil",
+      "NullableParameterType": "integer() | nil",
+      "OptionalParameterType": "integer()"
+    },
+    {
+      "DatabaseTypes": ["bigint", "int8"],
+      "MappedType": "integer()",
+      "MappingFunction": "elem",
+      "NullableReturnType": "integer() | nil",
+      "NullableParameterType": "integer() | nil",
+      "OptionalParameterType": "integer()"
+    },
+    {
+      "DatabaseTypes": ["real", "float4"],
+      "MappedType": "float()",
+      "MappingFunction": "elem",
+      "NullableReturnType": "float() | nil",
+      "NullableParameterType": "float() | nil",
+      "OptionalParameterType": "float()"
+    },
+    {
+      "DatabaseTypes": ["double precision", "float8"],
+      "MappedType": "float()",
+      "MappingFunction": "elem",
+      "NullableReturnType": "float() | nil",
+      "NullableParameterType": "float() | nil",
+      "OptionalParameterType": "float()"
+    },
+    {
+      "DatabaseTypes": ["numeric", "money"],
+      "MappedType": "Decimal.t()",
+      "MappingFunction": "elem",
+      "NullableReturnType": "Decimal.t() | nil",
+      "NullableParameterType": "Decimal.t() | nil",
+      "OptionalParameterType": "Decimal.t()"
+    },
+    {
+      "DatabaseTypes": ["text", "character varying", "character", "citext", "varchar"],
+      "MappedType": "String.t()",
+      "MappingFunction": "elem",
+      "NullableReturnType": "String.t() | nil",
+      "NullableParameterType": "String.t() | nil",
+      "OptionalParameterType": "String.t()"
+    },
+    {
+      "DatabaseTypes": ["json", "jsonb"],
+      "MappedType": "map() | list()",
+      "MappingFunction": "elem",
+      "NullableReturnType": "map() | list() | nil",
+      "NullableParameterType": "map() | list() | nil",
+      "OptionalParameterType": "map() | list()"
+    },
+    {
+      "DatabaseTypes": ["xml"],
+      "MappedType": "String.t()",
+      "MappingFunction": "elem",
+      "NullableReturnType": "String.t() | nil",
+      "NullableParameterType": "String.t() | nil",
+      "OptionalParameterType": "String.t()"
+    },
+    {
+      "DatabaseTypes": ["uuid"],
+      "MappedType": "Ecto.UUID.t()",
+      "MappingFunction": "elem",
+      "NullableReturnType": "Ecto.UUID.t() | nil",
+      "NullableParameterType": "Ecto.UUID.t() | nil",
+      "OptionalParameterType": "Ecto.UUID.t()"
+    },
+    {
+      "DatabaseTypes": ["_uuid"],
+      "MappedType": "list(Ecto.UUID.t())",
+      "MappingFunction": "elem",
+      "NullableReturnType": "list(Ecto.UUID.t()) | nil",
+      "NullableParameterType": "list(Ecto.UUID.t()) | nil",
+      "OptionalParameterType": "list(Ecto.UUID.t())"
+    },
+    {
+      "DatabaseTypes": ["bytea"],
+      "MappedType": "binary()",
+      "MappingFunction": "elem",
+      "NullableReturnType": "binary() | nil",
+      "NullableParameterType": "binary() | nil",
+      "OptionalParameterType": "binary()"
+    },
+    {
+      "DatabaseTypes": ["timestamptz", "timestamp", "timestamp with time zone", "timestamp without time zone"],
+      "MappedType": "DateTime.t()",
+      "MappingFunction": "elem",
+      "NullableReturnType": "DateTime.t() | nil",
+      "NullableParameterType": "DateTime.t() | nil",
+      "OptionalParameterType": "DateTime.t()"
+    },
+    {
+      "DatabaseTypes": ["date"],
+      "MappedType": "Date.t()",
+      "MappingFunction": "elem",
+      "NullableReturnType": "Date.t() | nil",
+      "NullableParameterType": "Date.t() | nil",
+      "OptionalParameterType": "Date.t()"
+    },
+    {
+      "DatabaseTypes": ["time"],
+      "MappedType": "Time.t()",
+      "MappingFunction": "elem",
+      "NullableReturnType": "Time.t() | nil",
+      "NullableParameterType": "Time.t() | nil",
+      "OptionalParameterType": "Time.t()"
+    },
+    {
+      "DatabaseTypes": ["interval"],
+      "MappedType": "Postgrex.Interval.t()",
+      "MappingFunction": "elem",
+      "NullableReturnType": "Postgrex.Interval.t() | nil",
+      "NullableParameterType": "Postgrex.Interval.t() | nil",
+      "OptionalParameterType": "Postgrex.Interval.t()"
+    },
+    {
+      "DatabaseTypes": ["ltree"],
+      "MappedType": "String.t()",
+      "MappingFunction": "elem",
+      "NullableReturnType": "String.t() | nil",
+      "NullableParameterType": "String.t() | nil",
+      "OptionalParameterType": "String.t()"
+    },
+    {
+      "DatabaseTypes": ["_text"],
+      "MappedType": "list(String.t())",
+      "MappingFunction": "elem",
+      "NullableReturnType": "list(String.t()) | nil",
+      "NullableParameterType": "list(String.t()) | nil",
+      "OptionalParameterType": "list(String.t())"
+    },
+    {
+      "DatabaseTypes": ["_int4"],
+      "MappedType": "list(integer())",
+      "MappingFunction": "elem",
+      "NullableReturnType": "list(integer()) | nil",
+      "NullableParameterType": "list(integer()) | nil",
+      "OptionalParameterType": "list(integer())"
+    },
+    {
+      "DatabaseTypes": ["_int8"],
+      "MappedType": "list(integer())",
+      "MappingFunction": "elem",
+      "NullableReturnType": "list(integer()) | nil",
+      "NullableParameterType": "list(integer()) | nil",
+      "OptionalParameterType": "list(integer())"
+    },
+    {
+      "DatabaseTypes": [],
+      "MappedType": "any()",
+      "MappingFunction": "elem",
+      "NullableReturnType": "any()",
+      "NullableParameterType": "any()",
+      "OptionalParameterType": "any()"
+    }
+  ]
+}
