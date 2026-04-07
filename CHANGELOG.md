@@ -1,5 +1,40 @@
 # Changelog
 
+## 2026-04-07 — Mobile-responsive nav, spring time schedule
+
+### Added
+- **Shared site navigation** — `Layouts.site_nav` component with consistent header across all pages (search, docs, API, MCP, LLMs)
+- **Mobile burger menu** — hamburger toggle with dropdown nav on small screens
+- **Cross-site link** — "Themes" link to pureadmin.io in the nav bar
+
+### Changed
+- **Unified navigation** — replaced per-page "Back to docs/search" headers with shared `site_nav` on all pages
+- **Higher contrast search & filters** — search bar and filter checkboxes use `base-content` opacity borders instead of `base-300`, visible on dark themes (evening/night)
+- **Spring time-of-day schedule** — adjusted theme transition times for longer daylight:
+  - Morning: 5:00–9:00 (was 6:00–11:00)
+  - Day: 9:00–20:00 (was 11:00–16:00)
+  - Evening: 20:00–22:00 (was 16:00–20:00)
+  - Night: 22:00–5:00 (was 20:00–6:00)
+
+### Removed
+- Per-page "Back to docs/search" link headers — replaced by unified nav
+
+---
+
+## 2026-04-07 — Icon-set-aware platform identifiers
+
+### Platform identifiers now match each icon library's actual conventions
+
+Previously, the React and Svelte sections in the icon detail modal were hardcoded to FluentUI conventions. Now each icon set generates correct import statements and component syntax for its own packages.
+
+- **React**: FluentUI (`@fluentui/react-icons`), Lucide (`lucide-react`), Tabler (`@tabler/icons-react`), Heroicons (`@heroicons/react`) — each with correct component naming and import paths
+- **Vue** (new section): Lucide (`lucide-vue-next`), Tabler (`@tabler/icons-vue`), Heroicons (`@heroicons/vue`) — hidden for FluentUI (no official Vue package)
+- **Svelte**: FluentUI (`svelte-fluentui`), Lucide (`lucide-svelte`), Tabler (`@tabler/icons-svelte`), Heroicons (`svelte-hero-icons`)
+- All non-FluentUI identifiers now include the import statement alongside the component usage
+- Package names in section headers link to npmjs (React, Vue) or project homepage (Svelte)
+- Single identifier row for icon sets where the component name doesn't vary by size (avoids duplicate rows)
+- "Include color" checkbox in Svelte section only shown for FluentUI (svelte-fluentui-specific feature)
+
 ## 2026-04-06 — Initial release
 
 ### New project: icons.pureadmin.io

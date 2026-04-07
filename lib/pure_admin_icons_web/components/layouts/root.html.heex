@@ -36,7 +36,7 @@
           document.documentElement.setAttribute("data-theme", themes[ov]);
         } else {
           var h = new Date().getHours();
-          var t = h >= 6 && h < 11 ? "park-morning" : h >= 11 && h < 16 ? "park-day" : h >= 16 && h < 20 ? "park-evening" : "park-night";
+          var t = h >= 5 && h < 9 ? "park-morning" : h >= 9 && h < 20 ? "park-day" : h >= 20 && h < 22 ? "park-evening" : "park-night";
           document.documentElement.setAttribute("data-theme", t);
         }
         // View mode

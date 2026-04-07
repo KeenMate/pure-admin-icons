@@ -17,6 +17,92 @@ defmodule PureAdminIconsWeb.Layouts do
     """
   end
 
+  @doc """
+  Shared site navigation bar with burger menu on mobile.
+  """
+  def site_nav(assigns) do
+    ~H"""
+    <nav class="relative px-4 sm:px-6 lg:px-8 py-3">
+      <%!-- Desktop nav --%>
+      <div class="hidden sm:flex items-center justify-between gap-2">
+        <.logo class="text-lg" />
+        <div class="flex items-center gap-2">
+          <a
+            href="/docs"
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-base-content/80 hover:text-primary hover:bg-base-200 transition-colors"
+          >
+            <.icon name="hero-book-open" class="size-4" /> Docs
+          </a>
+          <a
+            href="/docs/api"
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-base-content/80 hover:text-primary hover:bg-base-200 transition-colors"
+          >
+            <.icon name="hero-code-bracket" class="size-4" /> API
+          </a>
+          <a
+            href="https://pureadmin.io"
+            target="_blank"
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-base-content/80 hover:text-primary hover:bg-base-200 transition-colors"
+          >
+            <.icon name="hero-swatch" class="size-4" /> Themes
+          </a>
+          <a
+            href="https://keenmate.com"
+            target="_blank"
+            rel="noreferrer"
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-base-content/80 hover:text-primary hover:bg-base-200 transition-colors"
+          >
+            <.icon name="hero-building-office-2" class="size-4" /> Keenmate
+          </a>
+        </div>
+      </div>
+      <%!-- Mobile --%>
+      <div class="flex sm:hidden items-center justify-between">
+        <.logo class="text-lg" />
+        <button
+          type="button"
+          onclick="this.closest('nav').querySelector('[data-mobile-nav]').classList.toggle('hidden')"
+          class="inline-flex items-center justify-center p-2 rounded-lg text-base-content/80 hover:text-primary hover:bg-base-200 transition-colors"
+        >
+          <.icon name="hero-bars-3" class="size-6" />
+        </button>
+      </div>
+      <div
+        data-mobile-nav
+        class="hidden sm:hidden mt-2 rounded-xl bg-base-200 border border-base-300 p-2 flex flex-col gap-1"
+      >
+        <a
+          href="/docs"
+          class="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-base-content/80 hover:text-primary hover:bg-base-300 transition-colors"
+        >
+          <.icon name="hero-book-open" class="size-4" /> Docs
+        </a>
+        <a
+          href="/docs/api"
+          class="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-base-content/80 hover:text-primary hover:bg-base-300 transition-colors"
+        >
+          <.icon name="hero-code-bracket" class="size-4" /> API
+        </a>
+        <a
+          href="https://pureadmin.io"
+          target="_blank"
+          class="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-base-content/80 hover:text-primary hover:bg-base-300 transition-colors"
+        >
+          <.icon name="hero-swatch" class="size-4" /> Themes
+        </a>
+        <a
+          href="https://keenmate.com"
+          target="_blank"
+          rel="noreferrer"
+          class="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-base-content/80 hover:text-primary hover:bg-base-300 transition-colors"
+        >
+          <.icon name="hero-building-office-2" class="size-4" /> Keenmate
+        </a>
+      </div>
+    </nav>
+    """
+  end
+
   attr :flash, :map, required: true, doc: "the map of flash messages"
 
   attr :current_scope, :map,

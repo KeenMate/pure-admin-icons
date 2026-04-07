@@ -1,14 +1,14 @@
 // Time-of-day theme manager for Pure Theme Park
-// Themes: park-morning (6-11), park-day (11-16), park-evening (16-20), park-night (20-6)
+// Themes: park-morning (5-9), park-day (9-20), park-evening (20-22), park-night (22-5)
 
 const STORAGE_KEY = "theme-override"
 const THEME_MAP = { morning: "park-morning", day: "park-day", evening: "park-evening", night: "park-night" }
 
 export function getTimeTheme() {
   const h = new Date().getHours()
-  if (h >= 6 && h < 11) return "park-morning"
-  if (h >= 11 && h < 16) return "park-day"
-  if (h >= 16 && h < 20) return "park-evening"
+  if (h >= 5 && h < 9) return "park-morning"
+  if (h >= 9 && h < 20) return "park-day"
+  if (h >= 20 && h < 22) return "park-evening"
   return "park-night"
 }
 

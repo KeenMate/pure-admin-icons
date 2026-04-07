@@ -9,17 +9,8 @@ defmodule PureAdminIconsWeb.Docs.McpDocsLive do
   @impl true
   def render(assigns) do
     ~H"""
+    <Layouts.site_nav />
     <div class="max-w-4xl mx-auto px-4 py-10">
-      <div class="mb-8 flex items-center justify-between">
-        <Layouts.logo class="text-2xl" />
-        <a
-          href="/docs"
-          class="inline-flex items-center gap-1.5 text-sm text-base-content/60 hover:text-primary transition-colors"
-        >
-          <.icon name="hero-arrow-left" class="size-4" /> Back to docs
-        </a>
-      </div>
-
       <div class="rounded-box bg-base-200 overflow-hidden border border-base-300 p-8">
         <h1 class="text-3xl font-bold mb-2">MCP Server</h1>
         <p class="text-base-content/60 mb-8">
