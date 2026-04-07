@@ -96,6 +96,7 @@ defmodule PureAdminIcons.Sync.Worker do
         end
 
         # Complete job run
+        Logger.info("[#{icon_set}] Storing #{length(discrepancies)} discrepancies in job run")
         Icons.update_job_run(job_run_id, "completed", %{
           icons_created: import_stats.icons_created,
           icons_updated: import_stats.icons_updated,
@@ -105,7 +106,8 @@ defmodule PureAdminIcons.Sync.Worker do
           phrase_links_created: import_stats.phrase_links_created,
           primary_phrases_linked: import_stats.primary_phrases_linked,
           svgs_downloaded: svg_count,
-          discrepancy_count: length(discrepancies)
+          discrepancy_count: length(discrepancies),
+          discrepancies: discrepancies
         })
 
         Logger.info("[#{icon_set}] Sync complete!")

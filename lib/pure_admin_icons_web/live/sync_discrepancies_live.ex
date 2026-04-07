@@ -5,26 +5,25 @@ defmodule PureAdminIconsWeb.SyncDiscrepanciesLive do
 
   @impl true
   def mount(_params, _session, socket) do
-    sync_run = case Icons.get_last_sync() do
-      {:ok, syncs} when is_list(syncs) and syncs != [] ->
-        # Pick the most recent sync
-        Enum.max_by(syncs, & &1.finished_at, DateTime)
-      {:ok, sync} when is_map(sync) -> sync
-      _ -> nil
+    syncs = case Icons.get_last_sync() do
+      {:ok, syncs} when is_list(syncs) and syncs != [] -> syncs
+      {:ok, sync} when is_map(sync) -> [sync]
+      _ -> []
     end
 
-    # Discrepancies are stored in success_data for the new model
-    discrepancies = if sync_run do
-      sync_run[:discrepancies] ||
-        (sync_run.success_data || %{})["discrepancies"] ||
-        []
-    else
-      []
-    end
+    latest_sync = if syncs != [], do: Enum.max_by(syncs, & &1.finished_at, DateTime), else: nil
+
+    # Collect discrepancies from ALL sync runs
+    discrepancies =
+      syncs
+      |> Enum.flat_map(fn sync ->
+        items = sync[:discrepancies] || (sync.success_data || %{})["discrepancies"] || []
+        Enum.map(items, &Map.put(&1, "icon_set", sync.icon_set_code || "unknown"))
+      end)
 
     socket =
       socket
-      |> assign(:sync_run, sync_run)
+      |> assign(:sync_run, latest_sync)
       |> assign(:discrepancies, discrepancies)
       |> assign(:grouped, group_discrepancies(discrepancies))
 
@@ -40,102 +39,96 @@ defmodule PureAdminIconsWeb.SyncDiscrepanciesLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="min-h-screen bg-gray-50">
-      <div class="max-w-6xl mx-auto px-4 py-8">
-        <div class="mb-6">
-          <a href="/" class="text-blue-600 hover:text-blue-800 flex items-center gap-1 text-sm">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-            </svg>
-            Back to Icons
-          </a>
-        </div>
+    <Layouts.site_nav />
+    <div class="max-w-4xl mx-auto px-4 py-10">
+      <div class="rounded-box bg-base-200 overflow-hidden border border-base-300 p-8">
+        <h1 class="text-3xl font-bold mb-2">Sync Discrepancy Report</h1>
 
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h1 class="text-2xl font-bold text-gray-900 mb-2">Sync Discrepancy Report</h1>
+        <%= if @sync_run do %>
+          <p class="text-sm text-base-content/50 mb-6">
+            Last sync: <%= Calendar.strftime(@sync_run.finished_at, "%Y-%m-%d %H:%M:%S UTC") %>
+            &bull;
+            <span class="font-medium text-warning"><%= length(@discrepancies) %> discrepancies</span>
+          </p>
 
-          <%= if @sync_run do %>
-            <p class="text-sm text-gray-500 mb-6">
-              Last sync: <%= Calendar.strftime(@sync_run.finished_at, "%Y-%m-%d %H:%M:%S UTC") %>
-              &bull;
-              <span class="font-medium text-orange-600"><%= length(@discrepancies) %> discrepancies</span>
-            </p>
-
-            <%= if length(@discrepancies) == 0 do %>
-              <div class="text-center py-12">
-                <svg class="w-16 h-16 mx-auto text-green-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <p class="text-gray-600">No discrepancies found! All metadata matches actual SVG files.</p>
-              </div>
-            <% else %>
-              <div class="mb-4 p-4 bg-orange-50 border border-orange-200 rounded-lg">
-                <p class="text-sm text-orange-800">
-                  <strong>What are discrepancies?</strong>
-                  These are cases where Microsoft's metadata.json claims certain sizes/styles exist,
-                  but the actual SVG files are missing from the repository. This is an upstream data quality issue.
-                </p>
-              </div>
-
-              <div class="overflow-hidden">
-                <table class="min-w-full divide-y divide-gray-200">
-                  <thead class="bg-gray-50 sticky top-0 z-10">
-                    <tr>
-                      <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Icon</th>
-                      <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Missing Files</th>
-                    </tr>
-                  </thead>
-                  <tbody class="bg-white divide-y divide-gray-200">
-                    <%= for {icon_name, issues} <- @grouped do %>
-                      <tr>
-                        <td class="px-4 py-3 whitespace-nowrap">
-                          <a href={"https://github.com/microsoft/fluentui-system-icons/tree/main/assets/#{icon_name}"}
-                             target="_blank"
-                             rel="noopener noreferrer"
-                             class="font-medium text-blue-600 hover:text-blue-800 hover:underline">
-                            <%= icon_name %>
-                            <svg class="w-3 h-3 inline-block ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                            </svg>
-                          </a>
-                        </td>
-                        <td class="px-4 py-3">
-                          <div class="flex flex-wrap gap-2">
-                            <%= for issue <- sort_issues(issues) do %>
-                              <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-red-100 text-red-800">
-                                <%= issue["style"] %>/<%= issue["size"] %>px
-                              </span>
-                            <% end %>
-                          </div>
-                        </td>
-                      </tr>
-                    <% end %>
-                  </tbody>
-                </table>
-              </div>
-
-              <div class="mt-6 p-4 bg-gray-50 rounded-lg">
-                <h3 class="text-sm font-medium text-gray-700 mb-2">Summary by Style</h3>
-                <div class="flex flex-wrap gap-4">
-                  <%= for {style, count} <- count_by_style(@discrepancies) do %>
-                    <div class="text-sm">
-                      <span class="font-medium text-gray-900"><%= style %>:</span>
-                      <span class="text-gray-600"><%= count %> missing</span>
-                    </div>
-                  <% end %>
-                </div>
-              </div>
-            <% end %>
-          <% else %>
+          <%= if length(@discrepancies) == 0 do %>
             <div class="text-center py-12">
-              <p class="text-gray-600">No sync has been completed yet. Run <code class="bg-gray-100 px-2 py-1 rounded">mix icons.download</code> first.</p>
+              <svg class="w-16 h-16 mx-auto text-success mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <p class="text-base-content/60">No discrepancies found! All metadata matches actual SVG files.</p>
+            </div>
+          <% else %>
+            <div class="mb-4 p-4 bg-warning/10 border border-warning/30 rounded-lg">
+              <p class="text-sm text-base-content/80">
+                <strong>What are discrepancies?</strong>
+                These are cases where an icon set's metadata claims certain sizes/styles exist,
+                but the actual SVG files are missing from the repository. This is an upstream data quality issue.
+              </p>
+            </div>
+
+            <div class="overflow-x-auto">
+              <table class="table table-sm">
+                <thead>
+                  <tr>
+                    <th class="text-base-content/70">Set</th>
+                    <th class="text-base-content/70">Icon</th>
+                    <th class="text-base-content/70">Missing Files</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <%= for {icon_name, issues} <- @grouped do %>
+                    <tr class="hover">
+                      <td>
+                        <% icon_set = List.first(issues)["icon_set"] || "unknown" %>
+                        <span class={["badge badge-sm", icon_set_color(icon_set)]}><%= icon_set %></span>
+                      </td>
+                      <td class="whitespace-nowrap">
+                        <span class="font-medium text-primary"><%= icon_name %></span>
+                      </td>
+                      <td>
+                        <div class="flex flex-wrap gap-1">
+                          <%= for issue <- sort_issues(issues) do %>
+                            <span class="badge badge-sm badge-error badge-outline">
+                              <%= issue["style"] %>/<%= issue["size"] %>px
+                            </span>
+                          <% end %>
+                        </div>
+                      </td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="mt-6 p-4 bg-base-300/50 rounded-lg">
+              <h3 class="text-sm font-medium text-base-content mb-2">Summary by Style</h3>
+              <div class="flex flex-wrap gap-4">
+                <%= for {style, count} <- count_by_style(@discrepancies) do %>
+                  <div class="text-sm">
+                    <span class="font-medium text-base-content"><%= style %>:</span>
+                    <span class="text-base-content/60"><%= count %> missing</span>
+                  </div>
+                <% end %>
+              </div>
             </div>
           <% end %>
-        </div>
+        <% else %>
+          <div class="text-center py-12">
+            <p class="text-base-content/60">No sync has been completed yet.</p>
+          </div>
+        <% end %>
       </div>
     </div>
     """
   end
+
+  defp icon_set_color("fluentui"), do: "bg-blue-600 text-white"
+  defp icon_set_color("heroicons"), do: "bg-violet-600 text-white"
+  defp icon_set_color("lucide"), do: "bg-orange-500 text-white"
+  defp icon_set_color("tabler"), do: "bg-cyan-600 text-white"
+  defp icon_set_color("fontawesome"), do: "bg-yellow-500 text-black"
+  defp icon_set_color(_), do: "bg-base-300 text-base-content"
 
   defp count_by_style(discrepancies) do
     discrepancies
