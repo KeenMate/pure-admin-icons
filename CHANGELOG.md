@@ -1,6 +1,6 @@
 # Changelog
 
-## 2026-04-07 — Font Awesome, dynamic filters, color method, UI polish
+## 2026-04-07 19:50 — Font Awesome, dynamic filters, color method, UI polish ✅ PUBLISHED
 
 ### UI polish
 - **Page loader** — full-screen themed loader while LiveView connects, prevents layout flash
@@ -22,7 +22,7 @@
 
 ---
 
-## 2026-04-07 — Font Awesome, dynamic filters, color method, UI improvements
+## 2026-04-07 19:50 — Font Awesome, dynamic filters, color method, UI improvements ✅ PUBLISHED
 
 ### Font Awesome Free
 - New sync adapter downloading from npm registry (auto-fetches latest version)
@@ -58,7 +58,7 @@
 
 ---
 
-## 2026-04-07 — Mobile-responsive nav, spring time schedule
+## 2026-04-07 19:50 — Mobile-responsive nav, spring time schedule ✅ PUBLISHED
 
 ### Added
 - **Shared site navigation** — `Layouts.site_nav` component with consistent header across all pages (search, docs, API, MCP, LLMs)
@@ -79,7 +79,7 @@
 
 ---
 
-## 2026-04-07 — Icon-set-aware platform identifiers
+## 2026-04-07 19:50 — Icon-set-aware platform identifiers ✅ PUBLISHED
 
 ### Platform identifiers now match each icon library's actual conventions
 

@@ -36,6 +36,7 @@ defmodule PureAdminIconsWeb.Router do
 
     get "/icons/search", IconController, :search
     get "/health", HealthController, :index
+    post "/maintenance/:task", MaintenanceController, :run
   end
 
   # Other scopes may use custom stacks.
