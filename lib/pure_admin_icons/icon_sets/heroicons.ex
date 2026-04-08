@@ -43,6 +43,12 @@ defmodule PureAdminIcons.IconSets.Heroicons do
   @impl true
   def cssclass_package(_), do: {nil, nil}
 
+  @impl true
+  def ios_package(_), do: {nil, nil}
+
+  @impl true
+  def android_package(_), do: {nil, nil}
+
   # Heroicons React/Vue import paths vary by size, so loop over all sizes
   @impl true
   def react_identifier_sizes(icon), do: icon.sizes

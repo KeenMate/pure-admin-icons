@@ -31,7 +31,7 @@ defmodule Database.Processors.GetIconDetailProcessor do
   Parse a single result row into a GetIconDetailModel struct
   """
   @spec parse_result_row(list()) :: {:ok, %GetIconDetailModel{}} | {:error, any()}
-  def parse_result_row([icon_id, icon_set_code, icon_set_title, name, style_code, style_color_method, sizes, filenames, ios_identifiers, android_identifiers, categories, phrases]) do
+  def parse_result_row([icon_id, icon_set_code, icon_set_title, name, style_code, style_color_method, sizes, is_scalable, filenames, ios_identifiers, android_identifiers, categories, phrases]) do
     {:ok, %GetIconDetailModel{
       icon_id: icon_id,
       icon_set_code: icon_set_code,
@@ -40,6 +40,7 @@ defmodule Database.Processors.GetIconDetailProcessor do
       style_code: style_code,
       style_color_method: style_color_method,
       sizes: sizes,
+      is_scalable: is_scalable,
       filenames: filenames,
       ios_identifiers: ios_identifiers,
       android_identifiers: android_identifiers,

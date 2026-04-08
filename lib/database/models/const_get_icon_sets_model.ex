@@ -16,6 +16,7 @@ defmodule Database.Models.ConstGetIconSetsModel do
     :sizes,
     :default_size,
     :style_color_methods,
+    :is_scalable,
     :icon_count
   ]
 
@@ -34,6 +35,7 @@ defmodule Database.Models.ConstGetIconSetsModel do
     sizes: list(integer()),
     default_size: integer(),
     style_color_methods: map() | list(),
+    is_scalable: boolean(),
     icon_count: integer()
   }
 

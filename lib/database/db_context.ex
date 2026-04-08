@@ -355,14 +355,16 @@ defmodule Database.DbContext do
   Returns: {:ok, [%Models.GetPopularIconsModel{}]} | {:error, any()}
   
   """
-  @spec get_popular_icons(String.t() | :eg_value_not_provided, String.t() | :eg_value_not_provided, integer() | :eg_value_not_provided, keyword()) :: {:ok, [%Models.GetPopularIconsModel{}]} | {:error, any()}
-  def get_popular_icons(period_code \\ :eg_value_not_provided, action_code \\ :eg_value_not_provided, limit \\ :eg_value_not_provided, query_opts \\ []) do
+  @spec get_popular_icons(String.t() | :eg_value_not_provided, String.t() | :eg_value_not_provided, String.t() | :eg_value_not_provided, String.t() | :eg_value_not_provided, integer() | :eg_value_not_provided, keyword()) :: {:ok, [%Models.GetPopularIconsModel{}]} | {:error, any()}
+  def get_popular_icons(period_code \\ :eg_value_not_provided, action_code \\ :eg_value_not_provided, icon_set_code \\ :eg_value_not_provided, style_code \\ :eg_value_not_provided, limit \\ :eg_value_not_provided, query_opts \\ []) do
     Logger.debug("Calling database routine", routine_name: "get_popular_icons")
 
     sql_params_str =
       [
         {"_period_code", period_code},
         {"_action_code", action_code},
+        {"_icon_set_code", icon_set_code},
+        {"_style_code", style_code},
         {"_limit", limit}
       ]
       |> Enum.filter(fn {_name, value} -> value != :eg_value_not_provided end)
@@ -374,6 +376,8 @@ defmodule Database.DbContext do
       [
         period_code,
         action_code,
+        icon_set_code,
+        style_code,
         limit
       ]
       |> Enum.filter(fn value -> value != :eg_value_not_provided end)

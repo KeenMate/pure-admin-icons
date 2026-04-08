@@ -1,5 +1,64 @@
 # Changelog
 
+## 2026-04-08 — Honest platforms, download naming, mobile polish
+
+### Honest platform identifiers
+- iOS and Android sections only shown for icon sets that have **real** native distributions (currently only FluentUI)
+- Removed the fake `calendar24` / `ic_heroicons_calendar_24_solid` style identifiers that were generated for icon sets without iOS/Android packages (Heroicons, Lucide, Tabler, Font Awesome Free)
+- iOS/Android section headers now include linked package name like the other platforms
+- Two new behaviour callbacks `ios_package/1` and `android_package/1` on `IconSets.Formatter` — only FluentUI returns non-nil
+
+### Download filename naming
+- New "Filename:" dropdown next to "Available Sizes" in the detail modal
+- Choose **Original / kebab-case / snake_case / PascalCase** for SVG downloads
+- Selection persists to localStorage
+- Extension preserved from the original filename
+- Heroicons-style icons keep their `-{size}` suffix when the original had one
+
+### Filename template fix
+- `{filename}` placeholder now uses the **real filename from the DB** instead of hardcoded `ic_fluent_*` (was a leftover from FluentUI-only days)
+- When using `{name_kebab}` etc, the extension is auto-appended from the original filename if not already present
+
+### Grid layout polish
+- Card grid now uses `flex flex-wrap justify-center` with fixed `w-44` cards — results centered horizontally regardless of count
+- "Showing 1-30 of N icons" hidden when there are zero results
+- "Filters" / "Grid" / "List" buttons show only icons on mobile (labels appear at `sm` breakpoint)
+
+### Svelte code formatting
+- Heroicons Svelte identifier now respects newline (`whitespace-pre-line` added to the `<code>` element)
+- Import line and `<Icon>` line now appear on separate lines
+
+---
+
+## 2026-04-08 — Universal/scalable size, grid sizes polish
+
+### Universal "Scalable" size
+- New `is_scalable` flag (DB-side) for icon sets that have a single SVG that scales to any size
+- **Lucide, Tabler, Font Awesome** marked as scalable — instead of pretending they're "24px", we now show them as scalable
+- **FluentUI and Heroicons** stay non-scalable since they have hand-tuned variants per size
+- **Grid card** shows `∞` symbol (large, bold) with hover-to-copy popup for scalable icons
+- **List view (mobile)** shows `∞` badge instead of size badges
+- **List view (desktop)** uses `colspan` to merge size columns into a single "∞ Scalable" cell with hover-to-copy
+- **Detail modal** shows a single "Preview — Scalable, renders at any size" with one preview at 96px instead of multiple size previews
+- **Sizes filter** gets a new "∞ Scalable" pseudo-checkbox at the top (only when scalable sets exist in the union)
+- **Active filter badges** show "∞ Scalable" instead of "0px"
+- **API responses** include `is_scalable` flag on icons and icon sets
+- **Search context** translates `size: 0` filter to `is_scalable: true` criterion
+- **Icon helpers** — `Icon.svg_url`, `Icon.svg_filename` ignore the size argument for scalable icons
+- **Formatter modules** — identifier sizes return `[0]` for scalable icons so the modal renders one row instead of looping
+
+### Grid card sizes polish
+- Sizes use a custom `font-size: 0.8rem` with `font-semibold` and primary color
+- ∞ symbol is `text-2xl font-bold` so it stands out as the focal point
+- ∞ symbol in detail modal preview is `text-3xl font-bold` (was tiny `text-xs`)
+
+### Preset toggle button
+- "More / Less" button now uses an SVG chevron icon on the left, matching the Copy CSS / Import CSS button style
+- Icon rotates 180° when expanded (down → up chevron) with smooth transition
+- Label is a separate `<span>` so it can be swapped without re-rendering the icon
+
+---
+
 ## 2026-04-08 — Grid card redesign
 
 ### Grid card layout

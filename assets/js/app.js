@@ -460,25 +460,29 @@ Hooks.ColorPicker = {
   },
   collapsePresets() {
     const list = this.el.querySelector('.preview-preset-list')
-    const toggle = this.el.querySelector('.preview-preset-toggle')
     const customArea = this.el.querySelector('.preview-custom-area')
     if (list) {
       list.dataset.expanded = 'false'
       list.style.display = 'none'
     }
-    if (toggle) toggle.textContent = 'More ▾'
+    this.updateToggleButton(false)
     if (customArea) customArea.style.display = 'none'
   },
   expandPresets() {
     const list = this.el.querySelector('.preview-preset-list')
-    const toggle = this.el.querySelector('.preview-preset-toggle')
     const customArea = this.el.querySelector('.preview-custom-area')
     if (list) {
       list.dataset.expanded = 'true'
       list.style.display = ''
     }
-    if (toggle) toggle.textContent = 'Less ▴'
+    this.updateToggleButton(true)
     if (customArea) customArea.style.display = ''
+  },
+  updateToggleButton(expanded) {
+    const label = this.el.querySelector('.preview-preset-toggle-label')
+    const icon = this.el.querySelector('.preview-preset-toggle-icon')
+    if (label) label.textContent = expanded ? 'Less' : 'More'
+    if (icon) icon.style.transform = expanded ? 'rotate(180deg)' : ''
   },
   renderActivePreset() {
     const container = this.el.querySelector('.preview-preset-active')
@@ -781,6 +785,55 @@ Hooks.IconSizeSlider = {
   }
 }
 
+// DownloadNaming hook — lets users pick a filename convention for SVG downloads
+Hooks.DownloadNaming = {
+  mounted() {
+    this.select = this.el.querySelector('.download-naming-select')
+    this.name = this.el.dataset.name
+    this.style = this.el.dataset.style
+    if (!this.select) return
+    const saved = localStorage.getItem('download_naming') || 'original'
+    this.select.value = saved
+    this.applyNaming(saved)
+    this.select.addEventListener('change', () => {
+      localStorage.setItem('download_naming', this.select.value)
+      this.applyNaming(this.select.value)
+    })
+  },
+  updated() {
+    this.select = this.el.querySelector('.download-naming-select')
+    this.name = this.el.dataset.name
+    this.style = this.el.dataset.style
+    if (this.select) this.applyNaming(this.select.value || 'original')
+  },
+  applyNaming(convention) {
+    const toSnake = s => s.toLowerCase().replace(/\s+/g, '_')
+    const toPascal = s => s.split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join('')
+    const toKebab = s => s.toLowerCase().replace(/\s+/g, '-')
+
+    this.el.querySelectorAll('.download-link').forEach(link => {
+      const original = link.dataset.originalFilename || ''
+      if (!original) return
+      const extMatch = original.match(/\.[a-z0-9]+$/i)
+      const ext = extMatch ? extMatch[0] : ''
+      const size = link.dataset.size
+
+      let baseName
+      switch (convention) {
+        case 'kebab': baseName = toKebab(this.name); break
+        case 'snake': baseName = toSnake(this.name); break
+        case 'pascal': baseName = toPascal(this.name); break
+        default: link.setAttribute('download', original); return
+      }
+      // Append size suffix only when the original filename had it (e.g. heroicons "name-24.svg")
+      // and we're not in scalable mode
+      const hasSizeInOriginal = size && size !== '0' && original.includes(`-${size}`)
+      const sizeSuffix = hasSizeInOriginal ? `-${size}` : ''
+      link.setAttribute('download', `${baseName}${sizeSuffix}${ext}`)
+    })
+  }
+}
+
 // FilenameTemplate hook — custom filename templating
 Hooks.FilenameTemplate = {
   mounted() {
@@ -800,16 +853,28 @@ Hooks.FilenameTemplate = {
     const template = input.value || "{filename}"
     const name = this.el.dataset.name, style = this.el.dataset.style
     const sizes = JSON.parse(this.el.dataset.sizes || '[]')
+    const filenamesMap = JSON.parse(this.el.dataset.filenames || '{}')
     const resultsContainer = this.el.querySelector("[id^='filename-results']")
     if (!resultsContainer) return
     const toSnake = s => s.toLowerCase().replace(/\s+/g, '_')
     const toPascal = s => s.split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join('')
     const toKebab = s => s.toLowerCase().replace(/\s+/g, '-')
     resultsContainer.innerHTML = sizes.map(size => {
-      const origFilename = `ic_fluent_${toSnake(name)}_${size}_${style}.svg`
-      const filename = template.replace(/{filename}/g, origFilename).replace(/{name}/g, name)
+      // Look up the real filename from the server-provided map (handles all icon sets correctly)
+      // Falls back to the first available filename for scalable icons
+      const origFilename = filenamesMap[String(size)] || Object.values(filenamesMap)[0] || ''
+      // Extract extension from original filename so we can append it when user uses placeholders
+      // that don't include it (e.g. {name_kebab})
+      const extMatch = origFilename.match(/\.[a-z0-9]+$/i)
+      const ext = extMatch ? extMatch[0] : ''
+      const usesFilenamePlaceholder = template.includes('{filename}')
+      let filename = template.replace(/{filename}/g, origFilename).replace(/{name}/g, name)
         .replace(/{name_snake}/g, toSnake(name)).replace(/{name_pascal}/g, toPascal(name))
         .replace(/{name_kebab}/g, toKebab(name)).replace(/{size}/g, size).replace(/{style}/g, style)
+      // Append the extension if the template doesn't already end with one and didn't use {filename}
+      if (!usesFilenamePlaceholder && ext && !filename.toLowerCase().endsWith(ext.toLowerCase())) {
+        filename += ext
+      }
       const escaped = filename.replace(/"/g, '&quot;')
       return `<div class="flex items-center justify-between bg-base-200 rounded px-3 py-2 border border-base-300">
         <code class="text-sm text-base-content">${filename}</code>

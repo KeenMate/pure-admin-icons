@@ -41,7 +41,20 @@ defmodule PureAdminIcons.Icons do
     criteria = case opts[:sizes] do
       nil -> criteria
       [] -> criteria
-      [size | _] -> Map.put(criteria, "size", size)
+      sizes when is_list(sizes) ->
+        # Special: size 0 means "scalable icons only"
+        if 0 in sizes do
+          criteria = Map.put(criteria, "is_scalable", true)
+          # If there are also pixel sizes, include them too
+          pixel_sizes = Enum.reject(sizes, &(&1 == 0))
+          case pixel_sizes do
+            [] -> criteria
+            [size | _] -> Map.put(criteria, "size", size)
+          end
+        else
+          [size | _] = sizes
+          Map.put(criteria, "size", size)
+        end
     end
     criteria = case opts[:categories] do
       nil -> criteria

@@ -39,6 +39,7 @@ defmodule PureAdminIcons.Icons.Icon do
   @doc """
   Generate SVG URL for an icon at a specific size.
   Returns nil if the filename is not available for the given size.
+  For scalable icons, the size argument is ignored — there's only one SVG file.
   """
   def svg_url(icon, size) do
     case svg_filename(icon, size) do
@@ -87,16 +88,33 @@ defmodule PureAdminIcons.Icons.Icon do
   @doc """
   Generate the SVG filename for an icon at a specific size.
   Looks up the `filenames` map (keyed by size as string).
+  For scalable icons, the size argument is ignored and the first available filename is returned.
   """
   def svg_filename(icon, size) do
     filenames = get_filenames(icon)
-    size_key = to_string(size)
 
-    case filenames do
-      %{^size_key => filename} -> filename
-      _ -> nil
+    cond do
+      scalable?(icon) ->
+        case Enum.find_value(filenames, fn {_k, v} -> v end) do
+          nil -> nil
+          filename -> filename
+        end
+
+      true ->
+        size_key = to_string(size)
+        case filenames do
+          %{^size_key => filename} -> filename
+          _ -> nil
+        end
     end
   end
+
+  @doc """
+  Returns true if the icon is scalable (single SVG that scales to any size).
+  """
+  def scalable?(%{is_scalable: true}), do: true
+  def scalable?(%{"is_scalable" => true}), do: true
+  def scalable?(_), do: false
 
   # Helper functions to extract fields from various icon representations
   # (struct, map with atom keys, map with string keys)

@@ -101,6 +101,7 @@ defmodule PureAdminIconsWeb.API.IconController do
         sizes: set.sizes,
         default_size: set.default_size,
         style_color_methods: set.style_color_methods,
+        is_scalable: set.is_scalable,
         icon_count: set.icon_count
       }
     end)
@@ -142,6 +143,7 @@ defmodule PureAdminIconsWeb.API.IconController do
       style: icon.style_code,
       style_color_method: icon.style_color_method,
       sizes: icon.sizes,
+      is_scalable: Map.get(icon, :is_scalable, false),
       ios: icon.ios_identifiers,
       android: icon.android_identifiers,
       svg_url: Icon.svg_url(icon, default_size(icon.sizes))
@@ -150,6 +152,8 @@ defmodule PureAdminIconsWeb.API.IconController do
 
   # Full format for icon detail
   defp format_icon_detail(icon) do
+    scalable = Map.get(icon, :is_scalable, false)
+
     %{
       id: icon.icon_id,
       icon_set: icon.icon_set_code,
@@ -158,17 +162,22 @@ defmodule PureAdminIconsWeb.API.IconController do
       style: icon.style_code,
       style_color_method: icon.style_color_method,
       sizes: icon.sizes,
+      is_scalable: scalable,
       filenames: icon.filenames,
       ios: icon.ios_identifiers,
       android: icon.android_identifiers,
       categories: icon.categories,
       phrases: icon.phrases,
-      svg_urls: Enum.map(icon.sizes, fn size ->
-        %{size: size, url: Icon.svg_url(icon, size)}
-      end)
+      svg_urls:
+        if scalable do
+          [%{size: nil, url: Icon.svg_url(icon, 0)}]
+        else
+          Enum.map(icon.sizes, fn size -> %{size: size, url: Icon.svg_url(icon, size)} end)
+        end
     }
   end
 
+  defp default_size([]), do: 0
   defp default_size(sizes) when is_list(sizes) do
     if 24 in sizes, do: 24, else: hd(sizes)
   end

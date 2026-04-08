@@ -41,6 +41,12 @@ defmodule PureAdminIcons.IconSets.Fluentui do
   def cssclass_package(_), do: {nil, nil}
 
   @impl true
+  def ios_package(_), do: {"FluentIcons (Swift)", "https://github.com/microsoft/fluentui-system-icons/tree/main/ios"}
+
+  @impl true
+  def android_package(_), do: {"fluentui-system-icons (Android)", "https://github.com/microsoft/fluentui-system-icons/tree/main/android"}
+
+  @impl true
   def react_identifier_sizes(icon), do: icon.sizes
 
   @impl true

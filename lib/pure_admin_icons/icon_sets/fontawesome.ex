@@ -62,6 +62,12 @@ defmodule PureAdminIcons.IconSets.Fontawesome do
   def cssclass_package(_), do: {"@fortawesome/fontawesome-free", "https://www.npmjs.com/package/@fortawesome/fontawesome-free"}
 
   @impl true
+  def ios_package(_), do: {nil, nil}
+
+  @impl true
+  def android_package(_), do: {nil, nil}
+
+  @impl true
   def react_identifier_sizes(icon), do: [List.first(icon.sizes) || 24]
 
   @impl true

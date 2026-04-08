@@ -47,6 +47,12 @@ defmodule PureAdminIcons.IconSets.Tabler do
   def cssclass_package(_), do: {"@tabler/icons-webfont", "https://www.npmjs.com/package/@tabler/icons-webfont"}
 
   @impl true
+  def ios_package(_), do: {nil, nil}
+
+  @impl true
+  def android_package(_), do: {nil, nil}
+
+  @impl true
   def react_identifier_sizes(icon), do: [List.first(icon.sizes) || 24]
 
   @impl true

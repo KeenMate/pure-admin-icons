@@ -43,6 +43,12 @@ defmodule PureAdminIcons.IconSets.Lucide do
   def cssclass_package(_), do: {nil, nil}
 
   @impl true
+  def ios_package(_), do: {nil, nil}
+
+  @impl true
+  def android_package(_), do: {nil, nil}
+
+  @impl true
   def react_identifier_sizes(icon), do: [List.first(icon.sizes) || 24]
 
   @impl true

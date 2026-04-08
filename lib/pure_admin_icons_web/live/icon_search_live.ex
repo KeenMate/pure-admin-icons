@@ -475,7 +475,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
               </svg>
-              Filters
+              <span class="hidden sm:inline">Filters</span>
             </button>
             <div class="flex items-center gap-1 bg-base-200 rounded-lg p-1" id="view-mode" phx-hook="ViewMode">
               <button
@@ -486,7 +486,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                 </svg>
-                Grid
+                <span class="hidden sm:inline">Grid</span>
               </button>
               <button
                 phx-click="toggle_view"
@@ -496,7 +496,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
                 </svg>
-                List
+                <span class="hidden sm:inline">List</span>
               </button>
             </div>
           </div>
@@ -541,6 +541,18 @@ defmodule PureAdminIconsWeb.IconSearchLive do
           <!-- Size Filters -->
           <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
             <span class="text-base font-medium text-base-content min-w-14">Sizes:</span>
+            <%= if Enum.any?(@icon_sets, & &1.is_scalable) do %>
+              <label class="inline-flex items-center cursor-pointer gap-1.5">
+                <input
+                  type="checkbox"
+                  phx-click="toggle_size"
+                  phx-value-size="0"
+                  checked={0 in @selected_sizes}
+                  class="w-5 h-5 rounded border-base-content/25 focus:ring-primary"
+                />
+                <span class="text-base text-base-content/70" title="Icons that scale to any size">∞ Scalable</span>
+              </label>
+            <% end %>
             <%= for size <- @available_sizes do %>
               <label class="inline-flex items-center cursor-pointer gap-1.5">
                 <input
@@ -590,7 +602,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
                 phx-value-size={size}
                 class="badge badge-sm badge-ghost gap-1 cursor-pointer hover:opacity-80"
               >
-                <%= size %>px
+                <%= if size == 0, do: "∞ Scalable", else: "#{size}px" %>
                 <span class="text-lg leading-none">&times;</span>
               </button>
             <% end %>
@@ -606,7 +618,9 @@ defmodule PureAdminIconsWeb.IconSearchLive do
         <!-- Results Count, Icon Size Slider & Pager -->
         <div class="flex flex-wrap justify-between items-center mb-4 gap-3">
           <div class="text-sm text-base-content/70">
-            Showing <%= (@page - 1) * 30 + 1 %>-<%= min(@page * 30, @total_count) %> of <%= @total_count %> icons
+            <%= if @total_count > 0 do %>
+              Showing <%= (@page - 1) * 30 + 1 %>-<%= min(@page * 30, @total_count) %> of <%= @total_count %> icons
+            <% end %>
           </div>
           <div class="flex items-center gap-3">
             <div class={["flex items-center gap-2", if(@view_mode != "list", do: "hidden")]} id="icon-size-slider" phx-hook="IconSizeSlider">
@@ -789,7 +803,12 @@ defmodule PureAdminIconsWeb.IconSearchLive do
                 <div class="flex flex-wrap items-center gap-2 mb-2">
                   <label class="text-sm font-medium text-base-content">Preview:</label>
                   <div class="preview-preset-active inline-flex items-center gap-2"><!-- active preset rendered here by JS --></div>
-                  <button type="button" class="preview-preset-toggle px-3 py-1.5 rounded text-sm font-medium cursor-pointer border border-base-300 hover:bg-base-200">More ▾</button>
+                  <button type="button" class="preview-preset-toggle px-3 py-1.5 rounded text-sm font-medium cursor-pointer border border-base-300 hover:bg-base-200 inline-flex items-center gap-1.5">
+                    <svg class="preview-preset-toggle-icon w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                    <span class="preview-preset-toggle-label">More</span>
+                  </button>
                   <button type="button" class="preview-copy-css px-3 py-1.5 rounded text-sm font-medium cursor-pointer border border-base-300 hover:bg-base-200 inline-flex items-center gap-1.5" title="Copy CSS to use these colors in your project">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
                     Copy CSS
@@ -859,35 +878,84 @@ defmodule PureAdminIconsWeb.IconSearchLive do
             </div>
 
             <!-- Icon Sizes Preview with Download -->
-            <div class="mb-6">
-              <h3 class="text-sm font-medium text-base-content mb-3">Available Sizes</h3>
-              <div class="flex flex-wrap gap-4 justify-center items-end"
-                   id={"icon-preview-#{@icon.icon_id}"}
-                   phx-hook="InlineSvg"
-                   data-color="#212121"
-                   data-urls={Jason.encode!(Enum.map(@icon.sizes, &Icon.svg_url(@icon, &1)))}>
-                <%= for size <- @icon.sizes do %>
+            <div class="mb-6" id={"download-naming-#{@icon.icon_id}"} phx-hook="DownloadNaming"
+                 data-name={@icon.name} data-style={@icon.style_code}>
+              <div class="flex items-center justify-between mb-3">
+                <h3 class="text-sm font-medium text-base-content">
+                  <%= if Map.get(@icon, :is_scalable, false) do %>
+                    Preview <span class="text-base-content/50">— Scalable, renders at any size</span>
+                  <% else %>
+                    Available Sizes
+                  <% end %>
+                </h3>
+                <label class="flex items-center gap-2 text-xs text-base-content/70">
+                  <span>Filename:</span>
+                  <select class="download-naming-select select select-xs select-bordered">
+                    <option value="original">Original</option>
+                    <option value="kebab">kebab-case</option>
+                    <option value="snake">snake_case</option>
+                    <option value="pascal">PascalCase</option>
+                  </select>
+                </label>
+              </div>
+              <%= if Map.get(@icon, :is_scalable, false) do %>
+                <div class="flex justify-center"
+                     id={"icon-preview-#{@icon.icon_id}"}
+                     phx-hook="InlineSvg"
+                     data-color="#212121"
+                     data-urls={Jason.encode!([Icon.svg_url(@icon, 0)])}>
                   <div class="flex flex-col items-center">
                     <div class="svg-container bg-white rounded-lg p-3 border border-base-300 flex items-center justify-center"
-                         data-size={size}
-                         style={"width: #{min(size + 24, 96)}px; height: #{min(size + 24, 96)}px;"}>
+                         data-size="64"
+                         style="width: 96px; height: 96px;">
                       <!-- SVG loaded by JavaScript -->
                     </div>
-                    <span class="text-xs text-base-content/70 mt-1"><%= size %>px</span>
-                    <a href={Icon.svg_url(@icon, size)}
-                       download={Icon.svg_filename(@icon, size)}
+                    <span class="text-3xl font-bold text-base-content/70 mt-1 leading-none">∞</span>
+                    <a href={Icon.svg_url(@icon, 0)}
+                       download={Icon.svg_filename(@icon, 0)}
+                       data-original-filename={Icon.svg_filename(@icon, 0)}
                        phx-click="track_download"
                        phx-value-icon-id={@icon.icon_id}
-                       phx-value-size={size}
+                       phx-value-size="0"
                        title="Download SVG"
-                       class="mt-1 p-1.5 text-primary hover:text-primary hover:bg-base-200 rounded-md transition-colors">
+                       class="download-link mt-1 p-1.5 text-primary hover:text-primary hover:bg-base-200 rounded-md transition-colors">
                       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                       </svg>
                     </a>
                   </div>
-                <% end %>
-              </div>
+                </div>
+              <% else %>
+                <div class="flex flex-wrap gap-4 justify-center items-end"
+                     id={"icon-preview-#{@icon.icon_id}"}
+                     phx-hook="InlineSvg"
+                     data-color="#212121"
+                     data-urls={Jason.encode!(Enum.map(@icon.sizes, &Icon.svg_url(@icon, &1)))}>
+                  <%= for size <- @icon.sizes do %>
+                    <div class="flex flex-col items-center">
+                      <div class="svg-container bg-white rounded-lg p-3 border border-base-300 flex items-center justify-center"
+                           data-size={size}
+                           style={"width: #{min(size + 24, 96)}px; height: #{min(size + 24, 96)}px;"}>
+                        <!-- SVG loaded by JavaScript -->
+                      </div>
+                      <span class="text-xs text-base-content/70 mt-1"><%= size %>px</span>
+                      <a href={Icon.svg_url(@icon, size)}
+                         download={Icon.svg_filename(@icon, size)}
+                         data-original-filename={Icon.svg_filename(@icon, size)}
+                         data-size={size}
+                         phx-click="track_download"
+                         phx-value-icon-id={@icon.icon_id}
+                         phx-value-size={size}
+                         title="Download SVG"
+                         class="download-link mt-1 p-1.5 text-primary hover:text-primary hover:bg-base-200 rounded-md transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                      </a>
+                    </div>
+                  <% end %>
+                </div>
+              <% end %>
             </div>
 
             <!-- Platform Identifiers -->
@@ -898,31 +966,37 @@ defmodule PureAdminIconsWeb.IconSearchLive do
 
               <!-- Platform Toggle Checkboxes -->
               <div class="flex flex-wrap gap-4 pb-4 border-b border-base-300" id="platform-prefs" phx-hook="PlatformPrefs">
-                <label class="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={@platform_prefs.ios}
-                    phx-click="toggle_platform"
-                    phx-value-platform="ios"
-                    class="w-4 h-4 rounded border-base-300 focus:ring-primary"
-                  />
-                  <.platform_icon name="ios" class="w-4 h-4 text-base-content/70" />
-                  <span class="text-sm text-base-content/70">iOS</span>
-                </label>
-                <label class="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={@platform_prefs.android}
-                    phx-click="toggle_platform"
-                    phx-value-platform="android"
-                    class="w-4 h-4 rounded border-base-300 focus:ring-primary"
-                  />
-                  <.platform_icon name="android" class="w-4 h-4 text-base-content/70" />
-                  <span class="text-sm text-base-content/70">Android</span>
-                </label>
+                <% {ios_pkg, _} = ios_package(@icon) %>
+                <% {android_pkg, _} = android_package(@icon) %>
                 <% {react_pkg, _} = react_package(@icon) %>
                 <% {vue_pkg, _} = vue_package(@icon) %>
                 <% {svelte_pkg, _} = svelte_package(@icon) %>
+                <%= if ios_pkg do %>
+                  <label class="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={@platform_prefs.ios}
+                      phx-click="toggle_platform"
+                      phx-value-platform="ios"
+                      class="w-4 h-4 rounded border-base-300 focus:ring-primary"
+                    />
+                    <.platform_icon name="ios" class="w-4 h-4 text-base-content/70" />
+                    <span class="text-sm text-base-content/70">iOS</span>
+                  </label>
+                <% end %>
+                <%= if android_pkg do %>
+                  <label class="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={@platform_prefs.android}
+                      phx-click="toggle_platform"
+                      phx-value-platform="android"
+                      class="w-4 h-4 rounded border-base-300 focus:ring-primary"
+                    />
+                    <.platform_icon name="android" class="w-4 h-4 text-base-content/70" />
+                    <span class="text-sm text-base-content/70">Android</span>
+                  </label>
+                <% end %>
                 <%= if react_pkg do %>
                   <label class="flex items-center gap-2 cursor-pointer">
                     <input
@@ -1000,54 +1074,60 @@ defmodule PureAdminIconsWeb.IconSearchLive do
                 <% end %>
               </div>
 
-              <!-- iOS -->
+              <!-- iOS — only show when this icon set has a real iOS distribution -->
               <%= if @platform_prefs.ios do %>
-                <div class="bg-base-100 rounded-lg p-4">
-                  <div class="flex items-center justify-between mb-2">
-                    <span class="text-sm font-medium text-base-content/70 flex items-center gap-1.5">
-                      <.platform_icon name="ios" class="w-4 h-4" />
-                      iOS (Swift)
-                    </span>
+                <% {ios_pkg_name, ios_pkg_url} = ios_package(@icon) %>
+                <%= if ios_pkg_name do %>
+                  <div class="bg-base-100 rounded-lg p-4">
+                    <div class="flex items-center justify-between mb-2">
+                      <span class="text-sm font-medium text-base-content/70 flex items-center gap-1.5">
+                        <.platform_icon name="ios" class="w-4 h-4" />
+                        iOS (<%= if ios_pkg_url do %><a href={ios_pkg_url} target="_blank" rel="noreferrer" class="text-primary hover:underline"><%= ios_pkg_name %></a><% else %><%= ios_pkg_name %><% end %>)
+                      </span>
+                    </div>
+                    <div class="space-y-1">
+                      <%= for {size, id} <- @icon.ios_identifiers || %{} do %>
+                        <div class="flex items-center justify-between bg-base-200 rounded px-3 py-2 border border-base-300">
+                          <code class="text-sm text-primary"><%= id %></code>
+                          <button
+                            type="button"
+                            phx-click={JS.dispatch("phx:copy", to: "#ios-#{@icon.icon_id}-#{size}")}
+                            class="text-xs text-base-content/70 hover:text-base-content px-2 py-1 rounded hover:bg-base-200"
+                          >Copy</button>
+                          <span id={"ios-#{@icon.icon_id}-#{size}"} class="hidden"><%= id %></span>
+                        </div>
+                      <% end %>
+                    </div>
                   </div>
-                  <div class="space-y-1">
-                    <%= for {size, id} <- @icon.ios_identifiers || %{} do %>
-                      <div class="flex items-center justify-between bg-base-200 rounded px-3 py-2 border border-base-300">
-                        <code class="text-sm text-primary"><%= id %></code>
-                        <button
-                          type="button"
-                          phx-click={JS.dispatch("phx:copy", to: "#ios-#{@icon.icon_id}-#{size}")}
-                          class="text-xs text-base-content/70 hover:text-base-content px-2 py-1 rounded hover:bg-base-200"
-                        >Copy</button>
-                        <span id={"ios-#{@icon.icon_id}-#{size}"} class="hidden"><%= id %></span>
-                      </div>
-                    <% end %>
-                  </div>
-                </div>
+                <% end %>
               <% end %>
 
-              <!-- Android -->
+              <!-- Android — only show when this icon set has a real Android distribution -->
               <%= if @platform_prefs.android do %>
-                <div class="bg-base-100 rounded-lg p-4">
-                  <div class="flex items-center justify-between mb-2">
-                    <span class="text-sm font-medium text-base-content/70 flex items-center gap-1.5">
-                      <.platform_icon name="android" class="w-4 h-4" />
-                      Android (Kotlin/Java)
-                    </span>
+                <% {android_pkg_name, android_pkg_url} = android_package(@icon) %>
+                <%= if android_pkg_name do %>
+                  <div class="bg-base-100 rounded-lg p-4">
+                    <div class="flex items-center justify-between mb-2">
+                      <span class="text-sm font-medium text-base-content/70 flex items-center gap-1.5">
+                        <.platform_icon name="android" class="w-4 h-4" />
+                        Android (<%= if android_pkg_url do %><a href={android_pkg_url} target="_blank" rel="noreferrer" class="text-primary hover:underline"><%= android_pkg_name %></a><% else %><%= android_pkg_name %><% end %>)
+                      </span>
+                    </div>
+                    <div class="space-y-1">
+                      <%= for {size, id} <- @icon.android_identifiers || %{} do %>
+                        <div class="flex items-center justify-between bg-base-200 rounded px-3 py-2 border border-base-300">
+                          <code class="text-sm text-success"><%= id %></code>
+                          <button
+                            type="button"
+                            phx-click={JS.dispatch("phx:copy", to: "#android-#{@icon.icon_id}-#{size}")}
+                            class="text-xs text-base-content/70 hover:text-base-content px-2 py-1 rounded hover:bg-base-200"
+                          >Copy</button>
+                          <span id={"android-#{@icon.icon_id}-#{size}"} class="hidden"><%= id %></span>
+                        </div>
+                      <% end %>
+                    </div>
                   </div>
-                  <div class="space-y-1">
-                    <%= for {size, id} <- @icon.android_identifiers || %{} do %>
-                      <div class="flex items-center justify-between bg-base-200 rounded px-3 py-2 border border-base-300">
-                        <code class="text-sm text-success"><%= id %></code>
-                        <button
-                          type="button"
-                          phx-click={JS.dispatch("phx:copy", to: "#android-#{@icon.icon_id}-#{size}")}
-                          class="text-xs text-base-content/70 hover:text-base-content px-2 py-1 rounded hover:bg-base-200"
-                        >Copy</button>
-                        <span id={"android-#{@icon.icon_id}-#{size}"} class="hidden"><%= id %></span>
-                      </div>
-                    <% end %>
-                  </div>
-                </div>
+                <% end %>
               <% end %>
 
               <!-- React -->
@@ -1125,7 +1205,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
                   <div class="space-y-1 svelte-code-list">
                     <%= for size <- svelte_identifier_sizes(@icon) do %>
                       <div class="flex items-center justify-between bg-base-200 rounded px-3 py-2 border border-base-300">
-                        <code id={"svelte-#{@icon.icon_id}-#{size}"} class="text-sm text-orange-600" data-size={size}><%= svelte_identifier(@icon, size) %></code>
+                        <code id={"svelte-#{@icon.icon_id}-#{size}"} class="text-sm text-orange-600 whitespace-pre-line" data-size={size}><%= svelte_identifier(@icon, size) %></code>
                         <button
                           type="button"
                           phx-click={JS.dispatch("phx:copy", to: "#svelte-#{@icon.icon_id}-#{size}")}
@@ -1194,7 +1274,9 @@ defmodule PureAdminIconsWeb.IconSearchLive do
               <!-- Filename -->
               <%= if @platform_prefs.filename do %>
                 <div class="bg-base-100 rounded-lg p-4" id={"filename-section-#{@icon.icon_id}"} phx-hook="FilenameTemplate"
-                     data-name={@icon.name} data-style={@icon.style_code} data-sizes={Jason.encode!(@icon.sizes)}>
+                     data-name={@icon.name} data-style={@icon.style_code}
+                     data-sizes={Jason.encode!(if Map.get(@icon, :is_scalable, false), do: [0], else: @icon.sizes)}
+                     data-filenames={Jason.encode!(@icon.filenames || %{})}>
                   <div class="flex items-center justify-between mb-2">
                     <span class="text-sm font-medium text-base-content/70 flex items-center gap-1.5">
                       <.platform_icon name="filename" class="w-4 h-4" />
@@ -1269,7 +1351,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
     show_style_badge = assigns.icons |> Enum.map(& &1.style_code) |> Enum.uniq() |> length() > 1
     assigns = assign(assigns, :show_style_badge, show_style_badge)
     ~H"""
-    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+    <div class="flex flex-wrap justify-center gap-4 [&>*]:w-44">
       <%= for icon <- @icons do %>
         <div
           phx-click="select_icon"
@@ -1299,23 +1381,41 @@ defmodule PureAdminIconsWeb.IconSearchLive do
             </div>
 
             <!-- Sizes (always expanded, hover for copy buttons) -->
-            <div class="mt-auto flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-xs text-primary/80 min-h-5">
-              <%= for size <- icon.sizes do %>
+            <div class="mt-auto flex flex-wrap items-center justify-center gap-x-2 gap-y-1 font-semibold text-primary min-h-6" style="font-size: 0.8rem;">
+              <%= if Map.get(icon, :is_scalable, false) do %>
                 <div class="relative group/size">
-                  <span class="cursor-help"><%= size %>px</span>
+                  <span class="cursor-help text-2xl leading-none font-bold" title="Scalable — renders at any size">∞</span>
                   <div class="absolute bottom-full left-1/2 -translate-x-1/2 -mb-0.5 hidden group-hover/size:flex gap-1 bg-base-100 rounded-lg p-1.5 shadow-xl border-2 border-base-content/20 z-50">
                     <%= for platform <- preferred_platforms(@platform_prefs, 2) do %>
                       <button
                         type="button"
                         class={"p-2.5 rounded cursor-pointer hover:bg-base-300 hover:scale-110 active:scale-95 transition-transform #{platform_color(platform)}"}
-                        title={"Copy #{platform} identifier for size #{size}"}
-                        phx-click={JS.dispatch("phx:copy_text", detail: copy_detail(icon, platform, size))}
+                        title={"Copy #{platform} identifier"}
+                        phx-click={JS.dispatch("phx:copy_text", detail: copy_detail(icon, platform, 0))}
                       >
                         <.platform_icon name={to_string(platform)} class="w-5 h-5" />
                       </button>
                     <% end %>
                   </div>
                 </div>
+              <% else %>
+                <%= for size <- icon.sizes do %>
+                  <div class="relative group/size">
+                    <span class="cursor-help"><%= size %>px</span>
+                    <div class="absolute bottom-full left-1/2 -translate-x-1/2 -mb-0.5 hidden group-hover/size:flex gap-1 bg-base-100 rounded-lg p-1.5 shadow-xl border-2 border-base-content/20 z-50">
+                      <%= for platform <- preferred_platforms(@platform_prefs, 2) do %>
+                        <button
+                          type="button"
+                          class={"p-2.5 rounded cursor-pointer hover:bg-base-300 hover:scale-110 active:scale-95 transition-transform #{platform_color(platform)}"}
+                          title={"Copy #{platform} identifier for size #{size}"}
+                          phx-click={JS.dispatch("phx:copy_text", detail: copy_detail(icon, platform, size))}
+                        >
+                          <.platform_icon name={to_string(platform)} class="w-5 h-5" />
+                        </button>
+                      <% end %>
+                    </div>
+                  </div>
+                <% end %>
               <% end %>
             </div>
           </div>
@@ -1349,8 +1449,12 @@ defmodule PureAdminIconsWeb.IconSearchLive do
             </div>
           </div>
           <div class="flex flex-wrap gap-1 mt-1">
-            <%= for size <- icon.sizes do %>
-              <span class="badge badge-sm badge-ghost"><%= size %>px</span>
+            <%= if Map.get(icon, :is_scalable, false) do %>
+              <span class="badge badge-sm badge-ghost" title="Scalable — renders at any size">∞</span>
+            <% else %>
+              <%= for size <- icon.sizes do %>
+                <span class="badge badge-sm badge-ghost"><%= size %>px</span>
+              <% end %>
             <% end %>
           </div>
         </div>
@@ -1391,29 +1495,50 @@ defmodule PureAdminIconsWeb.IconSearchLive do
                 <td class="px-4 py-3 text-center">
                   <span class="px-2 py-0.5 rounded text-xs bg-base-200 text-base-content/70 capitalize"><%= icon.style_code %></span>
                 </td>
-                <%= for size <- @display_sizes do %>
-                  <td class="px-2 py-3 text-center relative">
-                    <%= if size in icon.sizes do %>
-                      <span class="text-success font-black text-lg">✓</span>
-                      <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-base-200">
-                        <div class="flex gap-0.5">
-                          <%= for platform <- preferred_platforms(@platform_prefs, 2) do %>
-                            <button
-                              type="button"
-                              class={"p-1.5 rounded cursor-pointer hover:bg-base-300 hover:scale-110 active:scale-95 transition-transform #{platform_color(platform)}"}
-                              title={"Copy #{platform} identifier for size #{size}"}
-                              phx-click={JS.dispatch("phx:copy_text", detail: copy_detail(icon, platform, size))}
-                              phx-value-stop-propagation="true"
-                            >
-                              <.platform_icon name={to_string(platform)} class="w-4 h-4" />
-                            </button>
-                          <% end %>
-                        </div>
+                <%= if Map.get(icon, :is_scalable, false) do %>
+                  <td class="px-2 py-3 text-center relative" colspan={length(@display_sizes)}>
+                    <span class="text-base-content/80 font-bold text-lg" title="Scalable — renders at any size">∞ Scalable</span>
+                    <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-base-200">
+                      <div class="flex gap-0.5">
+                        <%= for platform <- preferred_platforms(@platform_prefs, 2) do %>
+                          <button
+                            type="button"
+                            class={"p-1.5 rounded cursor-pointer hover:bg-base-300 hover:scale-110 active:scale-95 transition-transform #{platform_color(platform)}"}
+                            title={"Copy #{platform} identifier"}
+                            phx-click={JS.dispatch("phx:copy_text", detail: copy_detail(icon, platform, 0))}
+                            phx-value-stop-propagation="true"
+                          >
+                            <.platform_icon name={to_string(platform)} class="w-4 h-4" />
+                          </button>
+                        <% end %>
                       </div>
-                    <% else %>
-                      <span class="text-base-content/50">✗</span>
-                    <% end %>
+                    </div>
                   </td>
+                <% else %>
+                  <%= for size <- @display_sizes do %>
+                    <td class="px-2 py-3 text-center relative">
+                      <%= if size in icon.sizes do %>
+                        <span class="text-success font-black text-lg">✓</span>
+                        <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-base-200">
+                          <div class="flex gap-0.5">
+                            <%= for platform <- preferred_platforms(@platform_prefs, 2) do %>
+                              <button
+                                type="button"
+                                class={"p-1.5 rounded cursor-pointer hover:bg-base-300 hover:scale-110 active:scale-95 transition-transform #{platform_color(platform)}"}
+                                title={"Copy #{platform} identifier for size #{size}"}
+                                phx-click={JS.dispatch("phx:copy_text", detail: copy_detail(icon, platform, size))}
+                                phx-value-stop-propagation="true"
+                              >
+                                <.platform_icon name={to_string(platform)} class="w-4 h-4" />
+                              </button>
+                            <% end %>
+                          </div>
+                        </div>
+                      <% else %>
+                        <span class="text-base-content/50">✗</span>
+                      <% end %>
+                    </td>
+                  <% end %>
                 <% end %>
               </tr>
             <% end %>
@@ -1424,6 +1549,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
     """
   end
 
+  defp default_size([]), do: 0
   defp default_size(sizes) do
     if 24 in sizes, do: 24, else: hd(sizes)
   end
@@ -1518,6 +1644,8 @@ defmodule PureAdminIconsWeb.IconSearchLive do
   defp vue_package(icon), do: Formatter.vue_package(icon)
   defp cssclass_package(icon), do: Formatter.cssclass_package(icon)
   defp htmltag_package(icon), do: Formatter.htmltag_package(icon)
+  defp ios_package(icon), do: Formatter.ios_package(icon)
+  defp android_package(icon), do: Formatter.android_package(icon)
 
   defp react_identifier_sizes(icon), do: Formatter.react_identifier_sizes(icon)
   defp svelte_identifier_sizes(icon), do: Formatter.svelte_identifier_sizes(icon)

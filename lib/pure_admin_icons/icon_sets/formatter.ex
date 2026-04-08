@@ -33,6 +33,8 @@ defmodule PureAdminIcons.IconSets.Formatter do
   @callback vue_package(icon) :: package
   @callback svelte_package(icon) :: package
   @callback cssclass_package(icon) :: package
+  @callback ios_package(icon) :: package
+  @callback android_package(icon) :: package
 
   # ---- Sizes that vary the identifier (for the per-size loop in the modal) ----
   @callback react_identifier_sizes(icon) :: [integer()]
@@ -78,10 +80,29 @@ defmodule PureAdminIcons.IconSets.Formatter do
   def svelte_package(icon), do: for_icon(icon).svelte_package(icon)
   def cssclass_package(icon), do: for_icon(icon).cssclass_package(icon)
   def htmltag_package(icon), do: cssclass_package(icon)
+  def ios_package(icon), do: for_icon(icon).ios_package(icon)
+  def android_package(icon), do: for_icon(icon).android_package(icon)
 
-  def react_identifier_sizes(icon), do: for_icon(icon).react_identifier_sizes(icon)
-  def vue_identifier_sizes(icon), do: for_icon(icon).vue_identifier_sizes(icon)
-  def svelte_identifier_sizes(icon), do: for_icon(icon).svelte_identifier_sizes(icon)
-  def cssclass_identifier_sizes(icon), do: [List.first(icon.sizes) || 24]
-  def htmltag_identifier_sizes(icon), do: [List.first(icon.sizes) || 24]
+  def react_identifier_sizes(icon) do
+    if scalable?(icon), do: [0], else: for_icon(icon).react_identifier_sizes(icon)
+  end
+
+  def vue_identifier_sizes(icon) do
+    if scalable?(icon), do: [0], else: for_icon(icon).vue_identifier_sizes(icon)
+  end
+
+  def svelte_identifier_sizes(icon) do
+    if scalable?(icon), do: [0], else: for_icon(icon).svelte_identifier_sizes(icon)
+  end
+
+  def cssclass_identifier_sizes(icon) do
+    if scalable?(icon), do: [0], else: [List.first(icon.sizes) || 24]
+  end
+
+  def htmltag_identifier_sizes(icon) do
+    if scalable?(icon), do: [0], else: [List.first(icon.sizes) || 24]
+  end
+
+  defp scalable?(%{is_scalable: true}), do: true
+  defp scalable?(_), do: false
 end
