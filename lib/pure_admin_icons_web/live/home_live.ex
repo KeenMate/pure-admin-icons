@@ -16,7 +16,7 @@ defmodule PureAdminIconsWeb.HomeLive do
         <a href="#api-section" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-base-content/80 hover:text-primary hover:bg-base-200 transition-colors">
           <.icon name="hero-code-bracket" class="size-4" /> API
         </a>
-        <a href="https://www.npmjs.com/package/@keenmate/fluentui-icons-mcp" target="_blank" rel="noreferrer" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-base-content/80 hover:text-primary hover:bg-base-200 transition-colors">
+        <a href="https://www.npmjs.com/package/@keenmate/pure-admin-icons-mcp" target="_blank" rel="noreferrer" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-base-content/80 hover:text-primary hover:bg-base-200 transition-colors">
           <.icon name="hero-puzzle-piece" class="size-4" /> MCP
         </a>
         <a href="/llms.txt" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-base-content/80 hover:text-primary hover:bg-base-200 transition-colors">
@@ -37,7 +37,7 @@ defmodule PureAdminIconsWeb.HomeLive do
         </p>
         <p class="text-sm text-base-content/50 mt-1">
           Using Claude? Try our
-          <a href="https://www.npmjs.com/package/@keenmate/fluentui-icons-mcp" target="_blank" rel="noreferrer" class="text-primary hover:underline">MCP server</a>
+          <a href="https://www.npmjs.com/package/@keenmate/pure-admin-icons-mcp" target="_blank" rel="noreferrer" class="text-primary hover:underline">MCP server</a>
           to search icons directly from Claude Desktop or Claude Code.
         </p>
 

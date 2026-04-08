@@ -442,7 +442,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
         <div class="max-w-5xl mx-auto text-center mb-4">
           <p class="text-base-content/70">Search <span class="font-semibold text-primary"><%= @icon_count %></span> icons from <span class="font-semibold text-primary"><%= length(@icon_sets) %></span> icon sets</p>
           <p class="text-sm text-base-content/50 mt-1">
-            Using Claude? Try our <a href="https://www.npmjs.com/package/@keenmate/fluentui-icons-mcp" target="_blank" rel="noreferrer" class="text-primary hover:underline">MCP server</a> to search icons directly from Claude Desktop or Claude Code.
+            Using Claude? Try our <a href="https://www.npmjs.com/package/@keenmate/pure-admin-icons-mcp" target="_blank" rel="noreferrer" class="text-primary hover:underline">MCP server</a> to search icons directly from Claude Desktop or Claude Code.
           </p>
         </div>
 

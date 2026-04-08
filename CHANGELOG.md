@@ -1,6 +1,14 @@
 # Changelog
 
-## 2026-04-08 — Honest platforms, download naming, mobile polish
+## 2026-04-08 — MCP package rename
+
+- All references to `@keenmate/fluentui-icons-mcp` updated to the new `@keenmate/pure-admin-icons-mcp` package
+- Updated home page MCP link, API docs MCP example, MCP docs page (Claude Desktop config + Claude Code command)
+- Claude Desktop config example now uses Windows-friendly form: `npx -y -p @keenmate/pure-admin-icons-mcp pure-admin-icons-mcp`
+
+---
+
+## 2026-04-08 — Honest platforms, download naming, mobile polish ✅ PUBLISHED
 
 ### Honest platform identifiers
 - iOS and Android sections only shown for icon sets that have **real** native distributions (currently only FluentUI)
@@ -30,7 +38,7 @@
 
 ---
 
-## 2026-04-08 — Universal/scalable size, grid sizes polish
+## 2026-04-08 — Universal/scalable size, grid sizes polish ✅ PUBLISHED
 
 ### Universal "Scalable" size
 - New `is_scalable` flag (DB-side) for icon sets that have a single SVG that scales to any size
@@ -59,7 +67,7 @@
 
 ---
 
-## 2026-04-08 — Grid card redesign
+## 2026-04-08 — Grid card redesign ✅ PUBLISHED
 
 ### Grid card layout
 - **Top accent bar** colored by icon set (blue=fluentui, violet=heroicons, orange=lucide, cyan=tabler, yellow=fontawesome) — replaces the icon set badge, follows card's rounded corners
@@ -76,7 +84,7 @@
 
 ---
 
-## 2026-04-08 — Icon set formatter modules, Import CSS, Copy CSS dual block
+## 2026-04-08 — Icon set formatter modules, Import CSS, Copy CSS dual block ✅ PUBLISHED
 
 ### Refactor: per-icon-set formatter modules
 - All icon-set-specific identifier and package logic moved out of `icon_search_live.ex`
@@ -105,7 +113,7 @@
 
 ---
 
-## 2026-04-08 — Per-set platform prefs, CSS class platform, preview presets, Copy CSS
+## 2026-04-08 — Per-set platform prefs, CSS class platform, preview presets, Copy CSS ✅ PUBLISHED
 
 ### Per-icon-set platform preferences
 - Platform toggle prefs (iOS, React, Vue, Svelte, etc.) are now stored **per icon set** in localStorage
@@ -150,7 +158,7 @@
 
 ---
 
-## 2026-04-08 — MCP server, llms.txt update
+## 2026-04-08 — MCP server, llms.txt update ✅ PUBLISHED
 
 ### MCP server
 - New `@keenmate/pure-admin-icons-mcp` package (separate repo at `../pure-admin-icons-mcp`)

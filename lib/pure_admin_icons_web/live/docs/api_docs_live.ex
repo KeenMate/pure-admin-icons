@@ -163,7 +163,7 @@ defmodule PureAdminIconsWeb.Docs.ApiDocsLive do
               <h3 class="text-sm font-semibold uppercase tracking-wider text-base-content/60 mb-2">
                 MCP Server (Claude Desktop / Claude Code)
               </h3>
-              <.code_block code={~s|{\n  "mcpServers": {\n    "fluentui-icons": {\n      "command": "npx",\n      "args": ["-y", "@keenmate/fluentui-icons-mcp"]\n    }\n  }\n}|} lang="json" />
+              <.code_block code={~s|{\n  "mcpServers": {\n    "pure-admin-icons": {\n      "command": "npx",\n      "args": ["-y", "-p", "@keenmate/pure-admin-icons-mcp", "pure-admin-icons-mcp"]\n    }\n  }\n}|} lang="json" />
             </div>
 
             <div>

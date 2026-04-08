@@ -24,7 +24,7 @@ defmodule PureAdminIconsWeb.Docs.McpDocsLive do
               The MCP server is published as an npm package. No local installation needed — npx runs it on demand.
             </p>
             <p class="text-base-content/70 text-sm mb-4">
-              npm: <a href="https://www.npmjs.com/package/@keenmate/fluentui-icons-mcp" target="_blank" class="text-primary hover:underline">@keenmate/fluentui-icons-mcp</a>
+              npm: <a href="https://www.npmjs.com/package/@keenmate/pure-admin-icons-mcp" target="_blank" class="text-primary hover:underline">@keenmate/pure-admin-icons-mcp</a>
             </p>
           </div>
 
@@ -33,7 +33,7 @@ defmodule PureAdminIconsWeb.Docs.McpDocsLive do
             <p class="text-base-content/70 text-sm mb-3">
               Add this to your Claude Desktop configuration file:
             </p>
-            <pre class="rounded-lg px-4 py-3 text-sm overflow-x-auto !bg-transparent border border-base-300/30"><code>{~s|{\n  "mcpServers": {\n    "fluentui-icons": {\n      "command": "npx",\n      "args": ["-y", "@keenmate/fluentui-icons-mcp"]\n    }\n  }\n}|}</code></pre>
+            <pre class="rounded-lg px-4 py-3 text-sm overflow-x-auto !bg-transparent border border-base-300/30"><code>{~s|{\n  "mcpServers": {\n    "pure-admin-icons": {\n      "command": "npx",\n      "args": ["-y", "-p", "@keenmate/pure-admin-icons-mcp", "pure-admin-icons-mcp"]\n    }\n  }\n}|}</code></pre>
           </div>
 
           <div>
@@ -41,7 +41,7 @@ defmodule PureAdminIconsWeb.Docs.McpDocsLive do
             <p class="text-base-content/70 text-sm mb-3">
               Add the MCP server to your Claude Code settings:
             </p>
-            <pre class="rounded-lg px-4 py-3 text-sm overflow-x-auto !bg-transparent border border-base-300/30"><code>claude mcp add fluentui-icons -- npx -y @keenmate/fluentui-icons-mcp</code></pre>
+            <pre class="rounded-lg px-4 py-3 text-sm overflow-x-auto !bg-transparent border border-base-300/30"><code>claude mcp add pure-admin-icons -- npx -y -p @keenmate/pure-admin-icons-mcp pure-admin-icons-mcp</code></pre>
           </div>
 
           <div>
