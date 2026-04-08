@@ -9,6 +9,23 @@ defmodule PureAdminIconsWeb.IconSearchLive do
 
   @per_page 30
 
+  # Load preview presets from JSON config at compile time
+  @preview_presets :pure_admin_icons
+                   |> :code.priv_dir()
+                   |> Path.join("preview_presets.json")
+                   |> File.read!()
+                   |> Jason.decode!()
+  @external_resource Path.join(:code.priv_dir(:pure_admin_icons), "preview_presets.json")
+  defp preview_presets, do: @preview_presets
+
+  defp preset_button_style(%{"bg" => "checker", "color" => color}) do
+    "background-image: repeating-conic-gradient(#e5e7eb 0% 25%, #fff 0% 50%); background-size: 8px 8px; color: #{color};"
+  end
+
+  defp preset_button_style(%{"bg" => bg, "color" => color}) do
+    "background-color: #{bg}; color: #{color};"
+  end
+
   @impl true
   def mount(_params, _session, socket) do
     require Logger
@@ -19,10 +36,11 @@ defmodule PureAdminIconsWeb.IconSearchLive do
     Logger.debug("[timing] connect_params: view_mode=#{connect_params["view_mode"]}, icon_list_size=#{connect_params["icon_list_size"]}")
     view_mode = connect_params["view_mode"] || "grid"
     icon_list_size = connect_params["icon_list_size"] || 32
-    platform_prefs = connect_params["platform_prefs"] || %{}
-    platform_prefs = atomize_keys(platform_prefs)
-    default_prefs = %{ios: true, android: true, react: true, vue: true, svelte: true, filename: true}
-    platform_prefs = Map.merge(default_prefs, platform_prefs)
+
+    # Per-icon-set platform prefs: %{icon_set_code => %{platform => bool}}
+    # Migration: if old shape (flat map) exists, treat it as the default for all sets
+    raw_prefs = connect_params["platform_prefs"] || %{}
+    platform_prefs_by_set = parse_platform_prefs(raw_prefs)
 
     {last_sync_at, discrepancy_count} = case Icons.get_last_sync() do
       {:ok, syncs} when is_list(syncs) and syncs != [] ->
@@ -45,7 +63,8 @@ defmodule PureAdminIconsWeb.IconSearchLive do
      |> assign(icon_sets: icon_sets)
      |> assign(all_styles: all_styles)
      |> assign(all_sizes: all_sizes)
-     |> assign(platform_prefs: platform_prefs)
+     |> assign(platform_prefs_by_set: platform_prefs_by_set)
+     |> assign(platform_prefs: default_platform_prefs())
      |> assign(view_mode: view_mode)
      |> assign(icon_list_size: icon_list_size)
      |> assign(last_sync_at: last_sync_at)
@@ -219,7 +238,9 @@ defmodule PureAdminIconsWeb.IconSearchLive do
     icon = Enum.find(socket.assigns.icons, &(to_string(&1.icon_id) == id))
     # Fetch metrics for this icon (from raw table, fast enough for single icon)
     metrics = if icon, do: Icons.icon_metrics(icon.icon_id), else: %{}
-    {:noreply, assign(socket, selected_icon: icon, icon_metrics: metrics)}
+    # Load this icon set's prefs (or defaults)
+    prefs = if icon, do: prefs_for_set(socket.assigns.platform_prefs_by_set, icon.icon_set_code), else: default_platform_prefs()
+    {:noreply, assign(socket, selected_icon: icon, icon_metrics: metrics, platform_prefs: prefs)}
   end
 
   def handle_event("close_modal", _params, socket) do
@@ -227,15 +248,25 @@ defmodule PureAdminIconsWeb.IconSearchLive do
   end
 
   def handle_event("toggle_platform", %{"platform" => platform}, socket) do
-    prefs = socket.assigns.platform_prefs
-    new_prefs = Map.update!(prefs, String.to_existing_atom(platform), &(!&1))
+    icon = socket.assigns.selected_icon
+    if icon do
+      prefs = socket.assigns.platform_prefs
+      key = String.to_existing_atom(platform)
+      new_prefs = Map.update!(prefs, key, &(!&1))
 
-    socket =
-      socket
-      |> assign(:platform_prefs, new_prefs)
-      |> push_event("save_platform_prefs", new_prefs)
+      # Update per-set storage
+      new_by_set = Map.put(socket.assigns.platform_prefs_by_set, icon.icon_set_code, new_prefs)
 
-    {:noreply, socket}
+      socket =
+        socket
+        |> assign(:platform_prefs, new_prefs)
+        |> assign(:platform_prefs_by_set, new_by_set)
+        |> push_event("save_platform_prefs", new_by_set)
+
+      {:noreply, socket}
+    else
+      {:noreply, socket}
+    end
   end
 
   def handle_event("toggle_view", %{"mode" => mode}, socket) do
@@ -296,6 +327,49 @@ defmodule PureAdminIconsWeb.IconSearchLive do
 
   defp maybe_add_param(params, _key, value, default) when value == default, do: params
   defp maybe_add_param(params, key, value, _default), do: [{key, value} | params]
+
+  # Default platform preferences for any new icon set
+  defp default_platform_prefs do
+    %{ios: true, android: true, react: true, vue: true, svelte: true, cssclass: true, htmltag: true, filename: true}
+  end
+
+  # Get prefs for a specific icon set, falling back to defaults
+  defp prefs_for_set(prefs_by_set, icon_set_code) do
+    case Map.get(prefs_by_set, icon_set_code) do
+      nil -> default_platform_prefs()
+      prefs -> Map.merge(default_platform_prefs(), prefs)
+    end
+  end
+
+  # Parse the platform_prefs from connect_params.
+  # Supports both new shape (%{set => prefs}) and legacy flat shape (%{platform => bool}).
+  defp parse_platform_prefs(raw) when is_map(raw) and map_size(raw) == 0, do: %{}
+  defp parse_platform_prefs(raw) when is_map(raw) do
+    # Detect legacy shape: top-level keys are platform names (ios/android/...) not set codes
+    legacy_keys = ["ios", "android", "react", "vue", "svelte", "cssclass", "htmltag", "filename"]
+    is_legacy = raw |> Map.keys() |> Enum.any?(&(&1 in legacy_keys))
+
+    if is_legacy do
+      # Migrate flat shape: apply to all known sets
+      flat = atomize_pref_values(raw)
+      ["fluentui", "fontawesome", "heroicons", "lucide", "tabler"]
+      |> Enum.map(fn set -> {set, flat} end)
+      |> Map.new()
+    else
+      # New shape: %{set => prefs}
+      Map.new(raw, fn {set, prefs} -> {set, atomize_pref_values(prefs)} end)
+    end
+  end
+  defp parse_platform_prefs(_), do: %{}
+
+  defp atomize_pref_values(prefs) when is_map(prefs) do
+    Map.new(prefs, fn {k, v} ->
+      key = if is_binary(k), do: String.to_existing_atom(k), else: k
+      val = if is_binary(v), do: v == "true", else: v
+      {key, val}
+    end)
+  end
+  defp atomize_pref_values(_), do: %{}
 
   defp maybe_add_list(params, _key, []), do: params
   defp maybe_add_list(params, key, list) do
@@ -702,7 +776,10 @@ defmodule PureAdminIconsWeb.IconSearchLive do
 
             <!-- Preview Presets & Custom Color -->
             <div class="mb-4" id={"color-picker-#{@icon.icon_id}"} phx-hook="ColorPicker"
-                 data-update-trigger={:erlang.phash2(@platform_prefs)}>
+                 data-update-trigger={:erlang.phash2(@platform_prefs)}
+                 data-presets={Jason.encode!(preview_presets())}
+                 data-color-method={@icon.style_color_method || "fill"}
+                 data-icon-set={@icon.icon_set_code}>
               <%= if @icon.style_color_method == "multicolor" do %>
                 <div class="flex items-center gap-3">
                   <label class="text-sm font-medium text-base-content">Preview:</label>
@@ -711,23 +788,55 @@ defmodule PureAdminIconsWeb.IconSearchLive do
               <% else %>
                 <div class="flex flex-wrap items-center gap-2 mb-2">
                   <label class="text-sm font-medium text-base-content">Preview:</label>
-                  <button type="button" data-preset="classic-light" class="preview-preset px-2.5 py-1 rounded text-xs font-medium cursor-pointer border border-base-300 hover:scale-105 transition-transform bg-white text-gray-800">Classic Light</button>
-                  <button type="button" data-preset="classic-dark" class="preview-preset px-2.5 py-1 rounded text-xs font-medium cursor-pointer border border-base-300 hover:scale-105 transition-transform bg-gray-800 text-white">Classic Dark</button>
-                  <button type="button" data-preset="neon-dark" class="preview-preset px-2.5 py-1 rounded text-xs font-medium cursor-pointer border border-base-300 hover:scale-105 transition-transform bg-black text-green-400">Neon Dark</button>
-                  <button type="button" data-preset="blueprint" class="preview-preset px-2.5 py-1 rounded text-xs font-medium cursor-pointer border border-base-300 hover:scale-105 transition-transform bg-blue-900 text-blue-200">Blueprint</button>
-                  <button type="button" data-preset="warm" class="preview-preset px-2.5 py-1 rounded text-xs font-medium cursor-pointer border border-base-300 hover:scale-105 transition-transform bg-amber-50 text-amber-800">Warm</button>
-                  <button type="button" data-preset="checker" class="preview-preset px-2.5 py-1 rounded text-xs font-medium cursor-pointer border border-base-300 hover:scale-105 transition-transform text-gray-600" style="background-image: repeating-conic-gradient(#e5e7eb 0% 25%, #fff 0% 50%); background-size: 8px 8px;">Transparent</button>
+                  <div class="preview-preset-active inline-flex items-center gap-2"><!-- active preset rendered here by JS --></div>
+                  <button type="button" class="preview-preset-toggle px-3 py-1.5 rounded text-sm font-medium cursor-pointer border border-base-300 hover:bg-base-200">More ▾</button>
+                  <button type="button" class="preview-copy-css px-3 py-1.5 rounded text-sm font-medium cursor-pointer border border-base-300 hover:bg-base-200 inline-flex items-center gap-1.5" title="Copy CSS to use these colors in your project">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                    Copy CSS
+                  </button>
                 </div>
-                <div class="flex items-center gap-3">
-                  <label class="text-sm text-base-content/70">Custom:</label>
-                  <input type="color" value="#212121"
-                         class="color-input w-8 h-8 rounded cursor-pointer border border-base-300" />
-                  <input type="text" value="#212121"
-                         class="color-text w-20 px-2 py-1 text-xs font-mono border border-base-300 rounded"
-                         maxlength="7" placeholder="#000000" />
-                  <span class={["text-xs px-2 py-0.5 rounded", color_method_class(@icon.style_color_method)]}>
-                    <%= color_method_label(@icon.style_color_method) %>
-                  </span>
+                <div class="preview-preset-list flex flex-wrap items-center gap-2 mb-2" style="display: none;">
+                  <%= for preset <- preview_presets() do %>
+                    <button
+                      type="button"
+                      data-preset={preset["key"]}
+                      class="preview-preset px-2.5 py-1 rounded text-xs font-medium cursor-pointer border border-base-300 hover:scale-105 transition-transform"
+                      style={preset_button_style(preset)}
+                    ><%= preset["label"] %></button>
+                  <% end %>
+                  <div class="custom-presets-container contents"></div>
+                </div>
+                <div class="preview-custom-area space-y-2 p-3 rounded-lg bg-base-200/50 border border-base-300">
+                  <div class="flex flex-wrap items-center gap-3">
+                    <label class="text-sm text-base-content/70 font-medium">Custom:</label>
+                    <div class="flex items-center gap-2">
+                      <span class="text-xs text-base-content/50">Icon</span>
+                      <input type="color" value="#212121"
+                             class="color-input w-8 h-8 rounded cursor-pointer border border-base-300" />
+                      <input type="text" value="#212121"
+                             class="color-text w-20 px-2 py-1 text-xs font-mono border border-base-300 rounded"
+                             maxlength="7" placeholder="#000000" />
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <span class="text-xs text-base-content/50">Bg</span>
+                      <input type="color" value="#ffffff"
+                             class="bg-color-input w-8 h-8 rounded cursor-pointer border border-base-300" />
+                      <input type="text" value="#ffffff"
+                             class="bg-color-text w-20 px-2 py-1 text-xs font-mono border border-base-300 rounded"
+                             maxlength="7" placeholder="#ffffff" />
+                    </div>
+                    <span class={["text-xs px-2 py-0.5 rounded", color_method_class(@icon.style_color_method)]}>
+                      <%= color_method_label(@icon.style_color_method) %>
+                    </span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <input type="text"
+                           class="custom-preset-name w-40 px-2 py-1 text-xs border border-base-300 rounded"
+                           placeholder="Name your preset..." maxlength="20" />
+                    <button type="button" class="custom-preset-save px-3 py-1 rounded text-xs font-medium cursor-pointer bg-primary text-primary-content hover:opacity-80">
+                      Save as preset
+                    </button>
+                  </div>
                 </div>
               <% end %>
             </div>
@@ -847,6 +956,31 @@ defmodule PureAdminIconsWeb.IconSearchLive do
                   <.platform_icon name="filename" class="w-4 h-4 text-base-content/70" />
                   <span class="text-sm text-base-content/70">Filename</span>
                 </label>
+                <% {cssclass_pkg, _} = cssclass_package(@icon) %>
+                <%= if cssclass_pkg do %>
+                  <label class="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={@platform_prefs.cssclass}
+                      phx-click="toggle_platform"
+                      phx-value-platform="cssclass"
+                      class="w-4 h-4 rounded border-base-300 focus:ring-primary"
+                    />
+                    <.platform_icon name="cssclass" class="w-4 h-4 text-base-content/70" />
+                    <span class="text-sm text-base-content/70">CSS Class</span>
+                  </label>
+                  <label class="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={@platform_prefs.htmltag}
+                      phx-click="toggle_platform"
+                      phx-value-platform="htmltag"
+                      class="w-4 h-4 rounded border-base-300 focus:ring-primary"
+                    />
+                    <.platform_icon name="htmltag" class="w-4 h-4 text-base-content/70" />
+                    <span class="text-sm text-base-content/70">HTML Tag</span>
+                  </label>
+                <% end %>
               </div>
 
               <!-- iOS -->
@@ -984,6 +1118,60 @@ defmodule PureAdminIconsWeb.IconSearchLive do
                     <% end %>
                   </div>
                 </div>
+              <% end %>
+
+              <!-- CSS Class -->
+              <%= if @platform_prefs.cssclass do %>
+                <% {cssclass_pkg_name, cssclass_pkg_url} = cssclass_package(@icon) %>
+                <%= if cssclass_pkg_name do %>
+                  <div class="bg-base-100 rounded-lg p-4">
+                    <div class="flex items-center justify-between mb-2">
+                      <span class="text-sm font-medium text-base-content/70 flex items-center gap-1.5">
+                        <.platform_icon name="cssclass" class="w-4 h-4" />
+                        CSS Class (<%= if cssclass_pkg_url do %><a href={cssclass_pkg_url} target="_blank" rel="noreferrer" class="text-primary hover:underline"><%= cssclass_pkg_name %></a><% else %><%= cssclass_pkg_name %><% end %>)
+                      </span>
+                    </div>
+                    <div class="space-y-1">
+                      <%= for size <- cssclass_identifier_sizes(@icon) do %>
+                        <div class="flex items-center justify-between bg-base-200 rounded px-3 py-2 border border-base-300">
+                          <code id={"cssclass-#{@icon.icon_id}-#{size}"} class="text-sm text-pink-600"><%= cssclass_identifier(@icon, size) %></code>
+                          <button
+                            type="button"
+                            phx-click={JS.dispatch("phx:copy", to: "#cssclass-#{@icon.icon_id}-#{size}")}
+                            class="text-xs text-base-content/70 hover:text-base-content px-2 py-1 rounded hover:bg-base-200"
+                          >Copy</button>
+                        </div>
+                      <% end %>
+                    </div>
+                  </div>
+                <% end %>
+              <% end %>
+
+              <!-- HTML Tag -->
+              <%= if @platform_prefs.htmltag do %>
+                <% {htmltag_pkg_name, htmltag_pkg_url} = htmltag_package(@icon) %>
+                <%= if htmltag_pkg_name do %>
+                  <div class="bg-base-100 rounded-lg p-4">
+                    <div class="flex items-center justify-between mb-2">
+                      <span class="text-sm font-medium text-base-content/70 flex items-center gap-1.5">
+                        <.platform_icon name="htmltag" class="w-4 h-4" />
+                        HTML Tag (<%= if htmltag_pkg_url do %><a href={htmltag_pkg_url} target="_blank" rel="noreferrer" class="text-primary hover:underline"><%= htmltag_pkg_name %></a><% else %><%= htmltag_pkg_name %><% end %>)
+                      </span>
+                    </div>
+                    <div class="space-y-1">
+                      <%= for size <- htmltag_identifier_sizes(@icon) do %>
+                        <div class="flex items-center justify-between bg-base-200 rounded px-3 py-2 border border-base-300">
+                          <code id={"htmltag-#{@icon.icon_id}-#{size}"} class="text-sm text-fuchsia-600"><%= htmltag_identifier(@icon, size) %></code>
+                          <button
+                            type="button"
+                            phx-click={JS.dispatch("phx:copy", to: "#htmltag-#{@icon.icon_id}-#{size}")}
+                            class="text-xs text-base-content/70 hover:text-base-content px-2 py-1 rounded hover:bg-base-200"
+                          >Copy</button>
+                        </div>
+                      <% end %>
+                    </div>
+                  </div>
+                <% end %>
               <% end %>
 
               <!-- Filename -->
@@ -1227,7 +1415,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
 
   # Get the first N enabled platforms from user preferences
   defp preferred_platforms(prefs, count) do
-    [:ios, :android, :react, :vue, :svelte, :filename]
+    [:ios, :android, :react, :vue, :svelte, :cssclass, :htmltag, :filename]
     |> Enum.filter(&Map.get(prefs, &1, false))
     |> Enum.take(count)
   end
@@ -1237,6 +1425,8 @@ defmodule PureAdminIconsWeb.IconSearchLive do
   defp platform_color(:react), do: "text-cyan-600"
   defp platform_color(:vue), do: "text-emerald-600"
   defp platform_color(:svelte), do: "text-orange-600"
+  defp platform_color(:cssclass), do: "text-pink-600"
+  defp platform_color(:htmltag), do: "text-fuchsia-600"
   defp platform_color(:filename), do: "text-base-content/70"
   defp platform_color(_), do: "text-base-content/70"
 
@@ -1245,6 +1435,8 @@ defmodule PureAdminIconsWeb.IconSearchLive do
   defp get_platform_id(icon, :react), do: react_identifier(icon, default_size(icon.sizes))
   defp get_platform_id(icon, :vue), do: vue_identifier(icon, default_size(icon.sizes))
   defp get_platform_id(icon, :svelte), do: svelte_identifier(icon, default_size(icon.sizes))
+  defp get_platform_id(icon, :cssclass), do: cssclass_identifier(icon, default_size(icon.sizes))
+  defp get_platform_id(icon, :htmltag), do: htmltag_identifier(icon, default_size(icon.sizes))
   defp get_platform_id(icon, :filename), do: Icon.svg_filename(icon, default_size(icon.sizes))
   defp get_platform_id(_, _), do: "N/A"
 
@@ -1257,12 +1449,18 @@ defmodule PureAdminIconsWeb.IconSearchLive do
       filename: filename,
       name: icon.name,
       style: icon.style_code,
-      size: size
+      size: size,
+      icon_id: icon.icon_id
     }
   end
 
   defp copy_detail(icon, platform, size) do
-    %{text: get_platform_id_for_size(icon, platform, size)}
+    %{
+      text: get_platform_id_for_size(icon, platform, size),
+      platform: to_string(platform),
+      size: size,
+      icon_id: icon.icon_id
+    }
   end
 
   defp get_platform_id_for_size(icon, :ios, size) do
@@ -1274,6 +1472,8 @@ defmodule PureAdminIconsWeb.IconSearchLive do
   defp get_platform_id_for_size(icon, :react, size), do: react_identifier(icon, size)
   defp get_platform_id_for_size(icon, :vue, size), do: vue_identifier(icon, size)
   defp get_platform_id_for_size(icon, :svelte, size), do: svelte_identifier(icon, size)
+  defp get_platform_id_for_size(icon, :cssclass, size), do: cssclass_identifier(icon, size)
+  defp get_platform_id_for_size(icon, :htmltag, size), do: htmltag_identifier(icon, size)
   defp get_platform_id_for_size(icon, :filename, size), do: Icon.svg_filename(icon, size)
   defp get_platform_id_for_size(_, _, _), do: "N/A"
 
@@ -1370,6 +1570,35 @@ defmodule PureAdminIconsWeb.IconSearchLive do
     "<#{name} />"
   end
 
+  # CSS class identifiers — raw class string only, for use in config/JSON/menu definitions
+  defp cssclass_identifier(%{icon_set_code: "fontawesome"} = icon, _size) do
+    kebab = icon.name |> String.downcase() |> String.replace(" ", "-")
+    style_prefix =
+      case icon.style_code do
+        "solid" -> "fa-solid"
+        "regular" -> "fa-regular"
+        "brands" -> "fa-brands"
+        _ -> "fa-solid"
+      end
+    "#{style_prefix} fa-#{kebab}"
+  end
+
+  defp cssclass_identifier(%{icon_set_code: "tabler"} = icon, _size) do
+    kebab = icon.name |> String.downcase() |> String.replace(" ", "-")
+    suffix = if icon.style_code == "filled", do: "-filled", else: ""
+    "ti ti-#{kebab}#{suffix}"
+  end
+
+  defp cssclass_identifier(_icon, _size), do: nil
+
+  # HTML tag identifiers — full <i> element, ready to paste into HTML/JSX
+  defp htmltag_identifier(icon, size) do
+    case cssclass_identifier(icon, size) do
+      nil -> nil
+      class -> ~s(<i class="#{class}"></i>)
+    end
+  end
+
   # Package name helpers
   defp react_package(%{icon_set_code: "fluentui"}), do: {"@fluentui/react-icons", "https://www.npmjs.com/package/@fluentui/react-icons"}
   defp react_package(%{icon_set_code: "lucide"}), do: {"lucide-react", "https://www.npmjs.com/package/lucide-react"}
@@ -1393,6 +1622,14 @@ defmodule PureAdminIconsWeb.IconSearchLive do
   defp vue_package(%{icon_set_code: "fontawesome"}), do: {"@fortawesome/vue-fontawesome", "https://www.npmjs.com/package/@fortawesome/vue-fontawesome"}
   defp vue_package(_), do: {nil, nil}
 
+  # CSS class packages — only icon sets with web font / CSS class APIs
+  defp cssclass_package(%{icon_set_code: "fontawesome"}), do: {"@fortawesome/fontawesome-free", "https://www.npmjs.com/package/@fortawesome/fontawesome-free"}
+  defp cssclass_package(%{icon_set_code: "tabler"}), do: {"@tabler/icons-webfont", "https://www.npmjs.com/package/@tabler/icons-webfont"}
+  defp cssclass_package(_), do: {nil, nil}
+
+  # HTML tag follows same availability as CSS class
+  defp htmltag_package(icon), do: cssclass_package(icon)
+
   # For React: FluentUI and Heroicons vary by size, others show single row
   defp react_identifier_sizes(%{icon_set_code: "fluentui"} = icon), do: icon.sizes
   defp react_identifier_sizes(%{icon_set_code: "heroicons"} = icon), do: icon.sizes
@@ -1405,6 +1642,10 @@ defmodule PureAdminIconsWeb.IconSearchLive do
   # For Svelte: only FluentUI varies by size
   defp svelte_identifier_sizes(%{icon_set_code: "fluentui"} = icon), do: icon.sizes
   defp svelte_identifier_sizes(icon), do: [List.first(icon.sizes) || 24]
+
+  # CSS classes don't vary by size — single row
+  defp cssclass_identifier_sizes(icon), do: [List.first(icon.sizes) || 24]
+  defp htmltag_identifier_sizes(icon), do: [List.first(icon.sizes) || 24]
 
   # Color method display helpers
   defp color_method_label("fill"), do: "CSS: fill / color"

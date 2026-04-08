@@ -57,6 +57,22 @@ defmodule PureAdminIconsWeb.Components.PlatformIcons do
     """
   end
 
+  def platform_icon(%{name: "cssclass"} = assigns) do
+    ~H"""
+    <svg class={@class} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M2 4h20v16H2V4zm2 2v12h16V6H4zm2 2h2v2H6V8zm4 0h8v2h-8V8zm-4 4h2v2H6v-2zm4 0h8v2h-8v-2z"/>
+    </svg>
+    """
+  end
+
+  def platform_icon(%{name: "htmltag"} = assigns) do
+    ~H"""
+    <svg class={@class} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0L19.2 12l-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/>
+    </svg>
+    """
+  end
+
   def platform_icon(%{name: "filename"} = assigns) do
     ~H"""
     <svg class={@class} viewBox="0 0 20 20" fill="currentColor">

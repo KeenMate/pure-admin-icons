@@ -44,7 +44,22 @@ curl 'https://icons.pureadmin.io/api/icons/search?q=pen&format=text'
 - `POST /api/maintenance/:task` — sync, clean, cube (requires X-API-Key)
 - `POST /api/maintenance/sync/:icon_set` — sync a specific icon set
 
-**Docs:** [icons.pureadmin.io/docs/api](https://icons.pureadmin.io/docs/api)
+**Docs:** [icons.pureadmin.io/docs/api](https://icons.pureadmin.io/docs/api) · [llms.txt](https://icons.pureadmin.io/llms.txt)
+
+## MCP Server (for Claude Desktop / Claude Code)
+
+```json
+{
+  "mcpServers": {
+    "icons": {
+      "command": "npx",
+      "args": ["-y", "@keenmate/pure-admin-icons-mcp"]
+    }
+  }
+}
+```
+
+Provides 5 tools: `get_usage_guide`, `search_icons`, `get_icon_detail`, `get_icon_svg`, `list_icon_sets`. Source: [`../pure-admin-icons-mcp`](../pure-admin-icons-mcp).
 
 ## Stack
 

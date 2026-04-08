@@ -136,36 +136,50 @@ Hooks.PlatformPrefs = {
 
 // ColorPicker hook — modal icon color preview with presets
 Hooks.ColorPicker = {
-  presets: {
-    'classic-light': { color: '#212121', bg: '#ffffff' },
-    'classic-dark': { color: '#ffffff', bg: '#1f2937' },
-    'neon-dark': { color: '#4ade80', bg: '#000000' },
-    'blueprint': { color: '#bfdbfe', bg: '#1e3a5f' },
-    'warm': { color: '#92400e', bg: '#fffbeb' },
-    'checker': { color: '#374151', bg: 'checker' }
+  loadBuiltinPresets() {
+    try {
+      const arr = JSON.parse(this.el.dataset.presets || '[]')
+      const map = {}
+      for (const p of arr) {
+        map[p.key] = { color: p.color, bg: p.bg, label: p.label }
+      }
+      return map
+    } catch { return {} }
+  },
+  loadCustomPresets() {
+    try { return JSON.parse(localStorage.getItem('icon_custom_presets') || '{}') } catch { return {} }
+  },
+  saveCustomPresets(presets) {
+    localStorage.setItem('icon_custom_presets', JSON.stringify(presets))
+  },
+  allPresets() {
+    return { ...this.loadBuiltinPresets(), ...this.loadCustomPresets() }
   },
   mounted() {
     this.colorInput = this.el.querySelector('.color-input')
     this.textInput = this.el.querySelector('.color-text')
+    this.bgColorInput = this.el.querySelector('.bg-color-input')
+    this.bgColorText = this.el.querySelector('.bg-color-text')
+    this.renderCustomPresets()
+    this.bindPresetButtons()
     this.applySaved()
 
-    // Preset buttons
-    this.el.querySelectorAll('.preview-preset').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const preset = this.presets[btn.dataset.preset]
-        if (!preset) return
-        localStorage.setItem('icon_preview_color', preset.color)
-        localStorage.setItem('icon_preview_bg', JSON.stringify(preset.bg))
-        localStorage.setItem('icon_preview_preset', btn.dataset.preset)
-        if (this.colorInput) this.colorInput.value = preset.color
-        if (this.textInput) this.textInput.value = preset.color
-        this.applyBg(preset.bg)
-        this.updateSvgColors(preset.color)
-        this.highlightPreset(btn.dataset.preset)
+    // Toggle button (More / Less)
+    const toggleBtn = this.el.querySelector('.preview-preset-toggle')
+    if (toggleBtn) {
+      toggleBtn.addEventListener('click', () => {
+        const list = this.el.querySelector('.preview-preset-list')
+        if (!list) return
+        const isExpanded = list.dataset.expanded === 'true'
+        if (isExpanded) {
+          this.collapsePresets()
+        } else {
+          this.expandPresets()
+        }
       })
-    })
+    }
 
-    // Custom color inputs
+    // Custom icon color inputs
     if (this.colorInput) {
       this.colorInput.addEventListener('input', (e) => {
         if (this.textInput) this.textInput.value = e.target.value
@@ -186,10 +200,149 @@ Hooks.ColorPicker = {
         }
       })
     }
+
+    // Custom background color inputs
+    if (this.bgColorInput) {
+      this.bgColorInput.addEventListener('input', (e) => {
+        if (this.bgColorText) this.bgColorText.value = e.target.value
+        localStorage.setItem('icon_preview_bg', JSON.stringify(e.target.value))
+        localStorage.removeItem('icon_preview_preset')
+        this.highlightPreset(null)
+        this.applyBg(e.target.value)
+      })
+    }
+    if (this.bgColorText) {
+      this.bgColorText.addEventListener('input', (e) => {
+        let bg = e.target.value
+        if (bg && !bg.startsWith('#')) { bg = '#' + bg; this.bgColorText.value = bg }
+        if (/^#[0-9A-Fa-f]{6}$/.test(bg)) {
+          if (this.bgColorInput) this.bgColorInput.value = bg
+          localStorage.setItem('icon_preview_bg', JSON.stringify(bg))
+          localStorage.removeItem('icon_preview_preset')
+          this.highlightPreset(null)
+          this.applyBg(bg)
+        }
+      })
+    }
+
+    // Copy CSS button
+    const copyCssBtn = this.el.querySelector('.preview-copy-css')
+    if (copyCssBtn) {
+      copyCssBtn.addEventListener('click', () => {
+        const css = this.generateCss()
+        navigator.clipboard.writeText(css).then(() => {
+          const orig = copyCssBtn.innerHTML
+          copyCssBtn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg> Copied!'
+          setTimeout(() => { copyCssBtn.innerHTML = orig }, 1500)
+        })
+      })
+    }
+
+    // Save as preset
+    const saveBtn = this.el.querySelector('.custom-preset-save')
+    const nameInput = this.el.querySelector('.custom-preset-name')
+    if (saveBtn && nameInput) {
+      saveBtn.addEventListener('click', () => {
+        const name = nameInput.value.trim()
+        if (!name) {
+          nameInput.focus()
+          return
+        }
+        const key = 'custom-' + name.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+        const color = this.colorInput ? this.colorInput.value : '#212121'
+        const bg = this.bgColorInput ? this.bgColorInput.value : '#ffffff'
+        const presets = this.loadCustomPresets()
+        presets[key] = { color, bg, label: name }
+        this.saveCustomPresets(presets)
+        nameInput.value = ''
+        this.renderCustomPresets()
+        this.bindPresetButtons()
+        // Activate the newly saved preset
+        localStorage.setItem('icon_preview_preset', key)
+        this.highlightPreset(key)
+        this.expandPresets()
+      })
+    }
+  },
+  renderCustomPresets() {
+    const container = this.el.querySelector('.custom-presets-container')
+    if (!container) return
+    container.innerHTML = ''
+    const customs = this.loadCustomPresets()
+    Object.entries(customs).forEach(([key, preset]) => {
+      // Wrapper acts as the preset button
+      const wrap = document.createElement('button')
+      wrap.type = 'button'
+      wrap.dataset.preset = key
+      wrap.className = 'preview-preset inline-flex items-center rounded text-xs font-medium cursor-pointer border border-base-300 hover:scale-105 transition-transform overflow-hidden'
+
+      // Colored label part (uses user's custom colors)
+      const label = document.createElement('span')
+      label.className = 'px-2.5 py-1'
+      label.style.backgroundColor = preset.bg
+      label.style.color = preset.color
+      label.textContent = preset.label || key
+      wrap.appendChild(label)
+
+      // X delete button (uses theme colors)
+      const del = document.createElement('span')
+      del.textContent = '×'
+      del.className = 'px-1.5 py-1 bg-base-300 text-base-content/70 hover:bg-error hover:text-error-content text-base leading-none border-l border-base-300'
+      del.title = 'Delete preset'
+      del.addEventListener('click', (e) => {
+        e.stopPropagation()
+        const presets = this.loadCustomPresets()
+        delete presets[key]
+        this.saveCustomPresets(presets)
+        if (localStorage.getItem('icon_preview_preset') === key) {
+          localStorage.removeItem('icon_preview_preset')
+        }
+        this.renderCustomPresets()
+        this.bindPresetButtons()
+      })
+      wrap.appendChild(del)
+
+      container.appendChild(wrap)
+    })
+  },
+  bindPresetButtons() {
+    this.el.querySelectorAll('.preview-preset').forEach(btn => {
+      if (btn.dataset.bound === 'true') return
+      btn.dataset.bound = 'true'
+      btn.addEventListener('click', () => {
+        const preset = this.allPresets()[btn.dataset.preset]
+        if (!preset) return
+        localStorage.setItem('icon_preview_color', preset.color)
+        localStorage.setItem('icon_preview_bg', JSON.stringify(preset.bg))
+        localStorage.setItem('icon_preview_preset', btn.dataset.preset)
+        if (this.colorInput) this.colorInput.value = preset.color
+        if (this.textInput) this.textInput.value = preset.color
+        if (this.bgColorInput && preset.bg !== 'checker') this.bgColorInput.value = preset.bg
+        if (this.bgColorText && preset.bg !== 'checker') this.bgColorText.value = preset.bg
+        // If this is a custom preset, populate the name input so Save updates it instead of duplicating
+        const customs = this.loadCustomPresets()
+        const nameInput = this.el.querySelector('.custom-preset-name')
+        if (nameInput) {
+          if (customs[btn.dataset.preset]) {
+            nameInput.value = preset.label || ''
+          } else {
+            nameInput.value = ''
+          }
+        }
+        this.applyBg(preset.bg)
+        this.updateSvgColors(preset.color)
+        this.highlightPreset(btn.dataset.preset)
+        this.renderActivePreset()
+      })
+    })
   },
   updated() {
     this.colorInput = this.el.querySelector('.color-input')
     this.textInput = this.el.querySelector('.color-text')
+    this.bgColorInput = this.el.querySelector('.bg-color-input')
+    this.bgColorText = this.el.querySelector('.bg-color-text')
+    this.renderCustomPresets()
+    this.bindPresetButtons()
     this.applySaved()
   },
   applySaved() {
@@ -200,11 +353,73 @@ Hooks.ColorPicker = {
     requestAnimationFrame(() => {
       if (this.colorInput) this.colorInput.value = savedColor
       if (this.textInput) this.textInput.value = savedColor
+      if (this.bgColorInput && savedBg !== 'checker') this.bgColorInput.value = savedBg
+      if (this.bgColorText && savedBg !== 'checker') this.bgColorText.value = savedBg
       this.applyBg(savedBg)
       this.highlightPreset(savedPreset)
+      this.renderActivePreset()
+      this.collapsePresets()
     })
   },
+  collapsePresets() {
+    const list = this.el.querySelector('.preview-preset-list')
+    const toggle = this.el.querySelector('.preview-preset-toggle')
+    const customArea = this.el.querySelector('.preview-custom-area')
+    if (list) {
+      list.dataset.expanded = 'false'
+      list.style.display = 'none'
+    }
+    if (toggle) toggle.textContent = 'More ▾'
+    if (customArea) customArea.style.display = 'none'
+  },
+  expandPresets() {
+    const list = this.el.querySelector('.preview-preset-list')
+    const toggle = this.el.querySelector('.preview-preset-toggle')
+    const customArea = this.el.querySelector('.preview-custom-area')
+    if (list) {
+      list.dataset.expanded = 'true'
+      list.style.display = ''
+    }
+    if (toggle) toggle.textContent = 'Less ▴'
+    if (customArea) customArea.style.display = ''
+  },
+  renderActivePreset() {
+    const container = this.el.querySelector('.preview-preset-active')
+    if (!container) return
+    container.innerHTML = ''
+    const activeKey = localStorage.getItem('icon_preview_preset')
+    const all = this.allPresets()
+    const preset = activeKey ? all[activeKey] : null
+
+    if (!preset) {
+      const span = document.createElement('span')
+      span.className = 'text-xs text-base-content/50 italic'
+      span.textContent = 'Custom'
+      container.appendChild(span)
+      return
+    }
+
+    // Find the matching button in the list (built-in or custom) and clone its style
+    const sourceBtn = this.el.querySelector(`.preview-preset-list .preview-preset[data-preset="${activeKey}"]`)
+    const clone = document.createElement('div')
+    clone.className = 'inline-flex items-center rounded text-xs font-medium border border-primary overflow-hidden ring-2 ring-primary ring-offset-1'
+
+    const label = document.createElement('span')
+    label.className = 'px-2.5 py-1'
+    if (preset.bg === 'checker') {
+      label.style.backgroundImage = 'repeating-conic-gradient(#e5e7eb 0% 25%, #fff 0% 50%)'
+      label.style.backgroundSize = '8px 8px'
+      label.style.color = preset.color
+    } else {
+      label.style.backgroundColor = preset.bg
+      label.style.color = preset.color
+    }
+    label.textContent = (preset.label || sourceBtn?.textContent?.replace('×', '').trim() || activeKey)
+    clone.appendChild(label)
+    container.appendChild(clone)
+  },
   applyBg(bg) {
+    // Modal preview boxes
     document.querySelectorAll('.svg-container').forEach(c => {
       c.style.removeProperty('background-image')
       c.style.removeProperty('background-size')
@@ -217,6 +432,81 @@ Hooks.ColorPicker = {
         c.style.backgroundColor = bg
       }
     })
+    // Grid / list icon wrappers
+    document.querySelectorAll('.icon-preview-bg').forEach(el => {
+      el.style.removeProperty('background-image')
+      el.style.removeProperty('background-size')
+      if (bg === 'checker') {
+        el.style.backgroundImage = 'repeating-conic-gradient(#d1d5db 0% 25%, #fff 0% 50%)'
+        el.style.backgroundSize = '8px 8px'
+        el.style.backgroundColor = ''
+      } else {
+        el.style.backgroundColor = bg
+      }
+    })
+  },
+  generateCss() {
+    const color = localStorage.getItem('icon_preview_color') || '#212121'
+    let bg = '#ffffff'
+    try { bg = JSON.parse(localStorage.getItem('icon_preview_bg') || '"#ffffff"') } catch { bg = localStorage.getItem('icon_preview_bg') || '#ffffff' }
+    const colorMethod = this.el.dataset.colorMethod || 'fill'
+    const iconSet = this.el.dataset.iconSet || ''
+    const presetKey = localStorage.getItem('icon_preview_preset')
+    const presetLabel = presetKey ? (this.allPresets()[presetKey]?.label || presetKey) : 'Custom'
+
+    // CSS class derived from preset key (already kebab-case lowercase) or 'custom'
+    const cssClass = presetKey ? presetKey.toLowerCase().replace(/[^a-z0-9]+/g, '-') : 'custom'
+
+    // Pick selector strategy based on icon set
+    // - Font Awesome: scope existing FA classes with the preset class
+    // - Tabler webfont: scope existing ti class with the preset class
+    // - SVG sets (Lucide, Heroicons, FluentUI): targets svg.{cssClass} directly
+    let selector, usage
+    if (iconSet === 'fontawesome') {
+      selector = `i.${cssClass}.fa-solid, i.${cssClass}.fa-regular, i.${cssClass}.fa-brands`
+      usage = `<i class="${cssClass} fa-solid fa-arrow-right"></i>`
+    } else if (iconSet === 'tabler') {
+      selector = `i.${cssClass}.ti`
+      usage = `<i class="${cssClass} ti ti-arrow-right"></i>`
+    } else {
+      selector = `svg.${cssClass}`
+      usage = `<Calendar className="${cssClass}" />  /* React */\n   <Calendar class="${cssClass}" />     /* Vue/Svelte */\n   <svg class="${cssClass}">...</svg>   /* Plain HTML */`
+    }
+
+    const lines = [
+      `/* Icon preview — ${presetLabel} (${iconSet || 'icon'}) */`,
+      `/* Color method: ${colorMethod} */`,
+      ``,
+      `${selector} {`,
+    ]
+
+    if (bg === 'checker') {
+      lines.push(
+        `  background-image: repeating-conic-gradient(#d1d5db 0% 25%, #fff 0% 50%);`,
+        `  background-size: 12px 12px;`
+      )
+    } else {
+      lines.push(`  background-color: ${bg};`)
+    }
+
+    if (colorMethod === 'multicolor') {
+      lines.push(`  /* Multicolor icon — colors come from the icon itself */`)
+    } else if (colorMethod === 'stroke') {
+      lines.push(
+        `  color: ${color};`,
+        `  stroke: currentColor;`,
+        `  fill: none;`
+      )
+    } else {
+      lines.push(
+        `  color: ${color};`,
+        `  fill: currentColor;`
+      )
+    }
+
+    lines.push(`}`, ``, `/* Usage: */`, `/* ${usage} */`)
+
+    return lines.join('\n')
   },
   highlightPreset(active) {
     this.el.querySelectorAll('.preview-preset').forEach(btn => {
@@ -377,7 +667,7 @@ Hooks.FilenameTemplate = {
 
 // Copy text handler
 window.addEventListener("phx:copy_text", (event) => {
-  let { text, platform, filename, name, style, size } = event.detail
+  let { text, platform, filename, name, style, size, icon_id } = event.detail
   // For filename platform, apply the saved template
   if (platform === 'filename' && filename) {
     const template = localStorage.getItem('filename_template') || '{filename}'
@@ -414,6 +704,13 @@ window.addEventListener("phx:copy_text", (event) => {
         document.body.appendChild(tip)
         setTimeout(() => tip.remove(), 1200)
       }
+      // Track copy on server
+      if (icon_id && platform) {
+        const metricsEl = document.getElementById('metrics-tracker')
+        if (metricsEl && metricsEl._pushEvent) {
+          metricsEl._pushEvent("track_copy", { "icon-id": String(icon_id), platform, size: String(size || '') })
+        }
+      }
     }).catch(err => console.error('Failed to copy:', err))
   }
 })
@@ -431,6 +728,18 @@ window.addEventListener("phx:copy", (event) => {
         const orig = button.textContent
         button.textContent = "Copied!"
         setTimeout(() => button.textContent = orig, 1500)
+        // Track copy on server
+        const metricsEl = document.getElementById('metrics-tracker')
+        if (metricsEl && metricsEl._pushEvent && target.id) {
+          // target.id is like "ios-1234-24" or "react-1234-16"
+          const parts = target.id.split('-')
+          if (parts.length >= 3) {
+            const platform = parts[0]
+            const iconId = parts[1]
+            const size = parts[parts.length - 1]
+            metricsEl._pushEvent("track_copy", { "icon-id": iconId, platform, size })
+          }
+        }
       }).catch(err => console.error('Failed to copy:', err))
     }
   }

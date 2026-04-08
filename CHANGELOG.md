@@ -1,5 +1,65 @@
 # Changelog
 
+## 2026-04-08 — Per-set platform prefs, CSS class platform, preview presets, Copy CSS
+
+### Per-icon-set platform preferences
+- Platform toggle prefs (iOS, React, Vue, Svelte, etc.) are now stored **per icon set** in localStorage
+- Switching from FluentUI to Font Awesome remembers each set's separate selection
+- Migration: legacy flat shape is auto-applied to all sets on first load
+
+### CSS Class & HTML Tag platforms
+- New `cssclass` platform — bare class string (e.g., `fa-solid fa-arrow-right`) for menu configs, JSON, etc.
+- New `htmltag` platform — full `<i class="..."></i>` element ready to paste
+- Both only shown for Font Awesome and Tabler (icon sets with web font APIs)
+- Hidden for FluentUI, Heroicons, Lucide
+
+### Preview presets
+- 10 built-in color presets: Classic Light/Dark, Neon Dark, Blueprint, Warm, Transit, Transit Inv, Expressway, Road Sign, Transparent
+- Loaded from `priv/preview_presets.json` (single source of truth, shared between server and client)
+- Custom presets — user can save their own color combinations with custom names
+- Custom preset badges have a dedicated theme-colored × delete button
+- Active preset always visible next to "Preview:" label, others hidden behind "More ▾" toggle
+- Selecting a preset updates icon previews live across grid, list, and detail modal
+- Background color picker added (separate from icon color)
+
+### Copy CSS button
+- New "Copy CSS" button next to "More" — generates ready-to-paste CSS for the active preset
+- Icon-set-aware selectors:
+  - Font Awesome: `i.{preset}.fa-solid, ...`
+  - Tabler: `i.{preset}.ti`
+  - SVG sets (Lucide, Heroicons, FluentUI): `svg.{preset}`
+- Color-method aware: outputs `fill: currentColor` or `stroke: currentColor` based on each icon's actual color method
+- Includes usage example for each framework (React, Vue, Svelte, plain HTML)
+- CSS class name derived from preset key (e.g., "Neon Dark" → `neon-dark`)
+
+### Tracking fixes
+- Copy events now actually round-trip to the server (was JS-only, never written to `icon_metric`)
+- Both modal copy buttons and grid/list hover-to-copy buttons track to DB now
+
+### MCP server
+- New `@keenmate/pure-admin-icons-mcp` package (`../pure-admin-icons-mcp`)
+- 5 tools: `get_usage_guide`, `search_icons`, `get_icon_detail`, `get_icon_svg`, `list_icon_sets`
+
+### llms.txt
+- Rewritten to follow [llmstxt.org spec](https://llmstxt.org/) format
+
+---
+
+## 2026-04-08 — MCP server, llms.txt update
+
+### MCP server
+- New `@keenmate/pure-admin-icons-mcp` package (separate repo at `../pure-admin-icons-mcp`)
+- 5 tools: `get_usage_guide`, `search_icons`, `get_icon_detail`, `get_icon_svg`, `list_icon_sets`
+- Multi-set support, format options (text/json/compact), Vue platform identifiers
+- `get_usage_guide` tool (and `icons://docs` resource) returns the llms.txt content for AI clients
+
+### llms.txt
+- Rewritten to follow the [llmstxt.org spec](https://llmstxt.org/): H1 title, blockquote summary, bulleted markdown links
+- Updated content: 16,000+ icons, 5 sets, all current API endpoints, color methods, MCP server reference
+- Was: outdated FluentUI-only documentation
+
+---
+
 ## 2026-04-07 — API endpoints, docs, footer, SEO
 
 ### API

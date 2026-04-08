@@ -1,0 +1,62 @@
+[
+  {
+    "key": "classic-light",
+    "label": "Classic Light",
+    "color": "#212121",
+    "bg": "#ffffff"
+  },
+  {
+    "key": "classic-dark",
+    "label": "Classic Dark",
+    "color": "#ffffff",
+    "bg": "#1f2937"
+  },
+  {
+    "key": "neon-dark",
+    "label": "Neon Dark",
+    "color": "#4ade80",
+    "bg": "#000000"
+  },
+  {
+    "key": "blueprint",
+    "label": "Blueprint",
+    "color": "#bfdbfe",
+    "bg": "#1e3a5f"
+  },
+  {
+    "key": "warm",
+    "label": "Warm",
+    "color": "#92400e",
+    "bg": "#fffbeb"
+  },
+  {
+    "key": "transit-yellow",
+    "label": "Transit",
+    "color": "#000000",
+    "bg": "#fbbf24"
+  },
+  {
+    "key": "transit-yellow-inverse",
+    "label": "Transit Inv",
+    "color": "#fbbf24",
+    "bg": "#000000"
+  },
+  {
+    "key": "expressway-green",
+    "label": "Expressway",
+    "color": "#ffffff",
+    "bg": "#15803d"
+  },
+  {
+    "key": "road-blue",
+    "label": "Road Sign",
+    "color": "#ffffff",
+    "bg": "#1e40af"
+  },
+  {
+    "key": "checker",
+    "label": "Transparent",
+    "color": "#374151",
+    "bg": "checker"
+  }
+]

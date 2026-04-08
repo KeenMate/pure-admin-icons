@@ -1,26 +1,45 @@
-# FluentUI Icons Search API
+# icons.pureadmin.io
 
-This site provides access to Microsoft's FluentUI icon library.
+> Search engine for 16,000+ open-source SVG icons across 5 icon libraries (FluentUI, Font Awesome, Heroicons, Lucide, Tabler). Provides platform identifiers for iOS, Android, React, Vue, and Svelte, plus a free JSON API.
 
-## API Endpoint
-GET /api/icons/search
+The API is read-only and requires no authentication. Use `format=text` for token-efficient search results.
 
-## Parameters
-- q: Search query (required) - e.g., "pen", "calendar", "user"
-- size: Filter by size (optional) - 16, 20, 24, 28, 32, 48
-- style: Filter by style (optional) - "regular" or "filled"
-- limit: Max results (optional, default: 50, max: 100)
-- format: Response format (optional, default: "json")
-  - "json" - Full response with all icon metadata
-  - "compact" - Minimal JSON with name, style, url only
-  - "text" - Plain text, one icon per line (most token-efficient)
+## API
 
-## Example
-GET /api/icons/search?q=pen&format=text
+- [Search icons](https://icons.pureadmin.io/api/icons/search?q=calendar&format=text): `GET /api/icons/search` — query (q), filter by set, style, size; format options: json, compact, text
+- [Icon detail](https://icons.pureadmin.io/api/icons/5403): `GET /api/icons/:id` — full metadata including sizes, identifiers, color method, phrases, SVG URLs
+- [List icon sets](https://icons.pureadmin.io/api/icon-sets): `GET /api/icon-sets` — all sets with styles, sizes, color methods, license, count
+- [SVG file](https://icons.pureadmin.io/icons/heroicons/outline/calendar-24.svg): `GET /icons/:set/:style/:filename` — direct SVG file access (cached 1 year)
+- [Health check](https://icons.pureadmin.io/api/health): `GET /api/health`
 
-Response:
-Pen → regular: /icons/regular/ic_fluent_pen_24_regular.svg
-Pen → filled: /icons/filled/ic_fluent_pen_24_filled.svg
+## Icon Sets
 
-## Usage
-Icons can be used via SVG URL directly in HTML/Markdown.
+- [FluentUI System Icons](https://github.com/microsoft/fluentui-system-icons): code `fluentui`, ~5400 icons, styles regular/filled/color/light, sizes 16/20/24/28/32/48, MIT
+- [Font Awesome Free](https://fontawesome.com/): code `fontawesome`, ~2850 icons, styles solid/regular/brands, scalable (24px nominal), CC BY 4.0
+- [Heroicons](https://heroicons.com/): code `heroicons`, ~650 icons, styles outline/solid, sizes 16/20/24, MIT
+- [Lucide](https://lucide.dev/): code `lucide`, ~1500 icons, single style (regular), 24px stroke-based, ISC
+- [Tabler Icons](https://tabler.io/icons): code `tabler`, ~5300 icons, styles outline/filled, 24px, MIT
+
+## Workflow
+
+- Call search to find icons by concept (e.g., "calendar", "notification")
+- Pick an icon ID from results, call detail for full info including all sizes and platform identifiers
+- Use the svg_url from results to fetch the actual SVG markup
+
+## Color Methods
+
+Each icon's `style_color_method` field indicates how to set its color via CSS:
+
+- `fill` — set via `fill: currentColor` (FluentUI, Heroicons solid, Font Awesome, Tabler filled)
+- `stroke` — set via `stroke: currentColor` (Heroicons outline, Lucide, Tabler outline)
+- `multicolor` — not recolorable (FluentUI color style uses gradients)
+
+## MCP Server
+
+For Claude Desktop / Claude Code: `npx -y @keenmate/pure-admin-icons-mcp`
+
+## Documentation
+
+- [API docs](https://icons.pureadmin.io/docs/api): Full API reference with examples
+- [MCP docs](https://icons.pureadmin.io/docs/mcp): MCP server setup guide
+- [LLM docs](https://icons.pureadmin.io/docs/llms): AI/LLM integration tips
