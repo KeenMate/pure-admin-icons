@@ -629,7 +629,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
         <!-- Icon Display (Grid or List) - Both rendered, CSS controls visibility -->
         <div id="icon-display" phx-hook="IconColorFilter">
           <div class="view-grid">
-            <.icon_grid icons={@icons} selected_styles={@selected_styles} selected_sizes={@selected_sizes} selected_icon_sets={@selected_icon_sets} platform_prefs={@platform_prefs} />
+            <.icon_grid icons={@icons} selected_styles={@selected_styles} selected_sizes={@selected_sizes} selected_icon_sets={@selected_icon_sets} platform_prefs={@platform_prefs} available_styles={@available_styles} />
           </div>
           <div class="view-list">
             <.icon_list icons={@icons} platform_prefs={@platform_prefs} selected_sizes={@selected_sizes} available_sizes={@available_sizes} icon_list_size={@icon_list_size} />
@@ -1265,37 +1265,45 @@ defmodule PureAdminIconsWeb.IconSearchLive do
   end
 
   defp icon_grid(assigns) do
+    # Hide style badge if all icons in this result page share the same style
+    show_style_badge = assigns.icons |> Enum.map(& &1.style_code) |> Enum.uniq() |> length() > 1
+    assigns = assign(assigns, :show_style_badge, show_style_badge)
     ~H"""
     <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
       <%= for icon <- @icons do %>
         <div
           phx-click="select_icon"
           phx-value-id={icon.icon_id}
-          class="icon-card bg-base-200 rounded-lg p-4 cursor-pointer group flex flex-col"
+          class="icon-card bg-base-200 rounded-lg cursor-pointer group flex flex-col"
+          title={"#{icon.icon_set_code} / #{icon.name}"}
         >
-          <!-- Icon Preview -->
-          <div class="icon-preview-bg w-16 h-16 mx-auto mb-3 flex items-center justify-center flex-shrink-0 rounded-lg bg-white/80">
-            <span class="inline-svg-icon inline-flex items-center justify-center w-10 h-10" data-svg-url={Icon.svg_url(icon, default_size(icon.sizes))}></span>
-          </div>
+          <!-- Top accent bar — colored by icon set, follows the rounded card corners -->
+          <div class={["h-1.5 w-full rounded-t-lg", icon_set_color(icon.icon_set_code)]}></div>
 
-          <!-- Icon Name -->
-          <div class="text-sm font-semibold text-base-content text-center truncate mb-auto" title={icon.name}>
-            <%= icon.name %>
-          </div>
-
-          <!-- Tags at bottom -->
-          <div class="mt-3 pt-3 border-t border-base-300">
-            <!-- Icon Set & Style -->
-            <div class="flex flex-wrap justify-center gap-1 mb-1">
-              <span class={["badge badge-sm", icon_set_color(icon.icon_set_code)]}><%= icon.icon_set_code %></span>
-              <span class="badge badge-sm badge-neutral"><%= icon.style_code %></span>
+          <div class="p-4 flex flex-col flex-1">
+            <!-- Icon Name on top -->
+            <div class="text-sm font-semibold text-base-content text-center truncate" title={icon.name}>
+              <%= icon.name %>
             </div>
-            <!-- Sizes with hover-to-copy -->
-            <div class="flex flex-wrap justify-center gap-1">
+
+            <!-- Style badge under the title (only when there are multiple styles in the result set) -->
+            <%= if @show_style_badge do %>
+              <div class="flex justify-center mt-1.5">
+                <span class="badge badge-sm badge-neutral capitalize"><%= icon.style_code %></span>
+              </div>
+            <% end %>
+
+            <!-- Icon Preview (centered, hero) -->
+            <div class="icon-preview-bg w-20 h-20 mx-auto my-3 flex items-center justify-center flex-shrink-0 rounded-lg bg-white/80">
+              <span class="inline-svg-icon inline-flex items-center justify-center w-12 h-12" data-svg-url={Icon.svg_url(icon, default_size(icon.sizes))}></span>
+            </div>
+
+            <!-- Sizes (always expanded, hover for copy buttons) -->
+            <div class="mt-auto flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-xs text-primary/80 min-h-5">
               <%= for size <- icon.sizes do %>
                 <div class="relative group/size">
-                  <span class="badge badge-sm badge-ghost"><%= size %>px</span>
-                  <div class="absolute bottom-full left-1/2 -translate-x-1/2 -mb-0.5 hidden group-hover/size:flex gap-1 bg-base-100 rounded-lg p-1.5 shadow-xl border-2 border-base-content/20 z-10">
+                  <span class="cursor-help"><%= size %>px</span>
+                  <div class="absolute bottom-full left-1/2 -translate-x-1/2 -mb-0.5 hidden group-hover/size:flex gap-1 bg-base-100 rounded-lg p-1.5 shadow-xl border-2 border-base-content/20 z-50">
                     <%= for platform <- preferred_platforms(@platform_prefs, 2) do %>
                       <button
                         type="button"

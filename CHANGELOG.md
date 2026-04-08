@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-04-08 — Grid card redesign
+
+### Grid card layout
+- **Top accent bar** colored by icon set (blue=fluentui, violet=heroicons, orange=lucide, cyan=tabler, yellow=fontawesome) — replaces the icon set badge, follows card's rounded corners
+- **Title moved to top** above the icon
+- **Style badge under the title** (centered) — only shown when the result set contains multiple styles, hidden when all icons share one style
+- **Larger icon preview** (w-20 h-20 wrapper, w-12 h-12 icon — was 16/10)
+- **Sizes at bottom**, expanded (all sizes shown inline as plain text, wrap to multiple lines for FluentUI's 6 sizes)
+- Card title attribute shows full `set / name` on hover
+
+### Tooltip fix
+- Removed `overflow-hidden` from icon cards so hover-to-copy tooltips can escape card boundaries
+- Top accent bar now uses `rounded-t-lg` directly to keep matching the card's rounded corners
+- Tooltips bumped to `z-50` so they appear above adjacent cards
+
+---
+
 ## 2026-04-08 — Icon set formatter modules, Import CSS, Copy CSS dual block
 
 ### Refactor: per-icon-set formatter modules
