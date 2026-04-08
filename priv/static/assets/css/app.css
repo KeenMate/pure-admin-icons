@@ -2084,6 +2084,9 @@
   .h-16 {
     height: calc(var(--spacing) * 16);
   }
+  .h-32 {
+    height: calc(var(--spacing) * 32);
+  }
   .h-full {
     height: 100%;
   }

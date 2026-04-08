@@ -794,6 +794,23 @@ defmodule PureAdminIconsWeb.IconSearchLive do
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
                     Copy CSS
                   </button>
+                  <button type="button" class="preview-import-css px-3 py-1.5 rounded text-sm font-medium cursor-pointer border border-base-300 hover:bg-base-200 inline-flex items-center gap-1.5" title="Import a preset from CSS pasted from another project">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                    Import CSS
+                  </button>
+                </div>
+                <div class="preview-import-area space-y-2 p-3 rounded-lg bg-base-200/50 border border-base-300 mb-2" style="display: none;">
+                  <label class="text-sm font-medium text-base-content">Paste CSS from another project:</label>
+                  <textarea class="preview-import-textarea w-full h-32 px-3 py-2 text-xs font-mono border border-base-300 rounded bg-base-100 text-base-content" placeholder="/* Preset — My Theme [color: #ffffff, background: #000000] */&#10;.my-class {&#10;  background-color: #000000;&#10;  color: #ffffff;&#10;}"></textarea>
+                  <div class="flex items-center gap-2">
+                    <button type="button" class="preview-import-submit px-3 py-1 rounded text-xs font-medium cursor-pointer bg-primary text-primary-content hover:opacity-80">
+                      Import as preset
+                    </button>
+                    <button type="button" class="preview-import-cancel px-3 py-1 rounded text-xs font-medium cursor-pointer border border-base-300 hover:bg-base-200">
+                      Cancel
+                    </button>
+                    <span class="preview-import-status text-xs text-base-content/60"></span>
+                  </div>
                 </div>
                 <div class="preview-preset-list flex flex-wrap items-center gap-2 mb-2" style="display: none;">
                   <%= for preset <- preview_presets() do %>
@@ -1477,175 +1494,28 @@ defmodule PureAdminIconsWeb.IconSearchLive do
   defp get_platform_id_for_size(icon, :filename, size), do: Icon.svg_filename(icon, size)
   defp get_platform_id_for_size(_, _, _), do: "N/A"
 
-  # React identifiers — icon-set-aware
-  defp react_identifier(%{icon_set_code: "fluentui"} = icon, size) do
-    name = icon.name |> String.replace(" ", "")
-    style = icon.style_code |> String.capitalize()
-    "<#{name}#{size}#{style} />"
-  end
+  # Identifier and package helpers — delegate to per-icon-set formatter modules
+  # in lib/pure_admin_icons/icon_sets/. Adding a new icon set means adding one
+  # file there, no changes here.
+  alias PureAdminIcons.IconSets.Formatter
 
-  defp react_identifier(%{icon_set_code: "lucide"} = icon, _size) do
-    name = icon.name |> String.replace(" ", "")
-    "import { #{name} } from 'lucide-react'\n<#{name} />"
-  end
+  defp react_identifier(icon, size), do: Formatter.react_identifier(icon, size)
+  defp svelte_identifier(icon, size), do: Formatter.svelte_identifier(icon, size)
+  defp vue_identifier(icon, size), do: Formatter.vue_identifier(icon, size)
+  defp cssclass_identifier(icon, size), do: Formatter.cssclass_identifier(icon, size)
+  defp htmltag_identifier(icon, size), do: Formatter.htmltag_identifier(icon, size)
 
-  defp react_identifier(%{icon_set_code: "tabler"} = icon, _size) do
-    name = icon.name |> String.replace(" ", "")
-    "import { Icon#{name} } from '@tabler/icons-react'\n<Icon#{name} />"
-  end
+  defp react_package(icon), do: Formatter.react_package(icon)
+  defp svelte_package(icon), do: Formatter.svelte_package(icon)
+  defp vue_package(icon), do: Formatter.vue_package(icon)
+  defp cssclass_package(icon), do: Formatter.cssclass_package(icon)
+  defp htmltag_package(icon), do: Formatter.htmltag_package(icon)
 
-  defp react_identifier(%{icon_set_code: "heroicons"} = icon, size) do
-    name = icon.name |> String.replace(" ", "")
-    "import { #{name}Icon } from '@heroicons/react/#{size}/#{icon.style_code}'\n<#{name}Icon />"
-  end
-
-  defp react_identifier(%{icon_set_code: "fontawesome"} = icon, _size) do
-    fa_name = to_fa_import_name(icon.name)
-    pkg = fa_style_package(icon.style_code)
-    "import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'\nimport { #{fa_name} } from '#{pkg}'\n<FontAwesomeIcon icon={#{fa_name}} />"
-  end
-
-  defp react_identifier(icon, size) do
-    name = icon.name |> String.replace(" ", "")
-    "<#{name}#{size} />"
-  end
-
-  # Svelte identifiers — icon-set-aware
-  defp svelte_identifier(%{icon_set_code: "fluentui"} = icon, size) do
-    name = icon.name |> String.downcase() |> String.replace(" ", "_")
-    ~s(<Icon name="#{name}" size={#{size}} variant="#{icon.style_code}" />)
-  end
-
-  defp svelte_identifier(%{icon_set_code: "lucide"} = icon, _size) do
-    name = icon.name |> String.replace(" ", "")
-    "import { #{name} } from 'lucide-svelte'\n<#{name} />"
-  end
-
-  defp svelte_identifier(%{icon_set_code: "tabler"} = icon, _size) do
-    name = icon.name |> String.replace(" ", "")
-    "import { Icon#{name} } from '@tabler/icons-svelte'\n<Icon#{name} />"
-  end
-
-  defp svelte_identifier(%{icon_set_code: "heroicons"} = icon, _size) do
-    name = icon.name |> String.replace(" ", "")
-    variant = if icon.style_code != "outline", do: " #{icon.style_code}", else: ""
-    "import { Icon, #{name} } from 'svelte-hero-icons'\n<Icon src={#{name}}#{variant} />"
-  end
-
-  defp svelte_identifier(%{icon_set_code: "fontawesome"} = icon, _size) do
-    fa_name = to_fa_import_name(icon.name)
-    pkg = fa_style_package(icon.style_code)
-    "import Fa from 'svelte-fa'\nimport { #{fa_name} } from '#{pkg}'\n<Fa icon={#{fa_name}} />"
-  end
-
-  defp svelte_identifier(icon, size) do
-    name = icon.name |> String.downcase() |> String.replace(" ", "_")
-    ~s(<Icon name="#{name}" size={#{size}} />)
-  end
-
-  # Vue identifiers — icon-set-aware (no FluentUI Vue package)
-  defp vue_identifier(%{icon_set_code: "lucide"} = icon, _size) do
-    name = icon.name |> String.replace(" ", "")
-    "import { #{name} } from 'lucide-vue-next'\n<#{name} />"
-  end
-
-  defp vue_identifier(%{icon_set_code: "tabler"} = icon, _size) do
-    name = icon.name |> String.replace(" ", "")
-    "import { Icon#{name} } from '@tabler/icons-vue'\n<Icon#{name} />"
-  end
-
-  defp vue_identifier(%{icon_set_code: "heroicons"} = icon, size) do
-    name = icon.name |> String.replace(" ", "")
-    "import { #{name}Icon } from '@heroicons/vue/#{size}/#{icon.style_code}'\n<#{name}Icon />"
-  end
-
-  defp vue_identifier(%{icon_set_code: "fontawesome"} = icon, _size) do
-    fa_name = to_fa_import_name(icon.name)
-    pkg = fa_style_package(icon.style_code)
-    "import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'\nimport { #{fa_name} } from '#{pkg}'\n<font-awesome-icon :icon=\"#{fa_name}\" />"
-  end
-
-  defp vue_identifier(icon, _size) do
-    name = icon.name |> String.replace(" ", "")
-    "<#{name} />"
-  end
-
-  # CSS class identifiers — raw class string only, for use in config/JSON/menu definitions
-  defp cssclass_identifier(%{icon_set_code: "fontawesome"} = icon, _size) do
-    kebab = icon.name |> String.downcase() |> String.replace(" ", "-")
-    style_prefix =
-      case icon.style_code do
-        "solid" -> "fa-solid"
-        "regular" -> "fa-regular"
-        "brands" -> "fa-brands"
-        _ -> "fa-solid"
-      end
-    "#{style_prefix} fa-#{kebab}"
-  end
-
-  defp cssclass_identifier(%{icon_set_code: "tabler"} = icon, _size) do
-    kebab = icon.name |> String.downcase() |> String.replace(" ", "-")
-    suffix = if icon.style_code == "filled", do: "-filled", else: ""
-    "ti ti-#{kebab}#{suffix}"
-  end
-
-  defp cssclass_identifier(_icon, _size), do: nil
-
-  # HTML tag identifiers — full <i> element, ready to paste into HTML/JSX
-  defp htmltag_identifier(icon, size) do
-    case cssclass_identifier(icon, size) do
-      nil -> nil
-      class -> ~s(<i class="#{class}"></i>)
-    end
-  end
-
-  # Package name helpers
-  defp react_package(%{icon_set_code: "fluentui"}), do: {"@fluentui/react-icons", "https://www.npmjs.com/package/@fluentui/react-icons"}
-  defp react_package(%{icon_set_code: "lucide"}), do: {"lucide-react", "https://www.npmjs.com/package/lucide-react"}
-  defp react_package(%{icon_set_code: "tabler"}), do: {"@tabler/icons-react", "https://www.npmjs.com/package/@tabler/icons-react"}
-  defp react_package(%{icon_set_code: "heroicons"}), do: {"@heroicons/react", "https://www.npmjs.com/package/@heroicons/react"}
-  defp react_package(%{icon_set_code: "fontawesome"}), do: {"@fortawesome/react-fontawesome", "https://www.npmjs.com/package/@fortawesome/react-fontawesome"}
-  defp react_package(_), do: {nil, nil}
-
-  defp svelte_package(%{icon_set_code: "fluentui"}), do: {"svelte-fluentui", "https://svelte-fluentui.keenmate.dev"}
-  defp svelte_package(%{icon_set_code: "lucide"}), do: {"lucide-svelte", "https://lucide.dev"}
-  defp svelte_package(%{icon_set_code: "tabler"}), do: {"@tabler/icons-svelte", "https://tabler.io/icons"}
-  defp svelte_package(%{icon_set_code: "heroicons"}), do: {"svelte-hero-icons", "https://www.npmjs.com/package/svelte-hero-icons"}
-  defp svelte_package(%{icon_set_code: "fontawesome"}), do: {"svelte-fa", "https://www.npmjs.com/package/svelte-fa"}
-  defp svelte_package(_), do: {nil, nil}
-
-  # Vue: no official FluentUI Vue package
-  defp vue_package(%{icon_set_code: "fluentui"}), do: {nil, nil}
-  defp vue_package(%{icon_set_code: "lucide"}), do: {"lucide-vue-next", "https://www.npmjs.com/package/lucide-vue-next"}
-  defp vue_package(%{icon_set_code: "tabler"}), do: {"@tabler/icons-vue", "https://www.npmjs.com/package/@tabler/icons-vue"}
-  defp vue_package(%{icon_set_code: "heroicons"}), do: {"@heroicons/vue", "https://www.npmjs.com/package/@heroicons/vue"}
-  defp vue_package(%{icon_set_code: "fontawesome"}), do: {"@fortawesome/vue-fontawesome", "https://www.npmjs.com/package/@fortawesome/vue-fontawesome"}
-  defp vue_package(_), do: {nil, nil}
-
-  # CSS class packages — only icon sets with web font / CSS class APIs
-  defp cssclass_package(%{icon_set_code: "fontawesome"}), do: {"@fortawesome/fontawesome-free", "https://www.npmjs.com/package/@fortawesome/fontawesome-free"}
-  defp cssclass_package(%{icon_set_code: "tabler"}), do: {"@tabler/icons-webfont", "https://www.npmjs.com/package/@tabler/icons-webfont"}
-  defp cssclass_package(_), do: {nil, nil}
-
-  # HTML tag follows same availability as CSS class
-  defp htmltag_package(icon), do: cssclass_package(icon)
-
-  # For React: FluentUI and Heroicons vary by size, others show single row
-  defp react_identifier_sizes(%{icon_set_code: "fluentui"} = icon), do: icon.sizes
-  defp react_identifier_sizes(%{icon_set_code: "heroicons"} = icon), do: icon.sizes
-  defp react_identifier_sizes(icon), do: [List.first(icon.sizes) || 24]
-
-  # For Vue: Heroicons varies by size (import path includes size/style), others single row
-  defp vue_identifier_sizes(%{icon_set_code: "heroicons"} = icon), do: icon.sizes
-  defp vue_identifier_sizes(icon), do: [List.first(icon.sizes) || 24]
-
-  # For Svelte: only FluentUI varies by size
-  defp svelte_identifier_sizes(%{icon_set_code: "fluentui"} = icon), do: icon.sizes
-  defp svelte_identifier_sizes(icon), do: [List.first(icon.sizes) || 24]
-
-  # CSS classes don't vary by size — single row
-  defp cssclass_identifier_sizes(icon), do: [List.first(icon.sizes) || 24]
-  defp htmltag_identifier_sizes(icon), do: [List.first(icon.sizes) || 24]
+  defp react_identifier_sizes(icon), do: Formatter.react_identifier_sizes(icon)
+  defp svelte_identifier_sizes(icon), do: Formatter.svelte_identifier_sizes(icon)
+  defp vue_identifier_sizes(icon), do: Formatter.vue_identifier_sizes(icon)
+  defp cssclass_identifier_sizes(icon), do: Formatter.cssclass_identifier_sizes(icon)
+  defp htmltag_identifier_sizes(icon), do: Formatter.htmltag_identifier_sizes(icon)
 
   # Color method display helpers
   defp color_method_label("fill"), do: "CSS: fill / color"
@@ -1665,18 +1535,6 @@ defmodule PureAdminIconsWeb.IconSearchLive do
   defp icon_set_color("tabler"), do: "bg-cyan-600 text-white"
   defp icon_set_color("fontawesome"), do: "bg-yellow-500 text-black"
   defp icon_set_color(_), do: "bg-base-300 text-base-content"
-
-  # Font Awesome helpers: "Arrow Right" -> "faArrowRight"
-  defp to_fa_import_name(display_name) do
-    pascal = display_name |> String.replace(" ", "")
-    "fa#{pascal}"
-  end
-
-  # Font Awesome style -> npm package
-  defp fa_style_package("solid"), do: "@fortawesome/free-solid-svg-icons"
-  defp fa_style_package("regular"), do: "@fortawesome/free-regular-svg-icons"
-  defp fa_style_package("brands"), do: "@fortawesome/free-brands-svg-icons"
-  defp fa_style_package(_), do: "@fortawesome/free-solid-svg-icons"
 
   # Format numbers with k/m suffixes (1000 -> 1k, 3400 -> 3.4k, 1500000 -> 1.5m)
   defp format_number(n) when n >= 1_000_000 do

@@ -72,32 +72,56 @@ Hooks.IconColorFilter = {
         svgText = await response.text()
         this.svgCache.set(url, svgText)
       }
-      const coloredSvg = svgText
-        .replace(/fill="#[0-9A-Fa-f]{3,6}"/g, `fill="${color}"`)
-        .replace(/fill="currentColor"/g, `fill="${color}"`)
-        .replace(/stroke="#[0-9A-Fa-f]{3,6}"/g, `stroke="${color}"`)
-        .replace(/stroke="currentColor"/g, `stroke="${color}"`)
-      container.innerHTML = coloredSvg
+      container.innerHTML = svgText
       const svg = container.querySelector('svg')
       if (svg) {
         svg.style.width = '100%'
         svg.style.height = '100%'
+        this.colorizeSvg(svg, color, url)
       }
       container.dataset.loaded = 'true'
     } catch (err) {
-      console.error('Failed to load SVG:', url, err)
+      console.error('[IconColorFilter] Failed to load SVG:', url, err)
+    }
+  },
+  // DOM-mutates an SVG to apply the user's color.
+  // Updates fill/stroke on the <svg> element AND all child shape elements.
+  // This handles icons that put currentColor on the svg parent (Lucide, Heroicons outline)
+  // AND icons that put colors directly on paths (FluentUI, Heroicons solid, FA).
+  colorizeSvg(svg, color, debugUrl) {
+    let touched = 0
+    const updateEl = (el) => {
+      const currentFill = el.getAttribute('fill')
+      if (currentFill && currentFill !== 'none') {
+        el.setAttribute('fill', color)
+        touched++
+      }
+      const currentStroke = el.getAttribute('stroke')
+      if (currentStroke && currentStroke !== 'none') {
+        el.setAttribute('stroke', color)
+        touched++
+      }
+    }
+    // Update the <svg> root first (covers icons with fill/stroke on the svg element)
+    updateEl(svg)
+    // Then walk all child shape elements
+    svg.querySelectorAll('path, circle, rect, line, polyline, polygon, ellipse, g').forEach(updateEl)
+
+    if (touched === 0) {
+      console.warn('[IconColorFilter] No fill/stroke attributes found in SVG, icon may render with default color:', debugUrl)
     }
   },
   updateAllColors() {
     const color = localStorage.getItem('icon_preview_color') || '#212121'
+    let count = 0
     this.el.querySelectorAll('.inline-svg-icon').forEach(icon => {
-      icon.querySelectorAll('svg path, svg circle, svg rect, svg line, svg polyline, svg polygon').forEach(el => {
-        const currentFill = el.getAttribute('fill')
-        if (currentFill && currentFill !== 'none') el.setAttribute('fill', color)
-        const currentStroke = el.getAttribute('stroke')
-        if (currentStroke && currentStroke !== 'none') el.setAttribute('stroke', color)
-      })
+      const svg = icon.querySelector('svg')
+      if (svg) {
+        this.colorizeSvg(svg, color, icon.dataset.svgUrl)
+        count++
+      }
     })
+    console.log(`[IconColorFilter] updateAllColors recolored ${count} icons to ${color}`)
   }
 }
 
@@ -238,7 +262,75 @@ Hooks.ColorPicker = {
       })
     }
 
-    // Save as preset
+    // Import CSS button + dialog
+    const importBtn = this.el.querySelector('.preview-import-css')
+    const importArea = this.el.querySelector('.preview-import-area')
+    const importTextarea = this.el.querySelector('.preview-import-textarea')
+    const importSubmit = this.el.querySelector('.preview-import-submit')
+    const importCancel = this.el.querySelector('.preview-import-cancel')
+    const importStatus = this.el.querySelector('.preview-import-status')
+
+    if (importBtn && importArea) {
+      importBtn.addEventListener('click', () => {
+        importArea.style.display = importArea.style.display === 'none' ? '' : 'none'
+        if (importArea.style.display !== 'none') importTextarea?.focus()
+      })
+    }
+    if (importCancel) {
+      importCancel.addEventListener('click', () => {
+        importArea.style.display = 'none'
+        if (importStatus) importStatus.textContent = ''
+        if (importTextarea) importTextarea.value = ''
+      })
+    }
+    if (importSubmit) {
+      importSubmit.addEventListener('click', () => {
+        const css = importTextarea?.value || ''
+        const parsed = this.parseImportedCss(css)
+        if (!parsed) {
+          if (importStatus) {
+            importStatus.textContent = 'Could not parse — need either a "Preset — Name [color: #..., background-color: #...]" comment, or at least a CSS rule with color: and background-color: properties.'
+            importStatus.className = 'preview-import-status text-xs text-error'
+          }
+          return
+        }
+        // Save as custom preset
+        const presets = this.loadCustomPresets()
+        const key = `custom-${Date.now()}`
+        presets[key] = { color: parsed.color, bg: parsed.bg, label: parsed.label }
+        this.saveCustomPresets(presets)
+        // Activate it
+        localStorage.setItem('icon_preview_color', parsed.color)
+        localStorage.setItem('icon_preview_bg', JSON.stringify(parsed.bg))
+        localStorage.setItem('icon_preview_preset', key)
+        this.renderCustomPresets()
+        this.bindPresetButtons()
+        if (this.colorInput) this.colorInput.value = parsed.color
+        if (this.textInput) this.textInput.value = parsed.color
+        if (this.bgColorInput) this.bgColorInput.value = parsed.bg
+        if (this.bgColorText) this.bgColorText.value = parsed.bg
+        // Update the custom-preset name input to reflect the just-imported preset
+        const nameInput = this.el.querySelector('.custom-preset-name')
+        if (nameInput) nameInput.value = parsed.label
+        this.applyBg(parsed.bg)
+        this.updateSvgColors(parsed.color)
+        this.highlightPreset(key)
+        this.renderActivePreset()
+        // Expand the preset list so user can see the new preset highlighted
+        this.expandPresets()
+        if (importStatus) {
+          importStatus.textContent = `Imported "${parsed.label}" — selected`
+          importStatus.className = 'preview-import-status text-xs text-success'
+        }
+        if (importTextarea) importTextarea.value = ''
+        setTimeout(() => {
+          if (importStatus) importStatus.textContent = ''
+          if (importArea) importArea.style.display = 'none'
+        }, 2000)
+      })
+    }
+
+    // Save as preset (creates new with timestamp ID, or updates active custom preset)
     const saveBtn = this.el.querySelector('.custom-preset-save')
     const nameInput = this.el.querySelector('.custom-preset-name')
     if (saveBtn && nameInput) {
@@ -248,18 +340,23 @@ Hooks.ColorPicker = {
           nameInput.focus()
           return
         }
-        const key = 'custom-' + name.toLowerCase().replace(/[^a-z0-9]+/g, '-')
         const color = this.colorInput ? this.colorInput.value : '#212121'
         const bg = this.bgColorInput ? this.bgColorInput.value : '#ffffff'
         const presets = this.loadCustomPresets()
+        const activeKey = localStorage.getItem('icon_preview_preset')
+        // If the active preset is a custom one, UPDATE it (keeps its ID).
+        // Otherwise, create a new one with a timestamp-based ID.
+        const key = (activeKey && presets[activeKey]) ? activeKey : `custom-${Date.now()}`
         presets[key] = { color, bg, label: name }
         this.saveCustomPresets(presets)
-        nameInput.value = ''
         this.renderCustomPresets()
         this.bindPresetButtons()
-        // Activate the newly saved preset
+        // Activate the saved preset
         localStorage.setItem('icon_preview_preset', key)
+        localStorage.setItem('icon_preview_color', color)
+        localStorage.setItem('icon_preview_bg', JSON.stringify(bg))
         this.highlightPreset(key)
+        this.renderActivePreset()
         this.expandPresets()
       })
     }
@@ -445,6 +542,36 @@ Hooks.ColorPicker = {
       }
     })
   },
+  // Parse pasted CSS to extract a preset.
+  // Strategy 1: look for the "Preset — Name [color: #X, background: #Y]" comment
+  // Strategy 2: extract the first background-color + color from any CSS rule
+  parseImportedCss(css) {
+    if (!css || !css.trim()) return null
+
+    // Strategy 1: parse the preset comment (accepts both background: and background-color:)
+    const presetCommentRe = /Preset\s*[—\-]\s*([^\(\[]+?)(?:\s*\([^)]+\))?\s*\[\s*color:\s*(#[0-9a-fA-F]{3,8})\s*,\s*background(?:-color)?:\s*(#[0-9a-fA-F]{3,8}|checker)\s*\]/i
+    const m = css.match(presetCommentRe)
+    if (m) {
+      return {
+        label: m[1].trim(),
+        color: m[2].toLowerCase(),
+        bg: m[3].toLowerCase()
+      }
+    }
+
+    // Strategy 2: extract first background-color and color values
+    const bgMatch = css.match(/background(?:-color)?\s*:\s*(#[0-9a-fA-F]{3,8})/i)
+    const colorMatch = css.match(/(?:^|[^-])\bcolor\s*:\s*(#[0-9a-fA-F]{3,8})/i)
+    if (bgMatch && colorMatch) {
+      return {
+        label: 'Imported',
+        color: colorMatch[1].toLowerCase(),
+        bg: bgMatch[1].toLowerCase()
+      }
+    }
+
+    return null
+  },
   generateCss() {
     const color = localStorage.getItem('icon_preview_color') || '#212121'
     let bg = '#ffffff'
@@ -454,59 +581,91 @@ Hooks.ColorPicker = {
     const presetKey = localStorage.getItem('icon_preview_preset')
     const presetLabel = presetKey ? (this.allPresets()[presetKey]?.label || presetKey) : 'Custom'
 
-    // CSS class derived from preset key (already kebab-case lowercase) or 'custom'
-    const cssClass = presetKey ? presetKey.toLowerCase().replace(/[^a-z0-9]+/g, '-') : 'custom'
+    // CSS class derived from the preset's LABEL (not key) so renaming a custom preset
+    // updates the CSS class too. Built-in preset keys already match the slug of their label.
+    const cssClass = presetLabel.toLowerCase().replace(/[^a-z0-9]+/g, '-') || 'custom'
 
-    // Pick selector strategy based on icon set
-    // - Font Awesome: scope existing FA classes with the preset class
-    // - Tabler webfont: scope existing ti class with the preset class
-    // - SVG sets (Lucide, Heroicons, FluentUI): targets svg.{cssClass} directly
-    let selector, usage
+    // Selectors per icon set:
+    //   scoped  — adds preset class so multiple presets can coexist
+    //   global  — applies to ALL icons of this set, no scope
+    let scopedSelector, globalSelector, scopedUsage, globalUsage
     if (iconSet === 'fontawesome') {
-      selector = `i.${cssClass}.fa-solid, i.${cssClass}.fa-regular, i.${cssClass}.fa-brands`
-      usage = `<i class="${cssClass} fa-solid fa-arrow-right"></i>`
+      scopedSelector = `i.${cssClass}.fa-solid, i.${cssClass}.fa-regular, i.${cssClass}.fa-brands`
+      globalSelector = `i.fa-solid, i.fa-regular, i.fa-brands`
+      scopedUsage = `<i class="${cssClass} fa-solid fa-arrow-right"></i>`
+      globalUsage = `<i class="fa-solid fa-arrow-right"></i>`
     } else if (iconSet === 'tabler') {
-      selector = `i.${cssClass}.ti`
-      usage = `<i class="${cssClass} ti ti-arrow-right"></i>`
+      scopedSelector = `i.${cssClass}.ti`
+      globalSelector = `i.ti`
+      scopedUsage = `<i class="${cssClass} ti ti-arrow-right"></i>`
+      globalUsage = `<i class="ti ti-arrow-right"></i>`
     } else {
-      selector = `svg.${cssClass}`
-      usage = `<Calendar className="${cssClass}" />  /* React */\n   <Calendar class="${cssClass}" />     /* Vue/Svelte */\n   <svg class="${cssClass}">...</svg>   /* Plain HTML */`
+      scopedSelector = `svg.${cssClass}`
+      globalSelector = `svg`
+      scopedUsage = `<Calendar className="${cssClass}" />`
+      globalUsage = `<Calendar />  /* any icon component renders <svg> */`
     }
 
-    const lines = [
-      `/* Icon preview — ${presetLabel} (${iconSet || 'icon'}) */`,
-      `/* Color method: ${colorMethod} */`,
+    // Header: identifies the preset so users can paste it back into icons.pureadmin.io to recreate it
+    const presetHeader = `/* Preset — ${presetLabel} (${iconSet || 'icon'}) [color: ${color}, background-color: ${bg}] */`
+    const colorMethodComment = `/* Color method: ${colorMethod} */`
+
+    // Build a CSS rule body for a given selector
+    const buildRule = (selector) => {
+      const lines = [`${selector} {`]
+
+      if (bg === 'checker') {
+        lines.push(
+          `  background-image: repeating-conic-gradient(#d1d5db 0% 25%, #fff 0% 50%);`,
+          `  background-size: 12px 12px;`
+        )
+      } else {
+        lines.push(`  background-color: ${bg};`)
+      }
+
+      if (colorMethod === 'multicolor') {
+        lines.push(`  /* Multicolor icon — original SVG colors are preserved */`)
+      } else if (colorMethod === 'stroke') {
+        lines.push(
+          `  color: ${color};`,
+          `  stroke: currentColor;`,
+          `  fill: none;`
+        )
+      } else {
+        lines.push(
+          `  color: ${color};`,
+          `  fill: currentColor;`
+        )
+      }
+
+      lines.push(`}`)
+      return lines.join('\n')
+    }
+
+    return [
+      `/* Generated by icons.pureadmin.io */`,
+      presetHeader,
+      colorMethodComment,
       ``,
-      `${selector} {`,
-    ]
-
-    if (bg === 'checker') {
-      lines.push(
-        `  background-image: repeating-conic-gradient(#d1d5db 0% 25%, #fff 0% 50%);`,
-        `  background-size: 12px 12px;`
-      )
-    } else {
-      lines.push(`  background-color: ${bg};`)
-    }
-
-    if (colorMethod === 'multicolor') {
-      lines.push(`  /* Multicolor icon — colors come from the icon itself */`)
-    } else if (colorMethod === 'stroke') {
-      lines.push(
-        `  color: ${color};`,
-        `  stroke: currentColor;`,
-        `  fill: none;`
-      )
-    } else {
-      lines.push(
-        `  color: ${color};`,
-        `  fill: currentColor;`
-      )
-    }
-
-    lines.push(`}`, ``, `/* Usage: */`, `/* ${usage} */`)
-
-    return lines.join('\n')
+      buildRule(scopedSelector),
+      ``,
+      `/* Usage: */`,
+      `/* ${scopedUsage} */`,
+      ``,
+      ``,
+      `/* ─────────────────────────────────────────────────── */`,
+      `/* GLOBAL OVERRIDE — applies to ALL ${iconSet || 'icon'} icons   */`,
+      `/* Use this if you want every icon styled the same way  */`,
+      `/* ─────────────────────────────────────────────────── */`,
+      ``,
+      presetHeader,
+      colorMethodComment,
+      ``,
+      buildRule(globalSelector),
+      ``,
+      `/* Usage: */`,
+      `/* ${globalUsage} */`
+    ].join('\n')
   },
   highlightPreset(active) {
     this.el.querySelectorAll('.preview-preset').forEach(btn => {
