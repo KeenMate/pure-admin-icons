@@ -13,7 +13,7 @@
    Time-of-day themes — shared with pureadmin.io
    ══════════════════════════════════════════════════════════ */
 
-/* ── Night (20:00–6:00) ── */
+/* ── Night (20:00–6:00) — current dark theme, unchanged ── */
 @plugin "../vendor/daisyui-theme" {
   name: "park-night";
   default: true;
@@ -49,14 +49,14 @@
   --noise: 0;
 }
 
-/* ── Morning (6:00–11:00) ── */
+/* ── Morning (6:00–11:00) — bright warm ivory, sunrise warmth ── */
 @plugin "../vendor/daisyui-theme" {
   name: "park-morning";
   color-scheme: "light";
-  --color-base-100: oklch(97% 0.01 80);
-  --color-base-200: oklch(93% 0.015 80);
-  --color-base-300: oklch(86% 0.02 80);
-  --color-base-content: oklch(18% 0.015 260);
+  --color-base-100: oklch(96% 0.01 80);
+  --color-base-200: oklch(91% 0.015 80);
+  --color-base-300: oklch(84% 0.02 80);
+  --color-base-content: oklch(12% 0.015 260);
   --color-primary: oklch(55% 0.17 55);
   --color-primary-content: oklch(98% 0.005 60);
   --color-secondary: oklch(38% 0.04 260);
@@ -83,14 +83,14 @@
   --noise: 0;
 }
 
-/* ── Day (11:00–16:00) ── */
+/* ── Day (11:00–16:00) — clean cool white, professional ── */
 @plugin "../vendor/daisyui-theme" {
   name: "park-day";
   color-scheme: "light";
-  --color-base-100: oklch(98% 0.005 260);
-  --color-base-200: oklch(94% 0.008 260);
-  --color-base-300: oklch(87% 0.012 260);
-  --color-base-content: oklch(18% 0.015 260);
+  --color-base-100: oklch(97% 0.005 260);
+  --color-base-200: oklch(93% 0.008 260);
+  --color-base-300: oklch(85% 0.012 260);
+  --color-base-content: oklch(12% 0.015 260);
   --color-primary: oklch(58% 0.18 60);
   --color-primary-content: oklch(98% 0.005 60);
   --color-secondary: oklch(36% 0.04 260);
@@ -117,7 +117,7 @@
   --noise: 0;
 }
 
-/* ── Evening (16:00–20:00) ── */
+/* ── Evening (16:00–20:00) — warm dim, golden hour, sunset tones ── */
 @plugin "../vendor/daisyui-theme" {
   name: "park-evening";
   color-scheme: "dark";
@@ -244,3 +244,77 @@ html.theme-transitions *::after {
 /* ── View mode toggle ── */
 [data-view-mode="grid"] .view-list { display: none !important; }
 [data-view-mode="list"] .view-grid { display: none !important; }
+
+/* ══════════════════════════════════════════════════════════
+   Semantic component classes
+   ══════════════════════════════════════════════════════════ */
+
+/* ── Segmented control wrapper (e.g. Grid/List toggle) ── */
+.view-toggle {
+  @apply flex items-center gap-1 bg-base-200 rounded-lg p-1 border border-base-content/20;
+}
+
+/* ── Action button used for Filters / Grid / List toggles ── */
+.btn-action {
+  @apply px-3 py-2 rounded text-sm flex items-center gap-1.5 cursor-pointer transition-colors;
+}
+
+/* ── Pager buttons (Previous / Next) ── */
+.btn-pager {
+  @apply btn btn-sm btn-ghost border border-base-content/20 cursor-pointer;
+}
+.btn-pager-disabled {
+  @apply btn btn-sm btn-ghost border border-base-content/10 text-base-content/40 cursor-not-allowed;
+}
+
+/* ── Icon card (grid view) ── */
+.icon-card-body {
+  @apply p-4 flex flex-col flex-1;
+}
+.icon-card-name {
+  @apply text-sm font-semibold text-base-content text-center truncate;
+}
+.icon-card-thumb {
+  @apply w-20 h-20 mx-auto my-3 flex items-center justify-center flex-shrink-0 rounded-lg;
+}
+.icon-card-sizes {
+  @apply mt-auto flex flex-wrap items-center justify-center gap-x-2 gap-y-1 font-semibold text-primary min-h-6;
+  font-size: 0.8rem;
+}
+
+/* ── List view: row hover ── */
+.list-row {
+  @apply hover:bg-base-200 cursor-pointer transition-colors;
+}
+
+/* ══════════════════════════════════════════════════════════
+   Floating popover (driven by FloatingPopover JS hook + floating-ui)
+   ══════════════════════════════════════════════════════════
+   Pattern:
+     <element class="has-popover">
+       trigger content (e.g. "24px", "✓", "∞ Scalable")
+       <div class="floating-popover">
+         ...buttons...
+       </div>
+     </element>
+   The hook listens for mouseover/mouseout on .has-popover and
+   positions the .floating-popover child via floating-ui's
+   computePosition (strategy: fixed, with offset/flip/shift).
+   ══════════════════════════════════════════════════════════ */
+.has-popover {
+  cursor: help;
+}
+.floating-popover {
+  @apply gap-1 bg-base-100 rounded-lg p-1.5 shadow-xl border-2 border-base-content/20;
+  position: fixed;
+  top: 0;
+  left: 0;
+  display: none;
+  z-index: 50;
+}
+.floating-popover.popover-open {
+  display: flex;
+}
+.floating-popover-btn {
+  @apply p-2 rounded cursor-pointer hover:bg-base-300 hover:scale-110 active:scale-95 transition-transform;
+}

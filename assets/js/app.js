@@ -750,6 +750,77 @@ Hooks.SvelteColor = {
   }
 }
 
+// FloatingPopover hook — uses floating-ui to position copy-button popovers above
+// .has-popover triggers (size pills in grid view, size cells in list view).
+// The popover element lives inside its trigger as a child with .floating-popover.
+// We position it using strategy:'fixed' so ancestor overflow doesn't clip it.
+Hooks.FloatingPopover = {
+  mounted() {
+    this.attach()
+  },
+  updated() {
+    this.detach()
+    this.attach()
+  },
+  destroyed() {
+    this.detach()
+  },
+  attach() {
+    if (!window.FloatingUIDOM) {
+      console.warn('[FloatingPopover] floating-ui-dom global not loaded — popovers disabled')
+      return
+    }
+    this.handlers = []
+    this.el.querySelectorAll('.has-popover').forEach(trigger => {
+      const popover = trigger.querySelector('.floating-popover')
+      if (!popover) return
+
+      let hideTimer = null
+      const cancelHide = () => { if (hideTimer) { clearTimeout(hideTimer); hideTimer = null } }
+      const scheduleHide = () => {
+        cancelHide()
+        hideTimer = setTimeout(() => this.hide(popover), 150)
+      }
+      const onTriggerEnter = () => { cancelHide(); this.show(trigger, popover) }
+      const onTriggerLeave = scheduleHide
+      const onPopoverEnter = cancelHide
+      const onPopoverLeave = scheduleHide
+
+      trigger.addEventListener('mouseenter', onTriggerEnter)
+      trigger.addEventListener('mouseleave', onTriggerLeave)
+      popover.addEventListener('mouseenter', onPopoverEnter)
+      popover.addEventListener('mouseleave', onPopoverLeave)
+      this.handlers.push({ trigger, popover, onTriggerEnter, onTriggerLeave, onPopoverEnter, onPopoverLeave })
+    })
+  },
+  detach() {
+    if (!this.handlers) return
+    this.handlers.forEach(({ trigger, popover, onTriggerEnter, onTriggerLeave, onPopoverEnter, onPopoverLeave }) => {
+      trigger.removeEventListener('mouseenter', onTriggerEnter)
+      trigger.removeEventListener('mouseleave', onTriggerLeave)
+      popover.removeEventListener('mouseenter', onPopoverEnter)
+      popover.removeEventListener('mouseleave', onPopoverLeave)
+      popover.classList.remove('popover-open')
+    })
+    this.handlers = []
+  },
+  show(trigger, popover) {
+    popover.classList.add('popover-open')
+    const { computePosition, offset, flip, shift } = window.FloatingUIDOM
+    computePosition(trigger, popover, {
+      strategy: 'fixed',
+      placement: 'top',
+      middleware: [offset(2), flip(), shift({ padding: 8 })]
+    }).then(({ x, y }) => {
+      popover.style.left = `${x}px`
+      popover.style.top = `${y}px`
+    })
+  },
+  hide(popover) {
+    popover.classList.remove('popover-open')
+  }
+}
+
 // IconSizeSlider hook — adjusts icon preview size in list/grid
 Hooks.IconSizeSlider = {
   mounted() {

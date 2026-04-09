@@ -1,5 +1,30 @@
 # Changelog
 
+## 2026-04-09 — Floating-UI popovers, semantic CSS extraction, control polish
+
+### Floating-UI for copy-button popovers
+- Vendored `@floating-ui/core@1.6.9` and `@floating-ui/dom@1.6.13` UMD bundles into `priv/static/assets/vendor/`, loaded via `<script defer>` in `root.html.heex` before `app.js`
+- New `Hooks.FloatingPopover` JS hook (attached to a `#icon-display-popovers` wrapper around `#icon-display`) — uses event delegation to find `.has-popover` triggers and position their child `.floating-popover` element
+- Uses `computePosition` with `strategy: 'fixed'` so ancestor `overflow:hidden` (table wrapper) no longer clips popovers
+- Middleware: `offset(2)` (sits 2px above trigger so cursor barely needs to traverse a gap), `flip()` (auto-flips below if no room above), `shift({padding: 8})` (slides horizontally to stay within viewport)
+- 150ms hide-debounce so the user can move from trigger to popover without it disappearing; cancelled by `mouseenter` on the popover itself
+- **Grid view** — size pills (`24px`, `∞`) replaced their `.size-cell` + `.size-popover` markup with the unified `.has-popover` pattern
+- **List view** — `✓` checkmarks and `∞ Scalable` cells replaced the old `.list-cell-hover` opacity-overlay pattern with the same `.has-popover` markup
+- Size column widths reverted to compact `w-16` — popovers no longer affect column layout since they float on top of neighboring cells
+
+### Semantic CSS class extraction
+- Added one block of semantic component classes at the bottom of `app.css` to replace repeated utility-class soup in templates
+- New classes: `.view-toggle`, `.btn-action`, `.btn-pager` / `.btn-pager-disabled`, `.icon-card-body`, `.icon-card-name`, `.icon-card-thumb`, `.icon-card-sizes`, `.list-row`, `.has-popover`, `.floating-popover`, `.floating-popover-btn`
+- `icon_grid` and `icon_list` templates significantly slimmer — popover-button markup now writes once and applies to all 4 places (grid scalable, grid sized, list scalable, list sized)
+- Renamed grid card `.icon-card-preview` → `.icon-card-thumb` to avoid colliding with the existing JS slider hook that targets `.icon-card-preview` for the **mobile** card layout
+
+### Pager and control polish
+- **Pager buttons** (Previous / Next) now use `btn btn-sm btn-ghost border border-base-content/20` matching `pure-admin-io`'s ghost button style — clearly visible white borders in night theme (was unstyled `bg-base-300` blending into the background)
+- **Top pager moved** out of the hero `max-w-5xl` section into the main `max-w-7xl` content area so it aligns vertically with the bottom pager regardless of view mode
+- **View toggle wrapper** (Grid/List segmented control) and the Filters button now both have visible `border-base-content/20` outlines for consistency with the new ghost-button style
+
+---
+
 ## 2026-04-08 — MCP package rename
 
 - All references to `@keenmate/fluentui-icons-mcp` updated to the new `@keenmate/pure-admin-icons-mcp` package

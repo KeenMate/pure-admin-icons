@@ -470,18 +470,18 @@ defmodule PureAdminIconsWeb.IconSearchLive do
           <div class="flex items-center gap-2">
             <button
               phx-click={JS.toggle(to: "#filters-panel", in: "fade-in-scale", out: "fade-out-scale")}
-              class={["px-3 py-2 rounded text-sm flex items-center gap-1.5 cursor-pointer transition-colors border", if(@selected_styles != [] || @selected_sizes != [] || @selected_icon_sets != [], do: "bg-primary text-primary-content border-primary", else: "bg-base-200 text-base-content/70 hover:text-base-content border-base-300")]}
+              class={["btn-action border", if(@selected_styles != [] || @selected_sizes != [] || @selected_icon_sets != [], do: "bg-primary text-primary-content border-primary", else: "bg-base-200 text-base-content/70 hover:text-base-content border-base-content/20")]}
             >
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
               </svg>
               <span class="hidden sm:inline">Filters</span>
             </button>
-            <div class="flex items-center gap-1 bg-base-200 rounded-lg p-1" id="view-mode" phx-hook="ViewMode">
+            <div class="view-toggle" id="view-mode" phx-hook="ViewMode">
               <button
                 phx-click="toggle_view"
                 phx-value-mode="grid"
-                class={["px-3 py-2 rounded text-sm flex items-center gap-1.5 cursor-pointer transition-colors", if(@view_mode == "grid", do: "bg-primary text-primary-content", else: "text-base-content/70 hover:text-base-content")]}
+                class={["btn-action", if(@view_mode == "grid", do: "bg-primary text-primary-content", else: "text-base-content/70 hover:text-base-content")]}
               >
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
@@ -491,7 +491,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
               <button
                 phx-click="toggle_view"
                 phx-value-mode="list"
-                class={["px-3 py-2 rounded text-sm flex items-center gap-1.5 cursor-pointer transition-colors", if(@view_mode == "list", do: "bg-primary text-primary-content", else: "text-base-content/70 hover:text-base-content")]}
+                class={["btn-action", if(@view_mode == "list", do: "bg-primary text-primary-content", else: "text-base-content/70 hover:text-base-content")]}
               >
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
@@ -615,6 +615,12 @@ defmodule PureAdminIconsWeb.IconSearchLive do
           </div>
         <% end %>
 
+        </div>
+      </div>
+
+      <%!-- Content --%>
+      <main class="px-4 py-6 sm:px-6 lg:px-8 flex-1">
+        <div class="mx-auto max-w-7xl">
         <!-- Results Count, Icon Size Slider & Pager -->
         <div class="flex flex-wrap justify-between items-center mb-4 gap-3">
           <div class="text-sm text-base-content/70">
@@ -634,19 +640,15 @@ defmodule PureAdminIconsWeb.IconSearchLive do
             <.pager current_page={@page} total_pages={@total_pages} />
           </div>
         </div>
-        </div>
-      </div>
-
-      <%!-- Content --%>
-      <main class="px-4 py-6 sm:px-6 lg:px-8 flex-1">
-        <div class="mx-auto max-w-7xl">
         <!-- Icon Display (Grid or List) - Both rendered, CSS controls visibility -->
-        <div id="icon-display" phx-hook="IconColorFilter">
-          <div class="view-grid">
-            <.icon_grid icons={@icons} selected_styles={@selected_styles} selected_sizes={@selected_sizes} selected_icon_sets={@selected_icon_sets} platform_prefs={@platform_prefs} available_styles={@available_styles} />
-          </div>
-          <div class="view-list">
-            <.icon_list icons={@icons} platform_prefs={@platform_prefs} selected_sizes={@selected_sizes} available_sizes={@available_sizes} icon_list_size={@icon_list_size} />
+        <div id="icon-display-popovers" phx-hook="FloatingPopover">
+          <div id="icon-display" phx-hook="IconColorFilter">
+            <div class="view-grid">
+              <.icon_grid icons={@icons} selected_styles={@selected_styles} selected_sizes={@selected_sizes} selected_icon_sets={@selected_icon_sets} platform_prefs={@platform_prefs} available_styles={@available_styles} />
+            </div>
+            <div class="view-list">
+              <.icon_list icons={@icons} platform_prefs={@platform_prefs} selected_sizes={@selected_sizes} available_sizes={@available_sizes} icon_list_size={@icon_list_size} />
+            </div>
           </div>
         </div>
 
@@ -1319,12 +1321,12 @@ defmodule PureAdminIconsWeb.IconSearchLive do
         :if={@current_page > 1}
         phx-click="change_page"
         phx-value-page={@current_page - 1}
-        class="px-3 py-1 rounded bg-base-300 hover:bg-base-300 text-sm"
+        class="btn-pager"
       >Previous</button>
       <button
         :if={@current_page <= 1}
         disabled
-        class="px-3 py-1 rounded bg-base-200 text-base-content/50 text-sm cursor-not-allowed"
+        class="btn-pager-disabled"
       >Previous</button>
 
       <span class="text-sm text-base-content/70">
@@ -1335,12 +1337,12 @@ defmodule PureAdminIconsWeb.IconSearchLive do
         :if={@current_page < @total_pages}
         phx-click="change_page"
         phx-value-page={@current_page + 1}
-        class="px-3 py-1 rounded bg-base-300 hover:bg-base-300 text-sm"
+        class="btn-pager"
       >Next</button>
       <button
         :if={@current_page >= @total_pages}
         disabled
-        class="px-3 py-1 rounded bg-base-200 text-base-content/50 text-sm cursor-not-allowed"
+        class="btn-pager-disabled"
       >Next</button>
     </div>
     """
@@ -1356,40 +1358,34 @@ defmodule PureAdminIconsWeb.IconSearchLive do
         <div
           phx-click="select_icon"
           phx-value-id={icon.icon_id}
-          class="icon-card bg-base-200 rounded-lg cursor-pointer group flex flex-col"
+          class="icon-card bg-base-200 rounded-lg cursor-pointer flex flex-col"
           title={"#{icon.icon_set_code} / #{icon.name}"}
         >
           <!-- Top accent bar — colored by icon set, follows the rounded card corners -->
           <div class={["h-1.5 w-full rounded-t-lg", icon_set_color(icon.icon_set_code)]}></div>
 
-          <div class="p-4 flex flex-col flex-1">
-            <!-- Icon Name on top -->
-            <div class="text-sm font-semibold text-base-content text-center truncate" title={icon.name}>
-              <%= icon.name %>
-            </div>
+          <div class="icon-card-body">
+            <div class="icon-card-name" title={icon.name}><%= icon.name %></div>
 
-            <!-- Style badge under the title (only when there are multiple styles in the result set) -->
             <%= if @show_style_badge do %>
               <div class="flex justify-center mt-1.5">
                 <span class="badge badge-sm badge-neutral capitalize"><%= icon.style_code %></span>
               </div>
             <% end %>
 
-            <!-- Icon Preview (centered, hero) -->
-            <div class="icon-preview-bg w-20 h-20 mx-auto my-3 flex items-center justify-center flex-shrink-0 rounded-lg bg-white/80">
+            <div class="icon-card-thumb icon-preview-bg bg-white/80">
               <span class="inline-svg-icon inline-flex items-center justify-center w-12 h-12" data-svg-url={Icon.svg_url(icon, default_size(icon.sizes))}></span>
             </div>
 
-            <!-- Sizes (always expanded, hover for copy buttons) -->
-            <div class="mt-auto flex flex-wrap items-center justify-center gap-x-2 gap-y-1 font-semibold text-primary min-h-6" style="font-size: 0.8rem;">
+            <div class="icon-card-sizes">
               <%= if Map.get(icon, :is_scalable, false) do %>
-                <div class="relative group/size">
-                  <span class="cursor-help text-2xl leading-none font-bold" title="Scalable — renders at any size">∞</span>
-                  <div class="absolute bottom-full left-1/2 -translate-x-1/2 -mb-0.5 hidden group-hover/size:flex gap-1 bg-base-100 rounded-lg p-1.5 shadow-xl border-2 border-base-content/20 z-50">
+                <div class="has-popover text-2xl leading-none font-bold" title="Scalable — renders at any size">
+                  ∞
+                  <div class="floating-popover">
                     <%= for platform <- preferred_platforms(@platform_prefs, 2) do %>
                       <button
                         type="button"
-                        class={"p-2.5 rounded cursor-pointer hover:bg-base-300 hover:scale-110 active:scale-95 transition-transform #{platform_color(platform)}"}
+                        class={["floating-popover-btn", platform_color(platform)]}
                         title={"Copy #{platform} identifier"}
                         phx-click={JS.dispatch("phx:copy_text", detail: copy_detail(icon, platform, 0))}
                       >
@@ -1400,13 +1396,13 @@ defmodule PureAdminIconsWeb.IconSearchLive do
                 </div>
               <% else %>
                 <%= for size <- icon.sizes do %>
-                  <div class="relative group/size">
-                    <span class="cursor-help"><%= size %>px</span>
-                    <div class="absolute bottom-full left-1/2 -translate-x-1/2 -mb-0.5 hidden group-hover/size:flex gap-1 bg-base-100 rounded-lg p-1.5 shadow-xl border-2 border-base-content/20 z-50">
+                  <div class="has-popover">
+                    <%= size %>px
+                    <div class="floating-popover">
                       <%= for platform <- preferred_platforms(@platform_prefs, 2) do %>
                         <button
                           type="button"
-                          class={"p-2.5 rounded cursor-pointer hover:bg-base-300 hover:scale-110 active:scale-95 transition-transform #{platform_color(platform)}"}
+                          class={["floating-popover-btn", platform_color(platform)]}
                           title={"Copy #{platform} identifier for size #{size}"}
                           phx-click={JS.dispatch("phx:copy_text", detail: copy_detail(icon, platform, size))}
                         >
@@ -1481,7 +1477,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
               <tr
                 phx-click="select_icon"
                 phx-value-id={icon.icon_id}
-                class="hover:bg-base-200 cursor-pointer transition-colors group"
+                class="list-row"
               >
                 <td class="px-4 py-3">
                   <span class="icon-list-preview icon-preview-bg inline-svg-icon inline-flex items-center justify-center rounded bg-white/80 p-1"
@@ -1496,19 +1492,19 @@ defmodule PureAdminIconsWeb.IconSearchLive do
                   <span class="px-2 py-0.5 rounded text-xs bg-base-200 text-base-content/70 capitalize"><%= icon.style_code %></span>
                 </td>
                 <%= if Map.get(icon, :is_scalable, false) do %>
-                  <td class="px-2 py-3 text-center relative" colspan={length(@display_sizes)}>
-                    <span class="text-base-content/80 font-bold text-lg" title="Scalable — renders at any size">∞ Scalable</span>
-                    <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-base-200">
-                      <div class="flex gap-0.5">
+                  <td class="px-2 py-3 text-center" colspan={length(@display_sizes)}>
+                    <div class="has-popover inline-block text-base-content/80 font-bold text-lg" title="Scalable — renders at any size">
+                      ∞ Scalable
+                      <div class="floating-popover">
                         <%= for platform <- preferred_platforms(@platform_prefs, 2) do %>
                           <button
                             type="button"
-                            class={"p-1.5 rounded cursor-pointer hover:bg-base-300 hover:scale-110 active:scale-95 transition-transform #{platform_color(platform)}"}
+                            class={["floating-popover-btn", platform_color(platform)]}
                             title={"Copy #{platform} identifier"}
                             phx-click={JS.dispatch("phx:copy_text", detail: copy_detail(icon, platform, 0))}
                             phx-value-stop-propagation="true"
                           >
-                            <.platform_icon name={to_string(platform)} class="w-4 h-4" />
+                            <.platform_icon name={to_string(platform)} class="w-5 h-5" />
                           </button>
                         <% end %>
                       </div>
@@ -1516,20 +1512,20 @@ defmodule PureAdminIconsWeb.IconSearchLive do
                   </td>
                 <% else %>
                   <%= for size <- @display_sizes do %>
-                    <td class="px-2 py-3 text-center relative">
+                    <td class="px-2 py-3 text-center">
                       <%= if size in icon.sizes do %>
-                        <span class="text-success font-black text-lg">✓</span>
-                        <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-base-200">
-                          <div class="flex gap-0.5">
+                        <div class="has-popover inline-block text-success font-black text-lg">
+                          ✓
+                          <div class="floating-popover">
                             <%= for platform <- preferred_platforms(@platform_prefs, 2) do %>
                               <button
                                 type="button"
-                                class={"p-1.5 rounded cursor-pointer hover:bg-base-300 hover:scale-110 active:scale-95 transition-transform #{platform_color(platform)}"}
+                                class={["floating-popover-btn", platform_color(platform)]}
                                 title={"Copy #{platform} identifier for size #{size}"}
                                 phx-click={JS.dispatch("phx:copy_text", detail: copy_detail(icon, platform, size))}
                                 phx-value-stop-propagation="true"
                               >
-                                <.platform_icon name={to_string(platform)} class="w-4 h-4" />
+                                <.platform_icon name={to_string(platform)} class="w-5 h-5" />
                               </button>
                             <% end %>
                           </div>
