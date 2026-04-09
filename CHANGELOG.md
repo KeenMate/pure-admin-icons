@@ -1,6 +1,18 @@
 # Changelog
 
-## 2026-04-09 — Floating-UI popovers, semantic CSS extraction, control polish
+## 2026-04-09 — Per-icon platform popover fix
+
+### Grid/list popover buttons leaked across icon sets
+- The hover popover on grid pills and list checkmarks used a single global `@platform_prefs` for **all** icons regardless of icon set, so every icon (Heroicons, Lucide, Tabler, Font Awesome) was showing iOS/Android copy buttons — even though only FluentUI has native iOS/Android distributions
+- After opening any icon detail modal, `@platform_prefs` got replaced by that one icon's per-set prefs and then leaked back into all the grid/list buttons (e.g., open a Heroicons icon → close → now every icon in the grid shows Svelte/CSS Class buttons)
+- New helper `preferred_platforms_for/3` resolves the prefs **per icon**: looks up the icon's set's own prefs from `@platform_prefs_by_set`, then filters to only the platforms the set actually supports (via `Formatter.{ios,android,react,vue,svelte,cssclass}_package(icon)` returning a non-nil package name)
+- New helpers `platform_supported?/2` and `package_present?/1` perform the support check
+- `icon_grid` and `icon_list` now receive `platform_prefs_by_set={@platform_prefs_by_set}` instead of the global `platform_prefs` and use `preferred_platforms_for(icon, @platform_prefs_by_set, 2)` at the four popover call sites — each icon now shows only the platforms relevant to its own set, computed independently
+- The modal still uses `@platform_prefs` since it only ever shows one icon at a time and the existing `select_icon` handler already populates that correctly
+
+---
+
+## 2026-04-09 — Floating-UI popovers, semantic CSS extraction, control polish ✅ PUBLISHED
 
 ### Floating-UI for copy-button popovers
 - Vendored `@floating-ui/core@1.6.9` and `@floating-ui/dom@1.6.13` UMD bundles into `priv/static/assets/vendor/`, loaded via `<script defer>` in `root.html.heex` before `app.js`

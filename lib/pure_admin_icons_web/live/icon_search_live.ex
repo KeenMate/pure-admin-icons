@@ -644,10 +644,10 @@ defmodule PureAdminIconsWeb.IconSearchLive do
         <div id="icon-display-popovers" phx-hook="FloatingPopover">
           <div id="icon-display" phx-hook="IconColorFilter">
             <div class="view-grid">
-              <.icon_grid icons={@icons} selected_styles={@selected_styles} selected_sizes={@selected_sizes} selected_icon_sets={@selected_icon_sets} platform_prefs={@platform_prefs} available_styles={@available_styles} />
+              <.icon_grid icons={@icons} selected_styles={@selected_styles} selected_sizes={@selected_sizes} selected_icon_sets={@selected_icon_sets} platform_prefs_by_set={@platform_prefs_by_set} available_styles={@available_styles} />
             </div>
             <div class="view-list">
-              <.icon_list icons={@icons} platform_prefs={@platform_prefs} selected_sizes={@selected_sizes} available_sizes={@available_sizes} icon_list_size={@icon_list_size} />
+              <.icon_list icons={@icons} platform_prefs_by_set={@platform_prefs_by_set} selected_sizes={@selected_sizes} available_sizes={@available_sizes} icon_list_size={@icon_list_size} />
             </div>
           </div>
         </div>
@@ -1382,7 +1382,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
                 <div class="has-popover text-2xl leading-none font-bold" title="Scalable — renders at any size">
                   ∞
                   <div class="floating-popover">
-                    <%= for platform <- preferred_platforms(@platform_prefs, 2) do %>
+                    <%= for platform <- preferred_platforms_for(icon, @platform_prefs_by_set, 2) do %>
                       <button
                         type="button"
                         class={["floating-popover-btn", platform_color(platform)]}
@@ -1399,7 +1399,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
                   <div class="has-popover">
                     <%= size %>px
                     <div class="floating-popover">
-                      <%= for platform <- preferred_platforms(@platform_prefs, 2) do %>
+                      <%= for platform <- preferred_platforms_for(icon, @platform_prefs_by_set, 2) do %>
                         <button
                           type="button"
                           class={["floating-popover-btn", platform_color(platform)]}
@@ -1496,7 +1496,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
                     <div class="has-popover inline-block text-base-content/80 font-bold text-lg" title="Scalable — renders at any size">
                       ∞ Scalable
                       <div class="floating-popover">
-                        <%= for platform <- preferred_platforms(@platform_prefs, 2) do %>
+                        <%= for platform <- preferred_platforms_for(icon, @platform_prefs_by_set, 2) do %>
                           <button
                             type="button"
                             class={["floating-popover-btn", platform_color(platform)]}
@@ -1517,7 +1517,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
                         <div class="has-popover inline-block text-success font-black text-lg">
                           ✓
                           <div class="floating-popover">
-                            <%= for platform <- preferred_platforms(@platform_prefs, 2) do %>
+                            <%= for platform <- preferred_platforms_for(icon, @platform_prefs_by_set, 2) do %>
                               <button
                                 type="button"
                                 class={["floating-popover-btn", platform_color(platform)]}
@@ -1566,6 +1566,36 @@ defmodule PureAdminIconsWeb.IconSearchLive do
     |> Enum.filter(&Map.get(prefs, &1, false))
     |> Enum.take(count)
   end
+
+  # Get the first N preferred platforms FOR a specific icon — uses the icon set's
+  # own prefs (from platform_prefs_by_set, falling back to defaults) AND filters
+  # out platforms the set doesn't actually support (e.g. iOS/Android only exist
+  # for FluentUI). Used by grid/list popovers so each icon shows only the
+  # platforms relevant to its own icon set.
+  defp preferred_platforms_for(icon, prefs_by_set, count) do
+    prefs = prefs_for_set(prefs_by_set, icon.icon_set_code)
+
+    [:ios, :android, :react, :vue, :svelte, :cssclass, :htmltag, :filename]
+    |> Enum.filter(&Map.get(prefs, &1, false))
+    |> Enum.filter(&platform_supported?(icon, &1))
+    |> Enum.take(count)
+  end
+
+  # Does the icon's set actually have this platform? Inspects the formatter
+  # package callbacks — a {nil, _} package means the set has no real
+  # distribution for that platform.
+  defp platform_supported?(icon, :ios), do: package_present?(Formatter.ios_package(icon))
+  defp platform_supported?(icon, :android), do: package_present?(Formatter.android_package(icon))
+  defp platform_supported?(icon, :react), do: package_present?(Formatter.react_package(icon))
+  defp platform_supported?(icon, :vue), do: package_present?(Formatter.vue_package(icon))
+  defp platform_supported?(icon, :svelte), do: package_present?(Formatter.svelte_package(icon))
+  defp platform_supported?(icon, :cssclass), do: package_present?(Formatter.cssclass_package(icon))
+  defp platform_supported?(icon, :htmltag), do: package_present?(Formatter.cssclass_package(icon))
+  defp platform_supported?(_, :filename), do: true
+  defp platform_supported?(_, _), do: false
+
+  defp package_present?({name, _url}) when is_binary(name) and name != "", do: true
+  defp package_present?(_), do: false
 
   defp platform_color(:ios), do: "text-primary"
   defp platform_color(:android), do: "text-success"
