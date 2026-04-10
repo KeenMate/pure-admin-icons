@@ -68,70 +68,80 @@ defmodule PureAdminIcons.Sync.Worker do
     icon_set = adapter.icon_set_id()
     Logger.info("[#{icon_set}] Starting sync...")
 
-    # Create job run record
-    {:ok, job_run_id} = Icons.create_job_run("sync_worker", "sync_icons", %{icon_set_code: icon_set})
+    # Download first so we can detect version before creating the job run
+    case adapter.download() do
+      {:ok, extracted_path} ->
+        version = detect_version(extracted_path)
+        if version, do: Logger.info("[#{icon_set}] Detected version: #{version}")
 
-    try do
-      with {:ok, extracted_path} <- adapter.download(),
-           {:ok, %{icons: icons, synonyms: synonyms, discrepancies: discrepancies}} <- adapter.parse(extracted_path),
-           {:ok, svg_count} <- move_svgs_if_configured(adapter, extracted_path) do
+        # Create job run with version in job_data
+        {:ok, job_run_id} = Icons.create_job_run("sync_worker", "sync_icons", %{icon_set_code: icon_set, version: version})
 
-        # Insert icons to stage table
-        insert_icons_to_stage(icons, icon_set, job_run_id)
+        try do
+          with {:ok, %{icons: icons, synonyms: synonyms, discrepancies: discrepancies}} <- adapter.parse(extracted_path),
+               {:ok, svg_count} <- move_svgs_if_configured(adapter, extracted_path) do
 
-        # Insert synonyms to stage table (if any)
-        insert_synonyms_to_stage(synonyms, icon_set, job_run_id)
+            # Insert icons to stage table
+            insert_icons_to_stage(icons, icon_set, job_run_id)
 
-        # Call the unified import function that handles everything
-        Logger.info("[#{icon_set}] Stage insert complete, calling process_icon_import...")
-        import_stats = process_icon_import(icon_set, job_run_id)
-        Logger.info("[#{icon_set}] Import complete: #{inspect(import_stats)}")
+            # Insert synonyms to stage table (if any)
+            insert_synonyms_to_stage(synonyms, icon_set, job_run_id)
 
-        # Cleanup extracted files
-        adapter.cleanup(extracted_path)
+            # Call the unified import function that handles everything
+            Logger.info("[#{icon_set}] Stage insert complete, calling process_icon_import...")
+            import_stats = process_icon_import(icon_set, job_run_id)
+            Logger.info("[#{icon_set}] Import complete: #{inspect(import_stats)}")
 
-        # Log discrepancies
-        if length(discrepancies) > 0 do
-          Logger.warning("[#{icon_set}] Found #{length(discrepancies)} discrepancies")
+            # Cleanup extracted files
+            adapter.cleanup(extracted_path)
+
+            # Log discrepancies
+            if length(discrepancies) > 0 do
+              Logger.warning("[#{icon_set}] Found #{length(discrepancies)} discrepancies")
+            end
+
+            # Complete job run
+            Logger.info("[#{icon_set}] Storing #{length(discrepancies)} discrepancies in job run")
+            Icons.update_job_run(job_run_id, "completed", %{
+              icons_created: import_stats.icons_created,
+              icons_updated: import_stats.icons_updated,
+              icons_deleted: import_stats.icons_deleted,
+              icons_unchanged: import_stats.icons_unchanged,
+              phrases_created: import_stats.phrases_created,
+              phrase_links_created: import_stats.phrase_links_created,
+              primary_phrases_linked: import_stats.primary_phrases_linked,
+              svgs_downloaded: svg_count,
+              discrepancy_count: length(discrepancies),
+              discrepancies: discrepancies
+            })
+
+            Logger.info("[#{icon_set}] Sync complete!")
+
+            {:ok, %{
+              icon_set: icon_set,
+              icons_created: import_stats.icons_created,
+              icons_updated: import_stats.icons_updated,
+              svgs: svg_count,
+              phrases_created: import_stats.phrases_created,
+              discrepancies: length(discrepancies)
+            }}
+          else
+            {:error, reason} ->
+              Logger.error("[#{icon_set}] Sync failed: #{inspect(reason)}")
+              Icons.update_job_run(job_run_id, "failed", nil, %{error: inspect(reason)})
+              {:error, reason}
+          end
+        rescue
+          e ->
+            Logger.error("[#{icon_set}] Sync crashed: #{Exception.message(e)}")
+            Logger.error(Exception.format_stacktrace(__STACKTRACE__))
+            Icons.update_job_run(job_run_id, "failed", nil, %{error: Exception.message(e)})
+            {:error, e}
         end
 
-        # Complete job run
-        Logger.info("[#{icon_set}] Storing #{length(discrepancies)} discrepancies in job run")
-        Icons.update_job_run(job_run_id, "completed", %{
-          icons_created: import_stats.icons_created,
-          icons_updated: import_stats.icons_updated,
-          icons_deleted: import_stats.icons_deleted,
-          icons_unchanged: import_stats.icons_unchanged,
-          phrases_created: import_stats.phrases_created,
-          phrase_links_created: import_stats.phrase_links_created,
-          primary_phrases_linked: import_stats.primary_phrases_linked,
-          svgs_downloaded: svg_count,
-          discrepancy_count: length(discrepancies),
-          discrepancies: discrepancies
-        })
-
-        Logger.info("[#{icon_set}] Sync complete!")
-
-        {:ok, %{
-          icon_set: icon_set,
-          icons_created: import_stats.icons_created,
-          icons_updated: import_stats.icons_updated,
-          svgs: svg_count,
-          phrases_created: import_stats.phrases_created,
-          discrepancies: length(discrepancies)
-        }}
-      else
-        {:error, reason} ->
-          Logger.error("[#{icon_set}] Sync failed: #{inspect(reason)}")
-          Icons.update_job_run(job_run_id, "failed", nil, %{error: inspect(reason)})
-          {:error, reason}
-      end
-    rescue
-      e ->
-        Logger.error("[#{icon_set}] Sync crashed: #{Exception.message(e)}")
-        Logger.error(Exception.format_stacktrace(__STACKTRACE__))
-        Icons.update_job_run(job_run_id, "failed", nil, %{error: Exception.message(e)})
-        {:error, e}
+      {:error, reason} ->
+        Logger.error("[#{icon_set}] Download failed: #{inspect(reason)}")
+        {:error, reason}
     end
   end
 
@@ -328,15 +338,42 @@ defmodule PureAdminIcons.Sync.Worker do
   end
 
   defp compute_icon_hash(icon) do
-    data = %{
-      sizes: icon[:sizes] || [],
-      filenames: icon[:filenames] || %{},
-      ios: icon[:ios_identifiers] || %{},
-      android: icon[:android_identifiers] || %{}
-    }
+    # Prefer SVG content hash (computed by adapter from actual file content)
+    # Fall back to metadata hash if SVG hash not available
+    case icon[:svg_hash] do
+      nil ->
+        data = %{
+          sizes: icon[:sizes] || [],
+          filenames: icon[:filenames] || %{},
+          ios: icon[:ios_identifiers] || %{},
+          android: icon[:android_identifiers] || %{}
+        }
+        :crypto.hash(:md5, Jason.encode!(data)) |> Base.encode16(case: :lower)
 
-    :crypto.hash(:md5, Jason.encode!(data))
-    |> Base.encode16(case: :lower)
+      hash ->
+        hash
+    end
+  end
+
+  # Detect package version from extracted directory by looking for package.json
+  defp detect_version(extracted_path) do
+    # Try common patterns: direct package.json or one level deep (npm tarball, GitHub ZIP)
+    candidates =
+      [extracted_path | Path.wildcard(Path.join(extracted_path, "*"))]
+      |> Enum.flat_map(fn dir ->
+        [Path.join(dir, "package.json"), Path.join(dir, "lerna.json")]
+      end)
+
+    Enum.find_value(candidates, fn path ->
+      case File.read(path) do
+        {:ok, content} ->
+          case Jason.decode(content) do
+            {:ok, %{"version" => v}} when is_binary(v) and v != "" -> v
+            _ -> nil
+          end
+        _ -> nil
+      end
+    end)
   end
 
   # Legacy function for backwards compatibility

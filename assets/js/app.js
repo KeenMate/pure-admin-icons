@@ -21,9 +21,17 @@ Hooks.IconColorFilter = {
     })
   },
   updated() {
-    this.updateAllColors()
-    this.applyPreviewBg()
-    this.loadAllSvgs()
+    // Only re-process if the icon list actually changed (skip modal open/close)
+    const icons = this.el.querySelectorAll('.inline-svg-icon')
+    const iconCount = icons.length
+    const firstUrl = icons[0]?.dataset?.svgUrl || ''
+    const sig = `${iconCount}:${firstUrl}`
+    if (sig !== this._lastSig) {
+      this._lastSig = sig
+      this.updateAllColors()
+      this.applyPreviewBg()
+      this.loadAllSvgs()
+    }
   },
   applyPreviewBg() {
     let bg = '#ffffff'
@@ -883,6 +891,9 @@ Hooks.DownloadNaming = {
     const toKebab = s => s.toLowerCase().replace(/\s+/g, '-')
 
     this.el.querySelectorAll('.download-link').forEach(link => {
+      // Set naming convention so phx-click="track_download" includes it
+      link.setAttribute('phx-value-naming', convention)
+
       const original = link.dataset.originalFilename || ''
       if (!original) return
       const extMatch = original.match(/\.[a-z0-9]+$/i)

@@ -278,21 +278,30 @@ defmodule PureAdminIconsWeb.IconSearchLive do
     {:noreply, socket}
   end
 
-  def handle_event("track_download", %{"icon-id" => icon_id, "size" => size}, socket) do
-    # Track download asynchronously (don't block the UI)
+  def handle_event("track_download", %{"icon-id" => icon_id, "size" => size} = params, socket) do
+    require Logger
+    naming = params["naming"] || "original"
+    Logger.info("[metrics] track_download icon_id=#{icon_id} size=#{size} naming=#{naming}")
     Task.start(fn ->
-      Icons.track_action(String.to_integer(icon_id), "download", size: String.to_integer(size))
+      case Icons.track_action(String.to_integer(icon_id), "download", size: String.to_integer(size), platform: "download:#{naming}") do
+        :ok -> Logger.info("[metrics] track_download OK icon_id=#{icon_id}")
+        {:error, reason} -> Logger.error("[metrics] track_download FAILED icon_id=#{icon_id}: #{inspect(reason)}")
+      end
     end)
     {:noreply, socket}
   end
 
   def handle_event("track_copy", %{"icon-id" => icon_id, "platform" => platform} = params, socket) do
-    # Track copy asynchronously
+    require Logger
+    Logger.info("[metrics] track_copy icon_id=#{icon_id} platform=#{platform}")
     size = params["size"]
     Task.start(fn ->
       opts = [platform: platform]
       opts = if size, do: [{:size, String.to_integer(size)} | opts], else: opts
-      Icons.track_action(String.to_integer(icon_id), "copy", opts)
+      case Icons.track_action(String.to_integer(icon_id), "copy", opts) do
+        :ok -> Logger.info("[metrics] track_copy OK icon_id=#{icon_id} platform=#{platform}")
+        {:error, reason} -> Logger.error("[metrics] track_copy FAILED icon_id=#{icon_id}: #{inspect(reason)}")
+      end
     end)
     {:noreply, socket}
   end

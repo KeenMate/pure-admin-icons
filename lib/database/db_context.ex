@@ -468,7 +468,7 @@ defmodule Database.DbContext do
 
 
   @doc """
-  Calls database function public.track_icon_action
+  Calls database procedure public.track_icon_action
   
   Returns: {:ok, any()} | {:error, any()}
   
@@ -508,7 +508,7 @@ defmodule Database.DbContext do
 
 
   @doc """
-  Calls database function public.track_search
+  Calls database procedure public.track_search
   
   Returns: {:ok, any()} | {:error, any()}
   

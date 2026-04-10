@@ -151,7 +151,8 @@ defmodule PureAdminIcons.Sync.Adapters.Fontawesome do
                 sizes: [24],
                 filenames: %{"24" => filename},
                 ios_identifiers: %{"24" => to_fa_camel_case(name)},
-                android_identifiers: %{"24" => "ic_fa_#{String.replace(name, "-", "_")}_#{style}"}
+                android_identifiers: %{"24" => "ic_fa_#{String.replace(name, "-", "_")}_#{style}"},
+                svg_hash: hash_file(Path.join(style_dir, filename))
               }
             end)
             # Deduplicate aliases: FA has e.g. "thumbtack" and "thumb-tack" which
@@ -317,5 +318,12 @@ defmodule PureAdminIcons.Sync.Adapters.Fontawesome do
       |> Enum.join()
 
     "fa#{camel}"
+  end
+
+  defp hash_file(path) do
+    case File.read(path) do
+      {:ok, content} -> :crypto.hash(:sha256, content) |> Base.encode16(case: :lower)
+      _ -> nil
+    end
   end
 end

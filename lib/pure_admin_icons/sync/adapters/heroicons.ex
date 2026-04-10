@@ -138,6 +138,9 @@ defmodule PureAdminIcons.Sync.Adapters.Heroicons do
           sizes = Enum.map(entries, fn {_, _, size} -> size end) |> Enum.sort()
           display_name = name |> String.replace("-", " ") |> title_case()
 
+          # Hash all SVG files for this icon (one per size)
+          svg_hash = hash_multi_svg(src_dir, name, style, sizes)
+
           %{
             icon_set: icon_set_id(),
             name: display_name,
@@ -146,7 +149,8 @@ defmodule PureAdminIcons.Sync.Adapters.Heroicons do
             sizes: sizes,
             filenames: build_filenames(name, sizes),
             ios_identifiers: build_ios_identifiers(name, sizes),
-            android_identifiers: build_android_identifiers(name, sizes, style)
+            android_identifiers: build_android_identifiers(name, sizes, style),
+            svg_hash: svg_hash
           }
         end)
 
@@ -305,5 +309,38 @@ defmodule PureAdminIcons.Sync.Adapters.Heroicons do
     sizes
     |> Enum.map(fn size -> {Integer.to_string(size), "ic_heroicons_#{snake}_#{size}_#{style}"} end)
     |> Map.new()
+  end
+
+  # Build a map from size to folder path (e.g. %{24 => "24/outline", 20 => "20/solid"})
+  defp size_to_folder(style) do
+    @style_configs
+    |> Enum.find(fn {s, _} -> s == style end)
+    |> case do
+      {_, size_folders} -> Map.new(size_folders)
+      nil -> %{}
+    end
+  end
+
+  defp hash_multi_svg(src_dir, name, style, sizes) do
+    folders = size_to_folder(style)
+
+    contents =
+      sizes
+      |> Enum.sort()
+      |> Enum.map(fn size ->
+        folder = Map.get(folders, size)
+        if folder do
+          path = Path.join([src_dir, folder, "#{name}.svg"])
+          case File.read(path) do
+            {:ok, data} -> data
+            _ -> ""
+          end
+        else
+          ""
+        end
+      end)
+      |> Enum.join()
+
+    if contents == "", do: nil, else: :crypto.hash(:sha256, contents) |> Base.encode16(case: :lower)
   end
 end

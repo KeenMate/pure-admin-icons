@@ -1,6 +1,6 @@
 {
   "version": "LOCAL",
-  "time": "2026-04-08T21:26:35.5494365+02:00",
+  "time": "2026-04-10T21:25:13.8360526+02:00",
   "routines": [
     {
       "RowNumber": 1,
@@ -1901,6 +1901,55 @@
     {
       "RowNumber": 1,
       "RoutineSchema": "public",
+      "RoutineNameWithParams": "export_translations(text)",
+      "HasOverload": true,
+      "RoutineName": "export_translations",
+      "SpecificName": "",
+      "DataType": "record",
+      "UdtTypeScheme": "pg_catalog",
+      "UdtTypeName": "record",
+      "ParamCount": 4,
+      "FuncType": "function",
+      "InParameters": [
+        {
+          "OrdinalPosition": 1,
+          "Name": "_data_group",
+          "Mode": "IN",
+          "UDTName": "text",
+          "IsNullable": false,
+          "IsOptional": false
+        }
+      ],
+      "OutParameters": [
+        {
+          "OrdinalPosition": 2,
+          "Name": "__lang_code",
+          "Mode": "OUT",
+          "UDTName": "text",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 3,
+          "Name": "__translations",
+          "Mode": "OUT",
+          "UDTName": "json",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 4,
+          "Name": "__count",
+          "Mode": "OUT",
+          "UDTName": "int8",
+          "IsNullable": false,
+          "IsOptional": false
+        }
+      ]
+    },
+    {
+      "RowNumber": 2,
+      "RoutineSchema": "public",
       "RoutineNameWithParams": "export_translations(int8,text)",
       "HasOverload": true,
       "RoutineName": "export_translations",
@@ -1955,55 +2004,6 @@
         },
         {
           "OrdinalPosition": 6,
-          "Name": "__count",
-          "Mode": "OUT",
-          "UDTName": "int8",
-          "IsNullable": false,
-          "IsOptional": false
-        }
-      ]
-    },
-    {
-      "RowNumber": 2,
-      "RoutineSchema": "public",
-      "RoutineNameWithParams": "export_translations(text)",
-      "HasOverload": true,
-      "RoutineName": "export_translations",
-      "SpecificName": "",
-      "DataType": "record",
-      "UdtTypeScheme": "pg_catalog",
-      "UdtTypeName": "record",
-      "ParamCount": 4,
-      "FuncType": "function",
-      "InParameters": [
-        {
-          "OrdinalPosition": 1,
-          "Name": "_data_group",
-          "Mode": "IN",
-          "UDTName": "text",
-          "IsNullable": false,
-          "IsOptional": false
-        }
-      ],
-      "OutParameters": [
-        {
-          "OrdinalPosition": 2,
-          "Name": "__lang_code",
-          "Mode": "OUT",
-          "UDTName": "text",
-          "IsNullable": false,
-          "IsOptional": false
-        },
-        {
-          "OrdinalPosition": 3,
-          "Name": "__translations",
-          "Mode": "OUT",
-          "UDTName": "json",
-          "IsNullable": false,
-          "IsOptional": false
-        },
-        {
-          "OrdinalPosition": 4,
           "Name": "__count",
           "Mode": "OUT",
           "UDTName": "int8",
@@ -3495,11 +3495,11 @@
       "HasOverload": false,
       "RoutineName": "track_icon_action",
       "SpecificName": "",
-      "DataType": "void",
-      "UdtTypeScheme": "pg_catalog",
-      "UdtTypeName": "void",
+      "DataType": "",
+      "UdtTypeScheme": "",
+      "UdtTypeName": "",
       "ParamCount": 4,
-      "FuncType": "function",
+      "FuncType": "procedure",
       "InParameters": [
         {
           "OrdinalPosition": 1,
@@ -3543,11 +3543,11 @@
       "HasOverload": false,
       "RoutineName": "track_search",
       "SpecificName": "",
-      "DataType": "void",
-      "UdtTypeScheme": "pg_catalog",
-      "UdtTypeName": "void",
+      "DataType": "",
+      "UdtTypeScheme": "",
+      "UdtTypeName": "",
       "ParamCount": 5,
-      "FuncType": "function",
+      "FuncType": "procedure",
       "InParameters": [
         {
           "OrdinalPosition": 1,

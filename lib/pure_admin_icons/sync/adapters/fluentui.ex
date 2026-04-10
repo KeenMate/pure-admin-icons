@@ -254,7 +254,7 @@ defmodule PureAdminIcons.Sync.Adapters.Fluentui do
 
         if name && claimed_sizes != [] && claimed_styles != [] do
           actual_svgs = list_svg_files(svg_dir)
-          {icons, discrepancies} = build_verified_icons(name, claimed_sizes, claimed_styles, actual_svgs)
+          {icons, discrepancies} = build_verified_icons(name, claimed_sizes, claimed_styles, actual_svgs, svg_dir)
 
           if icons != [] do
             {:ok, icons, name, synonyms, discrepancies}
@@ -292,7 +292,7 @@ defmodule PureAdminIcons.Sync.Adapters.Fluentui do
     end
   end
 
-  defp build_verified_icons(name, claimed_sizes, claimed_styles, actual_svgs) do
+  defp build_verified_icons(name, claimed_sizes, claimed_styles, actual_svgs, svg_dir) do
     name_snake = to_snake_case(name)
     normalized_styles = Enum.map(claimed_styles, &String.downcase/1)
     actual_combinations = parse_svg_combinations(actual_svgs)
@@ -314,15 +314,19 @@ defmodule PureAdminIcons.Sync.Adapters.Fluentui do
           end)
 
         if actual_sizes != [] do
+          filenames = build_filenames(name_snake, actual_sizes, style)
+          svg_hash = hash_multi_svg(svg_dir, filenames)
+
           icon = %{
             icon_set: icon_set_id(),
             name: name,
             name_lower: String.downcase(name),
             style: style,
             sizes: Enum.sort(actual_sizes),
-            filenames: build_filenames(name_snake, actual_sizes, style),
+            filenames: filenames,
             ios_identifiers: build_ios_identifiers(name, actual_sizes, style),
-            android_identifiers: build_android_identifiers(name_snake, actual_sizes, style)
+            android_identifiers: build_android_identifiers(name_snake, actual_sizes, style),
+            svg_hash: svg_hash
           }
           {[icon | icons_acc], disc_acc ++ new_discrepancies}
         else
@@ -391,5 +395,21 @@ defmodule PureAdminIcons.Sync.Adapters.Fluentui do
     Enum.find(@valid_styles, fn style ->
       String.ends_with?(filename, "_#{style}.svg")
     end)
+  end
+
+  # Hash all SVG files for one icon variant (sorted by filename for determinism)
+  defp hash_multi_svg(svg_dir, filenames) do
+    contents =
+      filenames
+      |> Enum.sort_by(fn {size, _} -> size end)
+      |> Enum.map(fn {_size, filename} ->
+        case File.read(Path.join(svg_dir, filename)) do
+          {:ok, data} -> data
+          _ -> ""
+        end
+      end)
+      |> Enum.join()
+
+    if contents == "", do: nil, else: :crypto.hash(:sha256, contents) |> Base.encode16(case: :lower)
   end
 end

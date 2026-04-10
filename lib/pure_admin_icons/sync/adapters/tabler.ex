@@ -127,7 +127,8 @@ defmodule PureAdminIcons.Sync.Adapters.Tabler do
                 sizes: [24],
                 filenames: %{"24" => filename},
                 ios_identifiers: %{"24" => to_camel_case(name)},
-                android_identifiers: %{"24" => "ic_tabler_#{String.replace(name, "-", "_")}"}
+                android_identifiers: %{"24" => "ic_tabler_#{String.replace(name, "-", "_")}"},
+                svg_hash: hash_file(Path.join(style_dir, filename))
               }
             end)
           else
@@ -260,5 +261,12 @@ defmodule PureAdminIcons.Sync.Adapters.Tabler do
       if idx == 0, do: word, else: String.capitalize(word)
     end)
     |> Enum.join()
+  end
+
+  defp hash_file(path) do
+    case File.read(path) do
+      {:ok, content} -> :crypto.hash(:sha256, content) |> Base.encode16(case: :lower)
+      _ -> nil
+    end
   end
 end
