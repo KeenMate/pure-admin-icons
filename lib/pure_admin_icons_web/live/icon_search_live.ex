@@ -1584,13 +1584,13 @@ defmodule PureAdminIconsWeb.IconSearchLive do
   # Does the icon's set actually have this platform? Inspects the formatter
   # package callbacks — a {nil, _} package means the set has no real
   # distribution for that platform.
-  defp platform_supported?(icon, :ios), do: package_present?(Formatter.ios_package(icon))
-  defp platform_supported?(icon, :android), do: package_present?(Formatter.android_package(icon))
-  defp platform_supported?(icon, :react), do: package_present?(Formatter.react_package(icon))
-  defp platform_supported?(icon, :vue), do: package_present?(Formatter.vue_package(icon))
-  defp platform_supported?(icon, :svelte), do: package_present?(Formatter.svelte_package(icon))
-  defp platform_supported?(icon, :cssclass), do: package_present?(Formatter.cssclass_package(icon))
-  defp platform_supported?(icon, :htmltag), do: package_present?(Formatter.cssclass_package(icon))
+  defp platform_supported?(icon, :ios), do: package_present?(ios_package(icon))
+  defp platform_supported?(icon, :android), do: package_present?(android_package(icon))
+  defp platform_supported?(icon, :react), do: package_present?(react_package(icon))
+  defp platform_supported?(icon, :vue), do: package_present?(vue_package(icon))
+  defp platform_supported?(icon, :svelte), do: package_present?(svelte_package(icon))
+  defp platform_supported?(icon, :cssclass), do: package_present?(cssclass_package(icon))
+  defp platform_supported?(icon, :htmltag), do: package_present?(cssclass_package(icon))
   defp platform_supported?(_, :filename), do: true
   defp platform_supported?(_, _), do: false
 
