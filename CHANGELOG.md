@@ -1,6 +1,22 @@
 # Changelog
 
-## 2026-04-09 — Per-icon platform popover fix
+## 2026-04-10 — Styled error pages, per-icon popover fix
+
+### Custom error pages
+- Replaced the plain-text Phoenix error pages with styled, self-contained HTML pages matching the site's branding
+- Big `icons.pureadmin.io` logo header with golden "pure" accent, status code, title, description, and "Back to icon search" button
+- GitHub icon link in top-right corner linking to `KeenMate/pure-admin-icons`
+- Time-of-day theme support via inline script — morning/day/evening/night color schemes matching the main site, CSS variable swap with no FOWT
+- Generic handler covers all HTTP status codes (named messages for 400/403/404/408/500/502/503/504, fallback for others)
+- Error preview route at `/errors/:code` for testing (e.g. `/errors/404`, `/errors/500`)
+
+### Per-icon platform popover fix
+- Fixed grid/list hover popover buttons showing iOS/Android for all icons regardless of icon set — now each icon's popover only shows platforms the set actually supports (via `Formatter.*_package/1` callbacks)
+- Fixed Formatter module alias scope crash (500 on every page load in production)
+
+---
+
+## 2026-04-09 — Per-icon platform popover fix ✅ PUBLISHED
 
 ### Grid/list popover buttons leaked across icon sets
 - The hover popover on grid pills and list checkmarks used a single global `@platform_prefs` for **all** icons regardless of icon set, so every icon (Heroicons, Lucide, Tabler, Font Awesome) was showing iOS/Android copy buttons — even though only FluentUI has native iOS/Android distributions

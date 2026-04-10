@@ -23,6 +23,7 @@ defmodule PureAdminIconsWeb.Router do
   scope "/", PureAdminIconsWeb do
     pipe_through :browser
 
+    get "/errors/:code", ErrorPreviewController, :show
     live "/", IconSearchLive
     live "/docs", Docs.DocsIndexLive
     live "/docs/api", Docs.ApiDocsLive
