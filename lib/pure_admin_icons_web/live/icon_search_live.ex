@@ -26,6 +26,14 @@ defmodule PureAdminIconsWeb.IconSearchLive do
     "background-color: #{bg}; color: #{color};"
   end
 
+  # Compact swatch for the quick-preset bar: shows a half-and-half circle (bg left, color right)
+  defp preset_swatch_style(%{"bg" => "checker", "color" => color}) do
+    "background: linear-gradient(90deg, #e5e7eb 50%, #{color} 50%);"
+  end
+  defp preset_swatch_style(%{"bg" => bg, "color" => color}) do
+    "background: linear-gradient(90deg, #{bg} 50%, #{color} 50%);"
+  end
+
   @impl true
   def mount(_params, _session, socket) do
     require Logger
@@ -477,15 +485,17 @@ defmodule PureAdminIconsWeb.IconSearchLive do
             </div>
           </form>
           <div class="flex items-center gap-2">
-            <button
-              phx-click={JS.toggle(to: "#filters-panel", in: "fade-in-scale", out: "fade-out-scale")}
-              class={["btn-action border", if(@selected_styles != [] || @selected_sizes != [] || @selected_icon_sets != [], do: "bg-primary text-primary-content border-primary", else: "bg-base-200 text-base-content/70 hover:text-base-content border-base-content/20")]}
-            >
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-              </svg>
-              <span class="hidden sm:inline">Filters</span>
-            </button>
+            <div class="view-toggle">
+              <button
+                phx-click={JS.toggle(to: "#filters-panel", in: "fade-in-scale", out: "fade-out-scale")}
+                class={["btn-action", if(@selected_styles != [] || @selected_sizes != [] || @selected_icon_sets != [], do: "bg-primary text-primary-content", else: "text-base-content/70 hover:text-base-content")]}
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                </svg>
+                <span class="hidden sm:inline">Filters</span>
+              </button>
+            </div>
             <div class="view-toggle" id="view-mode" phx-hook="ViewMode">
               <button
                 phx-click="toggle_view"
@@ -514,66 +524,72 @@ defmodule PureAdminIconsWeb.IconSearchLive do
         <!-- Filters (collapsible) -->
         <div id="filters-panel" class="mb-6 p-4 bg-base-200/50 rounded-lg border border-base-300 space-y-4" style="display: none;">
           <!-- Icon Set Filter -->
-          <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
-            <span class="text-base font-medium text-base-content min-w-14">Sets:</span>
-            <%= for icon_set <- @icon_sets do %>
-              <label class="inline-flex items-center cursor-pointer gap-1.5">
-                <input
-                  type="checkbox"
-                  phx-click="toggle_icon_set"
-                  phx-value-set={icon_set.code}
-                  checked={icon_set.code in @selected_icon_sets}
-                  class="w-5 h-5 rounded border-base-content/25 focus:ring-primary"
-                />
-                <span class="text-base text-base-content/70" title={"#{icon_set.icon_count} icons"}><%= icon_set.title %></span>
-              </label>
-            <% end %>
+          <div>
+            <span class="text-sm font-semibold text-base-content block mb-2">Sets</span>
+            <div class="flex flex-wrap gap-x-4 gap-y-2">
+              <%= for icon_set <- @icon_sets do %>
+                <label class="inline-flex items-center cursor-pointer gap-1.5">
+                  <input
+                    type="checkbox"
+                    phx-click="toggle_icon_set"
+                    phx-value-set={icon_set.code}
+                    checked={icon_set.code in @selected_icon_sets}
+                    class="w-4 h-4 rounded border-base-content/25 focus:ring-primary"
+                  />
+                  <span class="text-sm text-base-content/70" title={"#{icon_set.icon_count} icons"}><%= icon_set.title %></span>
+                </label>
+              <% end %>
+            </div>
           </div>
 
           <!-- Style Filter -->
-          <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
-            <span class="text-base font-medium text-base-content min-w-14">Styles:</span>
-            <%= for style <- @available_styles do %>
-              <label class="inline-flex items-center cursor-pointer gap-1.5">
-                <input
-                  type="checkbox"
-                  phx-click="toggle_style"
-                  phx-value-style={style}
-                  checked={style in @selected_styles}
-                  class="w-5 h-5 rounded border-base-content/25 focus:ring-primary"
-                />
-                <span class="text-base text-base-content/70 capitalize"><%= style %></span>
-              </label>
-            <% end %>
+          <div>
+            <span class="text-sm font-semibold text-base-content block mb-2">Styles</span>
+            <div class="flex flex-wrap gap-x-4 gap-y-2">
+              <%= for style <- @available_styles do %>
+                <label class="inline-flex items-center cursor-pointer gap-1.5">
+                  <input
+                    type="checkbox"
+                    phx-click="toggle_style"
+                    phx-value-style={style}
+                    checked={style in @selected_styles}
+                    class="w-4 h-4 rounded border-base-content/25 focus:ring-primary"
+                  />
+                  <span class="text-sm text-base-content/70 capitalize"><%= style %></span>
+                </label>
+              <% end %>
+            </div>
           </div>
 
           <!-- Size Filters -->
-          <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
-            <span class="text-base font-medium text-base-content min-w-14">Sizes:</span>
-            <%= if Enum.any?(@icon_sets, & &1.is_scalable) do %>
-              <label class="inline-flex items-center cursor-pointer gap-1.5">
-                <input
-                  type="checkbox"
-                  phx-click="toggle_size"
-                  phx-value-size="0"
-                  checked={0 in @selected_sizes}
-                  class="w-5 h-5 rounded border-base-content/25 focus:ring-primary"
-                />
-                <span class="text-base text-base-content/70" title="Icons that scale to any size">∞ Scalable</span>
-              </label>
-            <% end %>
-            <%= for size <- @available_sizes do %>
-              <label class="inline-flex items-center cursor-pointer gap-1.5">
-                <input
-                  type="checkbox"
-                  phx-click="toggle_size"
-                  phx-value-size={size}
-                  checked={size in @selected_sizes}
-                  class="w-5 h-5 rounded border-base-content/25 focus:ring-primary"
-                />
-                <span class="text-base text-base-content/70"><%= size %></span>
-              </label>
-            <% end %>
+          <div>
+            <span class="text-sm font-semibold text-base-content block mb-2">Sizes</span>
+            <div class="flex flex-wrap gap-x-4 gap-y-2">
+              <%= if Enum.any?(@icon_sets, & &1.is_scalable) do %>
+                <label class="inline-flex items-center cursor-pointer gap-1.5">
+                  <input
+                    type="checkbox"
+                    phx-click="toggle_size"
+                    phx-value-size="0"
+                    checked={0 in @selected_sizes}
+                    class="w-4 h-4 rounded border-base-content/25 focus:ring-primary"
+                  />
+                  <span class="text-sm text-base-content/70" title="Icons that scale to any size">∞ Scalable</span>
+                </label>
+              <% end %>
+              <%= for size <- @available_sizes do %>
+                <label class="inline-flex items-center cursor-pointer gap-1.5">
+                  <input
+                    type="checkbox"
+                    phx-click="toggle_size"
+                    phx-value-size={size}
+                    checked={size in @selected_sizes}
+                    class="w-4 h-4 rounded border-base-content/25 focus:ring-primary"
+                  />
+                  <span class="text-sm text-base-content/70"><%= size %></span>
+                </label>
+              <% end %>
+            </div>
           </div>
 
         </div>
@@ -645,6 +661,26 @@ defmodule PureAdminIconsWeb.IconSearchLive do
               <input type="range" min="24" max="64" value={@icon_list_size} step="4"
                      class="icon-size-range range range-xs range-primary w-20 cursor-pointer" />
               <span class="icon-size-label text-xs text-base-content/50 w-8"><%= @icon_list_size %>px</span>
+            </div>
+            <div id="quick-presets" phx-hook="QuickPresets" class="relative" data-presets={Jason.encode!(preview_presets())}>
+              <button type="button" class="quick-preset-trigger btn-pager gap-2">
+                <span class="quick-preset-swatch w-4 h-4 rounded-sm border border-base-content/20" style="background: linear-gradient(135deg, #ffffff 50%, #212121 50%);"></span>
+                <span class="quick-preset-label text-xs">Classic Light</span>
+                <svg class="w-3 h-3 text-base-content/50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+              </button>
+              <div class="quick-preset-dropdown hidden absolute top-full right-0 mt-1 py-1 rounded-lg bg-base-100 border border-base-content/20 shadow-xl z-50 min-w-44 max-h-64 overflow-y-auto">
+                  <%= for preset <- Enum.sort_by(preview_presets(), & &1["label"]) do %>
+                    <button
+                      type="button"
+                      data-preset={preset["key"]}
+                      data-color={preset["color"]}
+                      data-bg={preset["bg"]}
+                      data-label={preset["label"]}
+                      class="quick-preset w-full text-left px-3 py-1.5 text-sm cursor-pointer hover:opacity-80"
+                      style={preset_button_style(preset)}
+                    ><%= preset["label"] %></button>
+                  <% end %>
+              </div>
             </div>
             <.pager current_page={@page} total_pages={@total_pages} />
           </div>

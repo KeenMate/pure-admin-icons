@@ -251,12 +251,12 @@ html.theme-transitions *::after {
 
 /* ── Segmented control wrapper (e.g. Grid/List toggle) ── */
 .view-toggle {
-  @apply flex items-center gap-1 bg-base-200 rounded-lg p-1 border border-base-content/20;
+  @apply flex items-center gap-1 bg-base-200 rounded-lg p-1.5 border border-base-content/20;
 }
 
 /* ── Action button used for Filters / Grid / List toggles ── */
 .btn-action {
-  @apply px-3 py-2 rounded text-sm flex items-center gap-1.5 cursor-pointer transition-colors;
+  @apply px-3 py-3 rounded-lg text-sm flex items-center gap-1.5 cursor-pointer transition-colors;
 }
 
 /* ── Pager buttons (Previous / Next) ── */

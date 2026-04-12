@@ -90,13 +90,29 @@ defmodule PureAdminIconsWeb.IconModalComponent do
                 </div>
               <% else %>
                 <div class="flex flex-wrap items-center gap-2 mb-2">
-                  <label class="text-sm font-medium text-base-content">Preview:</label>
-                  <div class="preview-preset-active inline-flex items-center gap-2"><!-- active preset rendered here by JS --></div>
-                  <button type="button" class="preview-preset-toggle px-3 py-1.5 rounded text-sm font-medium cursor-pointer border border-base-300 hover:bg-base-200 inline-flex items-center gap-1.5">
-                    <svg class="preview-preset-toggle-icon w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                    </svg>
-                    <span class="preview-preset-toggle-label">More</span>
+                  <label class="text-sm font-medium text-base-content">Colors:</label>
+                  <div class="relative preview-preset-combo">
+                    <button type="button" class="preview-preset-trigger inline-flex items-center gap-2 px-3 py-1.5 rounded text-sm font-medium cursor-pointer border border-base-300 hover:bg-base-200">
+                      <span class="preview-preset-swatch w-4 h-4 rounded-sm border border-base-content/20" style="background: linear-gradient(135deg, #ffffff 50%, #212121 50%);"></span>
+                      <span class="preview-preset-label">Classic Light</span>
+                      <svg class="w-3 h-3 text-base-content/50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                    </button>
+                    <div class="preview-preset-dropdown hidden absolute top-full left-0 mt-1 py-1 rounded-lg bg-base-100 border border-base-content/20 shadow-xl z-50 min-w-44 max-h-64 overflow-y-auto">
+                      <%= for preset <- preview_presets() do %>
+                        <button
+                          type="button"
+                          data-preset={preset["key"]}
+                          data-label={preset["label"]}
+                          class="preview-preset w-full text-left px-3 py-1.5 text-sm cursor-pointer hover:opacity-80"
+                          style={preset_button_style(preset)}
+                        ><%= preset["label"] %></button>
+                      <% end %>
+                      <div class="custom-presets-container"></div>
+                    </div>
+                  </div>
+                  <button type="button" class="custom-preset-new px-3 py-1.5 rounded text-sm font-medium cursor-pointer border border-base-300 hover:bg-base-200 inline-flex items-center gap-1.5" title="Create a new custom color preset">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+                    New
                   </button>
                   <button type="button" class="preview-copy-css px-3 py-1.5 rounded text-sm font-medium cursor-pointer border border-base-300 hover:bg-base-200 inline-flex items-center gap-1.5" title="Copy CSS to use these colors in your project">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
@@ -120,20 +136,8 @@ defmodule PureAdminIconsWeb.IconModalComponent do
                     <span class="preview-import-status text-xs text-base-content/60"></span>
                   </div>
                 </div>
-                <div class="preview-preset-list flex flex-wrap items-center gap-2 mb-2" style="display: none;">
-                  <%= for preset <- preview_presets() do %>
-                    <button
-                      type="button"
-                      data-preset={preset["key"]}
-                      class="preview-preset px-2.5 py-1 rounded text-xs font-medium cursor-pointer border border-base-300 hover:scale-105 transition-transform"
-                      style={preset_button_style(preset)}
-                    ><%= preset["label"] %></button>
-                  <% end %>
-                  <div class="custom-presets-container contents"></div>
-                </div>
-                <div class="preview-custom-area space-y-2 p-3 rounded-lg bg-base-200/50 border border-base-300">
+                <div class="preview-custom-area space-y-2 p-3 rounded-lg bg-base-200/50 border border-base-300" style="display: none;">
                   <div class="flex flex-wrap items-center gap-3">
-                    <label class="text-sm text-base-content/70 font-medium">Custom:</label>
                     <div class="flex items-center gap-2">
                       <span class="text-xs text-base-content/50">Icon</span>
                       <input type="color" value="#212121"
@@ -149,6 +153,9 @@ defmodule PureAdminIconsWeb.IconModalComponent do
                       <input type="text" value="#ffffff"
                              class="bg-color-text w-20 px-2 py-1 text-xs font-mono border border-base-300 rounded"
                              maxlength="7" placeholder="#ffffff" />
+                      <button type="button" class="bg-transparent-toggle w-8 h-8 rounded cursor-pointer border border-base-300 hover:border-primary text-xs leading-none"
+                              style="background-image: repeating-conic-gradient(#d1d5db 0% 25%, #fff 0% 50%); background-size: 6px 6px;"
+                              title="Transparent (checker)"></button>
                     </div>
                     <span class={["text-xs px-2 py-0.5 rounded", color_method_class(@icon.style_color_method)]}>
                       <%= color_method_label(@icon.style_color_method) %>
@@ -160,6 +167,9 @@ defmodule PureAdminIconsWeb.IconModalComponent do
                            placeholder="Name your preset..." maxlength="20" />
                     <button type="button" class="custom-preset-save px-3 py-1 rounded text-xs font-medium cursor-pointer bg-primary text-primary-content hover:opacity-80">
                       Save as preset
+                    </button>
+                    <button type="button" class="custom-preset-delete px-3 py-1 rounded text-xs font-medium cursor-pointer border border-error text-error hover:bg-error/10">
+                      Delete
                     </button>
                   </div>
                 </div>

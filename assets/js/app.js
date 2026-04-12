@@ -7,6 +7,113 @@ const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute
 
 let Hooks = {}
 
+// ══════════════════════════════════════════════════════════
+// PresetManager — single source of truth for color presets.
+// Built-in presets come from the server (embedded in the
+// #quick-presets element's data-presets attribute at page load).
+// Custom presets live in localStorage.
+// Both hooks (ColorPicker in modal, QuickPresets in results bar)
+// call these functions instead of each maintaining their own logic.
+// ══════════════════════════════════════════════════════════
+const PresetManager = {
+  _builtins: null,
+
+  /** Parse built-in presets once from the DOM (cached). */
+  getBuiltins() {
+    if (this._builtins) return this._builtins
+    try {
+      const el = document.getElementById('quick-presets')
+      const arr = JSON.parse(el?.dataset?.presets || '[]')
+      this._builtins = {}
+      for (const p of arr) this._builtins[p.key] = { color: p.color, bg: p.bg, label: p.label }
+    } catch { this._builtins = {} }
+    return this._builtins
+  },
+
+  /** Get custom presets from localStorage. */
+  getCustoms() {
+    try { return JSON.parse(localStorage.getItem('icon_custom_presets') || '{}') } catch { return {} }
+  },
+
+  /** Save custom presets to localStorage. */
+  saveCustoms(presets) {
+    localStorage.setItem('icon_custom_presets', JSON.stringify(presets))
+  },
+
+  /** All presets as a key→{color, bg, label} map (built-in + custom). */
+  getAll() {
+    return { ...this.getBuiltins(), ...this.getCustoms() }
+  },
+
+  /** All presets as a sorted array of {key, color, bg, label}. */
+  getSorted() {
+    const all = this.getAll()
+    return Object.entries(all)
+      .map(([key, p]) => ({ key, color: p.color, bg: p.bg, label: p.label || key }))
+      .sort((a, b) => a.label.localeCompare(b.label))
+  },
+
+  /** Is the given key a custom (user-created) preset? */
+  isCustom(key) {
+    return key && !!this.getCustoms()[key]
+  },
+
+  /** Get the currently active preset key from localStorage (or null). */
+  activeKey() {
+    return localStorage.getItem('icon_preview_preset') || null
+  },
+
+  /** Get the currently active preset object, or null if custom colors. */
+  active() {
+    const key = this.activeKey()
+    return key ? (this.getAll()[key] || null) : null
+  },
+
+  /** Render sorted preset buttons into a dropdown container.
+   *  Clears previous sorted items, hides server-rendered originals. */
+  renderDropdown(dropdown) {
+    if (!dropdown) return
+    // Remove old sorted items
+    dropdown.querySelectorAll('.preset-sorted').forEach(el => el.remove())
+    // Hide ALL non-sorted children (server-rendered originals, custom containers, etc.)
+    Array.from(dropdown.children).forEach(el => {
+      if (!el.classList.contains('preset-sorted')) el.classList.add('hidden')
+    })
+
+    for (const p of this.getSorted()) {
+      const btn = document.createElement('button')
+      btn.type = 'button'
+      btn.dataset.preset = p.key
+      btn.dataset.color = p.color
+      btn.dataset.bg = p.bg
+      btn.dataset.label = p.label
+      btn.className = 'preset-sorted w-full text-left px-3 py-1.5 text-sm cursor-pointer hover:opacity-80'
+      const bgCss = p.bg === 'checker' ? '#e5e7eb' : p.bg
+      btn.style.cssText = `background-color: ${bgCss}; color: ${p.color};`
+      btn.textContent = p.label
+      dropdown.appendChild(btn)
+    }
+  },
+
+  /** Update a combo trigger (swatch + label) to reflect the active preset. */
+  syncTrigger(swatch, label) {
+    if (!swatch || !label) return
+    const preset = this.active()
+    if (preset) {
+      const bgCss = preset.bg === 'checker' ? '#e5e7eb' : preset.bg
+      swatch.style.background = `linear-gradient(135deg, ${bgCss} 50%, ${preset.color} 50%)`
+      label.textContent = preset.label
+    } else {
+      const color = localStorage.getItem('icon_preview_color') || '#212121'
+      let bg = '#ffffff'
+      try { bg = JSON.parse(localStorage.getItem('icon_preview_bg') || '"#ffffff"') } catch { bg = localStorage.getItem('icon_preview_bg') || '#ffffff' }
+      const bgCss = bg === 'checker' ? '#e5e7eb' : bg
+      swatch.style.background = `linear-gradient(135deg, ${bgCss} 50%, ${color} 50%)`
+      label.textContent = 'Custom'
+    }
+  }
+}
+
 // Inline SVG loader with lazy loading, caching, and color support
 Hooks.IconColorFilter = {
   mounted() {
@@ -169,25 +276,6 @@ Hooks.PlatformPrefs = {
 
 // ColorPicker hook — modal icon color preview with presets
 Hooks.ColorPicker = {
-  loadBuiltinPresets() {
-    try {
-      const arr = JSON.parse(this.el.dataset.presets || '[]')
-      const map = {}
-      for (const p of arr) {
-        map[p.key] = { color: p.color, bg: p.bg, label: p.label }
-      }
-      return map
-    } catch { return {} }
-  },
-  loadCustomPresets() {
-    try { return JSON.parse(localStorage.getItem('icon_custom_presets') || '{}') } catch { return {} }
-  },
-  saveCustomPresets(presets) {
-    localStorage.setItem('icon_custom_presets', JSON.stringify(presets))
-  },
-  allPresets() {
-    return { ...this.loadBuiltinPresets(), ...this.loadCustomPresets() }
-  },
   mounted() {
     this.colorInput = this.el.querySelector('.color-input')
     this.textInput = this.el.querySelector('.color-text')
@@ -197,19 +285,22 @@ Hooks.ColorPicker = {
     this.bindPresetButtons()
     this.applySaved()
 
-    // Toggle button (More / Less)
-    const toggleBtn = this.el.querySelector('.preview-preset-toggle')
-    if (toggleBtn) {
-      toggleBtn.addEventListener('click', () => {
-        const list = this.el.querySelector('.preview-preset-list')
-        if (!list) return
-        const isExpanded = list.dataset.expanded === 'true'
-        if (isExpanded) {
-          this.collapsePresets()
-        } else {
-          this.expandPresets()
-        }
+    // Preset combo dropdown
+    const comboTrigger = this.el.querySelector('.preview-preset-trigger')
+    const comboDropdown = this.el.querySelector('.preview-preset-dropdown')
+    if (comboTrigger && comboDropdown) {
+      comboTrigger.addEventListener('click', (e) => {
+        e.stopPropagation()
+        this.renderCustomPresets()
+        this.bindPresetButtons()
+        this.rebuildDropdown()
+        comboDropdown.classList.toggle('hidden')
       })
+      this._comboOutsideClick = (e) => {
+        if (!this.el.querySelector('.preview-preset-combo')?.contains(e.target))
+          comboDropdown.classList.add('hidden')
+      }
+      document.addEventListener('click', this._comboOutsideClick)
     }
 
     // Custom icon color inputs
@@ -218,6 +309,7 @@ Hooks.ColorPicker = {
         if (this.textInput) this.textInput.value = e.target.value
         localStorage.removeItem('icon_preview_preset')
         this.highlightPreset(null)
+        this.syncComboTrigger()
         this.updateSvgColors(e.target.value)
       })
     }
@@ -229,6 +321,7 @@ Hooks.ColorPicker = {
           if (this.colorInput) this.colorInput.value = color
           localStorage.removeItem('icon_preview_preset')
           this.highlightPreset(null)
+        this.syncComboTrigger()
           this.updateSvgColors(color)
         }
       })
@@ -241,6 +334,7 @@ Hooks.ColorPicker = {
         localStorage.setItem('icon_preview_bg', JSON.stringify(e.target.value))
         localStorage.removeItem('icon_preview_preset')
         this.highlightPreset(null)
+        this.syncComboTrigger()
         this.applyBg(e.target.value)
       })
     }
@@ -253,8 +347,21 @@ Hooks.ColorPicker = {
           localStorage.setItem('icon_preview_bg', JSON.stringify(bg))
           localStorage.removeItem('icon_preview_preset')
           this.highlightPreset(null)
+          this.syncComboTrigger()
           this.applyBg(bg)
         }
+      })
+    }
+    // Transparent background toggle (checker pattern)
+    const transparentBtn = this.el.querySelector('.bg-transparent-toggle')
+    if (transparentBtn) {
+      transparentBtn.addEventListener('click', () => {
+        localStorage.setItem('icon_preview_bg', JSON.stringify('checker'))
+        localStorage.removeItem('icon_preview_preset')
+        if (this.bgColorText) this.bgColorText.value = 'transparent'
+        this.highlightPreset(null)
+        this.syncComboTrigger()
+        this.applyBg('checker')
       })
     }
 
@@ -304,16 +411,15 @@ Hooks.ColorPicker = {
           return
         }
         // Save as custom preset
-        const presets = this.loadCustomPresets()
+        const presets = PresetManager.getCustoms()
         const key = `custom-${Date.now()}`
         presets[key] = { color: parsed.color, bg: parsed.bg, label: parsed.label }
-        this.saveCustomPresets(presets)
+        PresetManager.saveCustoms(presets)
         // Activate it
         localStorage.setItem('icon_preview_color', parsed.color)
         localStorage.setItem('icon_preview_bg', JSON.stringify(parsed.bg))
         localStorage.setItem('icon_preview_preset', key)
-        this.renderCustomPresets()
-        this.bindPresetButtons()
+        this.rebuildDropdown()
         if (this.colorInput) this.colorInput.value = parsed.color
         if (this.textInput) this.textInput.value = parsed.color
         if (this.bgColorInput) this.bgColorInput.value = parsed.bg
@@ -324,9 +430,10 @@ Hooks.ColorPicker = {
         this.applyBg(parsed.bg)
         this.updateSvgColors(parsed.color)
         this.highlightPreset(key)
-        this.renderActivePreset()
-        // Expand the preset list so user can see the new preset highlighted
-        this.expandPresets()
+        this.syncComboTrigger()
+        // Show custom area so user can see the imported preset's fields
+        const customArea = this.el.querySelector('.preview-custom-area')
+        if (customArea) customArea.style.display = ''
         if (importStatus) {
           importStatus.textContent = `Imported "${parsed.label}" — selected`
           importStatus.className = 'preview-import-status text-xs text-success'
@@ -350,73 +457,77 @@ Hooks.ColorPicker = {
           return
         }
         const color = this.colorInput ? this.colorInput.value : '#212121'
-        const bg = this.bgColorInput ? this.bgColorInput.value : '#ffffff'
-        const presets = this.loadCustomPresets()
+        let bg = '#ffffff'
+        try { bg = JSON.parse(localStorage.getItem('icon_preview_bg') || '"#ffffff"') } catch { bg = localStorage.getItem('icon_preview_bg') || '#ffffff' }
+        const presets = PresetManager.getCustoms()
         const activeKey = localStorage.getItem('icon_preview_preset')
         // If the active preset is a custom one, UPDATE it (keeps its ID).
         // Otherwise, create a new one with a timestamp-based ID.
         const key = (activeKey && presets[activeKey]) ? activeKey : `custom-${Date.now()}`
         presets[key] = { color, bg, label: name }
-        this.saveCustomPresets(presets)
-        this.renderCustomPresets()
-        this.bindPresetButtons()
+        PresetManager.saveCustoms(presets)
         // Activate the saved preset
         localStorage.setItem('icon_preview_preset', key)
         localStorage.setItem('icon_preview_color', color)
         localStorage.setItem('icon_preview_bg', JSON.stringify(bg))
+        this.rebuildDropdown()
         this.highlightPreset(key)
-        this.renderActivePreset()
-        this.expandPresets()
+        this.syncComboTrigger()
+        window.dispatchEvent(new CustomEvent('iconColorChanged'))
+      })
+    }
+
+    // Delete active custom preset
+    const deleteBtn = this.el.querySelector('.custom-preset-delete')
+    if (deleteBtn) {
+      deleteBtn.addEventListener('click', () => {
+        const activeKey = localStorage.getItem('icon_preview_preset')
+        if (!activeKey) return
+        const presets = PresetManager.getCustoms()
+        if (!presets[activeKey]) return // can't delete built-in
+        delete presets[activeKey]
+        PresetManager.saveCustoms(presets)
+        localStorage.removeItem('icon_preview_preset')
+        this.rebuildDropdown()
+        this.highlightPreset(null)
+        this.syncComboTrigger()
+        // Hide the custom area
+        const customArea = this.el.querySelector('.preview-custom-area')
+        if (customArea) customArea.style.display = 'none'
+        window.dispatchEvent(new CustomEvent('iconColorChanged'))
+      })
+    }
+
+    // New preset button — show custom area, pre-fill with current colors
+    const newBtn = this.el.querySelector('.custom-preset-new')
+    if (newBtn) {
+      newBtn.addEventListener('click', () => {
+        const customArea = this.el.querySelector('.preview-custom-area')
+        if (customArea) customArea.style.display = ''
+        // Clear name input for fresh preset
+        if (nameInput) nameInput.value = ''
+        // Pre-fill with current active colors (from selected preset or custom picks)
+        const color = localStorage.getItem('icon_preview_color') || '#212121'
+        let bg = '#ffffff'
+        try { bg = JSON.parse(localStorage.getItem('icon_preview_bg') || '"#ffffff"') } catch { bg = localStorage.getItem('icon_preview_bg') || '#ffffff' }
+        if (this.colorInput) this.colorInput.value = color
+        if (this.textInput) this.textInput.value = color
+        if (this.bgColorInput && bg !== 'checker') this.bgColorInput.value = bg
+        if (this.bgColorText) this.bgColorText.value = bg === 'checker' ? 'transparent' : bg
+        localStorage.removeItem('icon_preview_preset')
+        this.highlightPreset(null)
+        this.syncComboTrigger()
+        if (nameInput) nameInput.focus()
       })
     }
   },
-  renderCustomPresets() {
-    const container = this.el.querySelector('.custom-presets-container')
-    if (!container) return
-    container.innerHTML = ''
-    const customs = this.loadCustomPresets()
-    Object.entries(customs).forEach(([key, preset]) => {
-      // Wrapper acts as the preset button
-      const wrap = document.createElement('button')
-      wrap.type = 'button'
-      wrap.dataset.preset = key
-      wrap.className = 'preview-preset inline-flex items-center rounded text-xs font-medium cursor-pointer border border-base-300 hover:scale-105 transition-transform overflow-hidden'
-
-      // Colored label part (uses user's custom colors)
-      const label = document.createElement('span')
-      label.className = 'px-2.5 py-1'
-      label.style.backgroundColor = preset.bg
-      label.style.color = preset.color
-      label.textContent = preset.label || key
-      wrap.appendChild(label)
-
-      // X delete button (uses theme colors)
-      const del = document.createElement('span')
-      del.textContent = '×'
-      del.className = 'px-1.5 py-1 bg-base-300 text-base-content/70 hover:bg-error hover:text-error-content text-base leading-none border-l border-base-300'
-      del.title = 'Delete preset'
-      del.addEventListener('click', (e) => {
-        e.stopPropagation()
-        const presets = this.loadCustomPresets()
-        delete presets[key]
-        this.saveCustomPresets(presets)
-        if (localStorage.getItem('icon_preview_preset') === key) {
-          localStorage.removeItem('icon_preview_preset')
-        }
-        this.renderCustomPresets()
-        this.bindPresetButtons()
-      })
-      wrap.appendChild(del)
-
-      container.appendChild(wrap)
-    })
-  },
+  renderCustomPresets() { /* no-op — PresetManager.renderDropdown handles everything */ },
   bindPresetButtons() {
-    this.el.querySelectorAll('.preview-preset').forEach(btn => {
+    this.el.querySelectorAll('.preset-sorted, .preview-preset').forEach(btn => {
       if (btn.dataset.bound === 'true') return
       btn.dataset.bound = 'true'
       btn.addEventListener('click', () => {
-        const preset = this.allPresets()[btn.dataset.preset]
+        const preset = PresetManager.getAll()[btn.dataset.preset]
         if (!preset) return
         localStorage.setItem('icon_preview_color', preset.color)
         localStorage.setItem('icon_preview_bg', JSON.stringify(preset.bg))
@@ -426,7 +537,7 @@ Hooks.ColorPicker = {
         if (this.bgColorInput && preset.bg !== 'checker') this.bgColorInput.value = preset.bg
         if (this.bgColorText && preset.bg !== 'checker') this.bgColorText.value = preset.bg
         // If this is a custom preset, populate the name input so Save updates it instead of duplicating
-        const customs = this.loadCustomPresets()
+        const customs = PresetManager.getCustoms()
         const nameInput = this.el.querySelector('.custom-preset-name')
         if (nameInput) {
           if (customs[btn.dataset.preset]) {
@@ -438,7 +549,13 @@ Hooks.ColorPicker = {
         this.applyBg(preset.bg)
         this.updateSvgColors(preset.color)
         this.highlightPreset(btn.dataset.preset)
-        this.renderActivePreset()
+        this.syncComboTrigger()
+        const dd = this.el.querySelector('.preview-preset-dropdown')
+        if (dd) dd.classList.add('hidden')
+        // Show custom area for custom presets so user can edit/delete
+        const customArea = this.el.querySelector('.preview-custom-area')
+        const isCustom = !!PresetManager.getCustoms()[btn.dataset.preset]
+        if (customArea) customArea.style.display = isCustom ? '' : 'none'
       })
     })
   },
@@ -460,73 +577,34 @@ Hooks.ColorPicker = {
       if (this.colorInput) this.colorInput.value = savedColor
       if (this.textInput) this.textInput.value = savedColor
       if (this.bgColorInput && savedBg !== 'checker') this.bgColorInput.value = savedBg
-      if (this.bgColorText && savedBg !== 'checker') this.bgColorText.value = savedBg
+      if (this.bgColorText) this.bgColorText.value = savedBg === 'checker' ? 'transparent' : savedBg
       this.applyBg(savedBg)
       this.highlightPreset(savedPreset)
-      this.renderActivePreset()
-      this.collapsePresets()
+      this.syncComboTrigger()
+      // Show custom area if active preset is a custom one (so user can edit/delete)
+      const customArea = this.el.querySelector('.preview-custom-area')
+      const isCustom = savedPreset && !!PresetManager.getCustoms()[savedPreset]
+      if (customArea) {
+        customArea.style.display = isCustom ? '' : 'none'
+        // Populate name input for custom presets
+        if (isCustom) {
+          const nameInput = this.el.querySelector('.custom-preset-name')
+          const customs = PresetManager.getCustoms()
+          if (nameInput && customs[savedPreset]) nameInput.value = customs[savedPreset].label || ''
+        }
+      }
     })
   },
-  collapsePresets() {
-    const list = this.el.querySelector('.preview-preset-list')
-    const customArea = this.el.querySelector('.preview-custom-area')
-    if (list) {
-      list.dataset.expanded = 'false'
-      list.style.display = 'none'
-    }
-    this.updateToggleButton(false)
-    if (customArea) customArea.style.display = 'none'
+  syncComboTrigger() {
+    PresetManager.syncTrigger(
+      this.el.querySelector('.preview-preset-swatch'),
+      this.el.querySelector('.preview-preset-label')
+    )
   },
-  expandPresets() {
-    const list = this.el.querySelector('.preview-preset-list')
-    const customArea = this.el.querySelector('.preview-custom-area')
-    if (list) {
-      list.dataset.expanded = 'true'
-      list.style.display = ''
-    }
-    this.updateToggleButton(true)
-    if (customArea) customArea.style.display = ''
-  },
-  updateToggleButton(expanded) {
-    const label = this.el.querySelector('.preview-preset-toggle-label')
-    const icon = this.el.querySelector('.preview-preset-toggle-icon')
-    if (label) label.textContent = expanded ? 'Less' : 'More'
-    if (icon) icon.style.transform = expanded ? 'rotate(180deg)' : ''
-  },
-  renderActivePreset() {
-    const container = this.el.querySelector('.preview-preset-active')
-    if (!container) return
-    container.innerHTML = ''
-    const activeKey = localStorage.getItem('icon_preview_preset')
-    const all = this.allPresets()
-    const preset = activeKey ? all[activeKey] : null
-
-    if (!preset) {
-      const span = document.createElement('span')
-      span.className = 'text-xs text-base-content/50 italic'
-      span.textContent = 'Custom'
-      container.appendChild(span)
-      return
-    }
-
-    // Find the matching button in the list (built-in or custom) and clone its style
-    const sourceBtn = this.el.querySelector(`.preview-preset-list .preview-preset[data-preset="${activeKey}"]`)
-    const clone = document.createElement('div')
-    clone.className = 'inline-flex items-center rounded text-xs font-medium border border-primary overflow-hidden ring-2 ring-primary ring-offset-1'
-
-    const label = document.createElement('span')
-    label.className = 'px-2.5 py-1'
-    if (preset.bg === 'checker') {
-      label.style.backgroundImage = 'repeating-conic-gradient(#e5e7eb 0% 25%, #fff 0% 50%)'
-      label.style.backgroundSize = '8px 8px'
-      label.style.color = preset.color
-    } else {
-      label.style.backgroundColor = preset.bg
-      label.style.color = preset.color
-    }
-    label.textContent = (preset.label || sourceBtn?.textContent?.replace('×', '').trim() || activeKey)
-    clone.appendChild(label)
-    container.appendChild(clone)
+  rebuildDropdown() {
+    const dropdown = this.el.querySelector('.preview-preset-dropdown')
+    PresetManager.renderDropdown(dropdown)
+    this.bindPresetButtons()
   },
   applyBg(bg) {
     // Modal preview boxes
@@ -592,7 +670,7 @@ Hooks.ColorPicker = {
     const colorMethod = this.el.dataset.colorMethod || 'fill'
     const iconSet = this.el.dataset.iconSet || ''
     const presetKey = localStorage.getItem('icon_preview_preset')
-    const presetLabel = presetKey ? (this.allPresets()[presetKey]?.label || presetKey) : 'Custom'
+    const presetLabel = presetKey ? (PresetManager.getAll()[presetKey]?.label || presetKey) : 'Custom'
 
     // CSS class derived from the preset's LABEL (not key) so renaming a custom preset
     // updates the CSS class too. Built-in preset keys already match the slug of their label.
@@ -827,6 +905,68 @@ Hooks.FloatingPopover = {
   },
   hide(popover) {
     popover.classList.remove('popover-open')
+  }
+}
+
+// QuickPresets hook — preset dropdown in the results bar
+Hooks.QuickPresets = {
+  mounted() {
+    this.trigger = this.el.querySelector('.quick-preset-trigger')
+    this.dropdown = this.el.querySelector('.quick-preset-dropdown')
+
+    // Sync trigger when preset changes elsewhere (e.g. modal ColorPicker)
+    window.addEventListener('iconColorChanged', () => this.syncTrigger())
+    this.swatch = this.el.querySelector('.quick-preset-swatch')
+    this.label = this.el.querySelector('.quick-preset-label')
+
+    // Hide server-rendered presets (kept as data source), build sorted merged list
+    this.dropdown.querySelectorAll('.quick-preset').forEach(el => el.classList.add('quick-preset-builtin', 'hidden'))
+    this.rebuildDropdown()
+
+    // Restore active preset from localStorage
+    this.syncTrigger()
+
+    // Toggle dropdown
+    this.trigger.addEventListener('click', (e) => {
+      e.stopPropagation()
+      this.rebuildDropdown() // refresh in case user added presets in the modal
+      this.dropdown.classList.toggle('hidden')
+    })
+
+    // Close on outside click
+    this._onOutsideClick = (e) => {
+      if (!this.el.contains(e.target)) this.dropdown.classList.add('hidden')
+    }
+    document.addEventListener('click', this._onOutsideClick)
+
+    // Preset selection (delegated — covers sorted items from PresetManager)
+    this.dropdown.addEventListener('click', (e) => {
+      const btn = e.target.closest('.preset-sorted') || e.target.closest('.quick-preset')
+      if (!btn) return
+      localStorage.setItem('icon_preview_color', btn.dataset.color)
+      localStorage.setItem('icon_preview_bg', JSON.stringify(btn.dataset.bg))
+      localStorage.setItem('icon_preview_preset', btn.dataset.preset)
+      window.dispatchEvent(new CustomEvent('iconColorChanged'))
+      this.syncTrigger()
+      this.dropdown.classList.add('hidden')
+    })
+  },
+  updated() {
+    this.trigger = this.el.querySelector('.quick-preset-trigger')
+    this.dropdown = this.el.querySelector('.quick-preset-dropdown')
+    this.swatch = this.el.querySelector('.quick-preset-swatch')
+    this.label = this.el.querySelector('.quick-preset-label')
+    this.rebuildDropdown()
+    this.syncTrigger()
+  },
+  destroyed() {
+    if (this._onOutsideClick) document.removeEventListener('click', this._onOutsideClick)
+  },
+  rebuildDropdown() {
+    PresetManager.renderDropdown(this.dropdown)
+  },
+  syncTrigger() {
+    PresetManager.syncTrigger(this.swatch, this.label)
   }
 }
 

@@ -1,5 +1,37 @@
 # Changelog
 
+## 2026-04-12 — Preset system rework, UI polish
+
+### PresetManager — single source of truth for color presets
+- New shared `PresetManager` JS module replaces duplicated preset logic across ColorPicker (modal) and QuickPresets (results bar) hooks
+- Built-in presets parsed once from `#quick-presets` `data-presets` attribute (cached); custom presets from localStorage
+- `getAll()`, `getSorted()`, `renderDropdown(container)`, `syncTrigger(swatch, label)` — both hooks delegate all preset operations here
+- No more duplicated merge/sort/render code between hooks
+
+### Preset combo dropdown (results bar + modal)
+- Both the results bar and modal now use the same dropdown combo pattern: trigger (swatch + label + chevron) → vertical A-Z sorted list of all presets (built-in + custom merged)
+- Replaced the old modal More/Less toggle + badge list with the combo dropdown
+- Both combos stay in sync via `iconColorChanged` event — selecting in the modal updates the results bar and vice versa
+- QuickPresets `updated()` rebuilds the dropdown and syncs trigger after LiveView DOM patches
+
+### Custom preset management in modal
+- **"Preview:" → "Colors:"** label rename
+- **New button**: opens the custom color area with Icon/Bg pickers pre-filled from the currently selected preset's colors (not reset to defaults)
+- **Delete button**: next to "Save as preset", removes the active custom preset
+- **Transparent background**: checker-pattern toggle button next to the Bg picker; save handler reads bg from localStorage so "checker" value is preserved
+- Custom area shown automatically when a custom preset is selected (from either combo or on dialog open), hidden when a built-in preset is selected
+
+### Button height consistency
+- `.btn-action` bumped to `py-3 rounded-lg` to match the search input height
+- `.view-toggle` wrapper bumped to `p-1.5` for breathing room
+- Filters button wrapped in `.view-toggle` container for identical height/border as Grid/List toggle
+
+### Filter panel layout
+- Labels (Sets, Styles, Sizes) are now block headings above their checkboxes instead of inline — wraps cleanly on narrow screens
+- Smaller checkboxes (`w-4 h-4`) and text (`text-sm`) for a tighter, cleaner look
+
+---
+
 ## 2026-04-12 — Modal LiveComponent extraction, SVG preservation fix
 
 ### Icon modal extracted to LiveComponent

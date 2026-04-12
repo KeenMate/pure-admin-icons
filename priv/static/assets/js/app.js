@@ -8618,6 +8618,99 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
   // js/app.js
   var csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content");
   var Hooks2 = {};
+  var PresetManager = {
+    _builtins: null,
+    /** Parse built-in presets once from the DOM (cached). */
+    getBuiltins() {
+      if (this._builtins) return this._builtins;
+      try {
+        const el = document.getElementById("quick-presets");
+        const arr = JSON.parse(el?.dataset?.presets || "[]");
+        this._builtins = {};
+        for (const p of arr) this._builtins[p.key] = { color: p.color, bg: p.bg, label: p.label };
+      } catch {
+        this._builtins = {};
+      }
+      return this._builtins;
+    },
+    /** Get custom presets from localStorage. */
+    getCustoms() {
+      try {
+        return JSON.parse(localStorage.getItem("icon_custom_presets") || "{}");
+      } catch {
+        return {};
+      }
+    },
+    /** Save custom presets to localStorage. */
+    saveCustoms(presets) {
+      localStorage.setItem("icon_custom_presets", JSON.stringify(presets));
+    },
+    /** All presets as a key→{color, bg, label} map (built-in + custom). */
+    getAll() {
+      return { ...this.getBuiltins(), ...this.getCustoms() };
+    },
+    /** All presets as a sorted array of {key, color, bg, label}. */
+    getSorted() {
+      const all = this.getAll();
+      return Object.entries(all).map(([key, p]) => ({ key, color: p.color, bg: p.bg, label: p.label || key })).sort((a, b) => a.label.localeCompare(b.label));
+    },
+    /** Is the given key a custom (user-created) preset? */
+    isCustom(key) {
+      return key && !!this.getCustoms()[key];
+    },
+    /** Get the currently active preset key from localStorage (or null). */
+    activeKey() {
+      return localStorage.getItem("icon_preview_preset") || null;
+    },
+    /** Get the currently active preset object, or null if custom colors. */
+    active() {
+      const key = this.activeKey();
+      return key ? this.getAll()[key] || null : null;
+    },
+    /** Render sorted preset buttons into a dropdown container.
+     *  Clears previous sorted items, hides server-rendered originals. */
+    renderDropdown(dropdown) {
+      if (!dropdown) return;
+      dropdown.querySelectorAll(".preset-sorted").forEach((el) => el.remove());
+      Array.from(dropdown.children).forEach((el) => {
+        if (!el.classList.contains("preset-sorted")) el.classList.add("hidden");
+      });
+      for (const p of this.getSorted()) {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.dataset.preset = p.key;
+        btn.dataset.color = p.color;
+        btn.dataset.bg = p.bg;
+        btn.dataset.label = p.label;
+        btn.className = "preset-sorted w-full text-left px-3 py-1.5 text-sm cursor-pointer hover:opacity-80";
+        const bgCss = p.bg === "checker" ? "#e5e7eb" : p.bg;
+        btn.style.cssText = `background-color: ${bgCss}; color: ${p.color};`;
+        btn.textContent = p.label;
+        dropdown.appendChild(btn);
+      }
+    },
+    /** Update a combo trigger (swatch + label) to reflect the active preset. */
+    syncTrigger(swatch, label) {
+      if (!swatch || !label) return;
+      const preset = this.active();
+      if (preset) {
+        const bgCss = preset.bg === "checker" ? "#e5e7eb" : preset.bg;
+        swatch.style.background = `linear-gradient(135deg, ${bgCss} 50%, ${preset.color} 50%)`;
+        label.textContent = preset.label;
+      } else {
+        const color = localStorage.getItem("icon_preview_color") || "#212121";
+        let bg = "#ffffff";
+        try {
+          bg = JSON.parse(localStorage.getItem("icon_preview_bg") || '"#ffffff"');
+        } catch {
+          bg = localStorage.getItem("icon_preview_bg") || "#ffffff";
+        }
+        const bgCss = bg === "checker" ? "#e5e7eb" : bg;
+        swatch.style.background = `linear-gradient(135deg, ${bgCss} 50%, ${color} 50%)`;
+        label.textContent = "Custom";
+      }
+    }
+  };
   Hooks2.IconColorFilter = {
     mounted() {
       console.time("[hook] IconColorFilter.mounted");
@@ -8770,31 +8863,6 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
     }
   };
   Hooks2.ColorPicker = {
-    loadBuiltinPresets() {
-      try {
-        const arr = JSON.parse(this.el.dataset.presets || "[]");
-        const map = {};
-        for (const p of arr) {
-          map[p.key] = { color: p.color, bg: p.bg, label: p.label };
-        }
-        return map;
-      } catch {
-        return {};
-      }
-    },
-    loadCustomPresets() {
-      try {
-        return JSON.parse(localStorage.getItem("icon_custom_presets") || "{}");
-      } catch {
-        return {};
-      }
-    },
-    saveCustomPresets(presets) {
-      localStorage.setItem("icon_custom_presets", JSON.stringify(presets));
-    },
-    allPresets() {
-      return { ...this.loadBuiltinPresets(), ...this.loadCustomPresets() };
-    },
     mounted() {
       this.colorInput = this.el.querySelector(".color-input");
       this.textInput = this.el.querySelector(".color-text");
@@ -8803,24 +8871,28 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
       this.renderCustomPresets();
       this.bindPresetButtons();
       this.applySaved();
-      const toggleBtn = this.el.querySelector(".preview-preset-toggle");
-      if (toggleBtn) {
-        toggleBtn.addEventListener("click", () => {
-          const list = this.el.querySelector(".preview-preset-list");
-          if (!list) return;
-          const isExpanded = list.dataset.expanded === "true";
-          if (isExpanded) {
-            this.collapsePresets();
-          } else {
-            this.expandPresets();
-          }
+      const comboTrigger = this.el.querySelector(".preview-preset-trigger");
+      const comboDropdown = this.el.querySelector(".preview-preset-dropdown");
+      if (comboTrigger && comboDropdown) {
+        comboTrigger.addEventListener("click", (e) => {
+          e.stopPropagation();
+          this.renderCustomPresets();
+          this.bindPresetButtons();
+          this.rebuildDropdown();
+          comboDropdown.classList.toggle("hidden");
         });
+        this._comboOutsideClick = (e) => {
+          if (!this.el.querySelector(".preview-preset-combo")?.contains(e.target))
+            comboDropdown.classList.add("hidden");
+        };
+        document.addEventListener("click", this._comboOutsideClick);
       }
       if (this.colorInput) {
         this.colorInput.addEventListener("input", (e) => {
           if (this.textInput) this.textInput.value = e.target.value;
           localStorage.removeItem("icon_preview_preset");
           this.highlightPreset(null);
+          this.syncComboTrigger();
           this.updateSvgColors(e.target.value);
         });
       }
@@ -8835,6 +8907,7 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
             if (this.colorInput) this.colorInput.value = color;
             localStorage.removeItem("icon_preview_preset");
             this.highlightPreset(null);
+            this.syncComboTrigger();
             this.updateSvgColors(color);
           }
         });
@@ -8845,6 +8918,7 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
           localStorage.setItem("icon_preview_bg", JSON.stringify(e.target.value));
           localStorage.removeItem("icon_preview_preset");
           this.highlightPreset(null);
+          this.syncComboTrigger();
           this.applyBg(e.target.value);
         });
       }
@@ -8860,8 +8934,20 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
             localStorage.setItem("icon_preview_bg", JSON.stringify(bg));
             localStorage.removeItem("icon_preview_preset");
             this.highlightPreset(null);
+            this.syncComboTrigger();
             this.applyBg(bg);
           }
+        });
+      }
+      const transparentBtn = this.el.querySelector(".bg-transparent-toggle");
+      if (transparentBtn) {
+        transparentBtn.addEventListener("click", () => {
+          localStorage.setItem("icon_preview_bg", JSON.stringify("checker"));
+          localStorage.removeItem("icon_preview_preset");
+          if (this.bgColorText) this.bgColorText.value = "transparent";
+          this.highlightPreset(null);
+          this.syncComboTrigger();
+          this.applyBg("checker");
         });
       }
       const copyCssBtn = this.el.querySelector(".preview-copy-css");
@@ -8907,15 +8993,14 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
             }
             return;
           }
-          const presets = this.loadCustomPresets();
+          const presets = PresetManager.getCustoms();
           const key = `custom-${Date.now()}`;
           presets[key] = { color: parsed.color, bg: parsed.bg, label: parsed.label };
-          this.saveCustomPresets(presets);
+          PresetManager.saveCustoms(presets);
           localStorage.setItem("icon_preview_color", parsed.color);
           localStorage.setItem("icon_preview_bg", JSON.stringify(parsed.bg));
           localStorage.setItem("icon_preview_preset", key);
-          this.renderCustomPresets();
-          this.bindPresetButtons();
+          this.rebuildDropdown();
           if (this.colorInput) this.colorInput.value = parsed.color;
           if (this.textInput) this.textInput.value = parsed.color;
           if (this.bgColorInput) this.bgColorInput.value = parsed.bg;
@@ -8925,8 +9010,9 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
           this.applyBg(parsed.bg);
           this.updateSvgColors(parsed.color);
           this.highlightPreset(key);
-          this.renderActivePreset();
-          this.expandPresets();
+          this.syncComboTrigger();
+          const customArea = this.el.querySelector(".preview-custom-area");
+          if (customArea) customArea.style.display = "";
           if (importStatus) {
             importStatus.textContent = `Imported "${parsed.label}" \u2014 selected`;
             importStatus.className = "preview-import-status text-xs text-success";
@@ -8948,64 +9034,76 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
             return;
           }
           const color = this.colorInput ? this.colorInput.value : "#212121";
-          const bg = this.bgColorInput ? this.bgColorInput.value : "#ffffff";
-          const presets = this.loadCustomPresets();
+          let bg = "#ffffff";
+          try {
+            bg = JSON.parse(localStorage.getItem("icon_preview_bg") || '"#ffffff"');
+          } catch {
+            bg = localStorage.getItem("icon_preview_bg") || "#ffffff";
+          }
+          const presets = PresetManager.getCustoms();
           const activeKey = localStorage.getItem("icon_preview_preset");
           const key = activeKey && presets[activeKey] ? activeKey : `custom-${Date.now()}`;
           presets[key] = { color, bg, label: name };
-          this.saveCustomPresets(presets);
-          this.renderCustomPresets();
-          this.bindPresetButtons();
+          PresetManager.saveCustoms(presets);
           localStorage.setItem("icon_preview_preset", key);
           localStorage.setItem("icon_preview_color", color);
           localStorage.setItem("icon_preview_bg", JSON.stringify(bg));
+          this.rebuildDropdown();
           this.highlightPreset(key);
-          this.renderActivePreset();
-          this.expandPresets();
+          this.syncComboTrigger();
+          window.dispatchEvent(new CustomEvent("iconColorChanged"));
+        });
+      }
+      const deleteBtn = this.el.querySelector(".custom-preset-delete");
+      if (deleteBtn) {
+        deleteBtn.addEventListener("click", () => {
+          const activeKey = localStorage.getItem("icon_preview_preset");
+          if (!activeKey) return;
+          const presets = PresetManager.getCustoms();
+          if (!presets[activeKey]) return;
+          delete presets[activeKey];
+          PresetManager.saveCustoms(presets);
+          localStorage.removeItem("icon_preview_preset");
+          this.rebuildDropdown();
+          this.highlightPreset(null);
+          this.syncComboTrigger();
+          const customArea = this.el.querySelector(".preview-custom-area");
+          if (customArea) customArea.style.display = "none";
+          window.dispatchEvent(new CustomEvent("iconColorChanged"));
+        });
+      }
+      const newBtn = this.el.querySelector(".custom-preset-new");
+      if (newBtn) {
+        newBtn.addEventListener("click", () => {
+          const customArea = this.el.querySelector(".preview-custom-area");
+          if (customArea) customArea.style.display = "";
+          if (nameInput) nameInput.value = "";
+          const color = localStorage.getItem("icon_preview_color") || "#212121";
+          let bg = "#ffffff";
+          try {
+            bg = JSON.parse(localStorage.getItem("icon_preview_bg") || '"#ffffff"');
+          } catch {
+            bg = localStorage.getItem("icon_preview_bg") || "#ffffff";
+          }
+          if (this.colorInput) this.colorInput.value = color;
+          if (this.textInput) this.textInput.value = color;
+          if (this.bgColorInput && bg !== "checker") this.bgColorInput.value = bg;
+          if (this.bgColorText) this.bgColorText.value = bg === "checker" ? "transparent" : bg;
+          localStorage.removeItem("icon_preview_preset");
+          this.highlightPreset(null);
+          this.syncComboTrigger();
+          if (nameInput) nameInput.focus();
         });
       }
     },
     renderCustomPresets() {
-      const container = this.el.querySelector(".custom-presets-container");
-      if (!container) return;
-      container.innerHTML = "";
-      const customs = this.loadCustomPresets();
-      Object.entries(customs).forEach(([key, preset]) => {
-        const wrap = document.createElement("button");
-        wrap.type = "button";
-        wrap.dataset.preset = key;
-        wrap.className = "preview-preset inline-flex items-center rounded text-xs font-medium cursor-pointer border border-base-300 hover:scale-105 transition-transform overflow-hidden";
-        const label = document.createElement("span");
-        label.className = "px-2.5 py-1";
-        label.style.backgroundColor = preset.bg;
-        label.style.color = preset.color;
-        label.textContent = preset.label || key;
-        wrap.appendChild(label);
-        const del = document.createElement("span");
-        del.textContent = "\xD7";
-        del.className = "px-1.5 py-1 bg-base-300 text-base-content/70 hover:bg-error hover:text-error-content text-base leading-none border-l border-base-300";
-        del.title = "Delete preset";
-        del.addEventListener("click", (e) => {
-          e.stopPropagation();
-          const presets = this.loadCustomPresets();
-          delete presets[key];
-          this.saveCustomPresets(presets);
-          if (localStorage.getItem("icon_preview_preset") === key) {
-            localStorage.removeItem("icon_preview_preset");
-          }
-          this.renderCustomPresets();
-          this.bindPresetButtons();
-        });
-        wrap.appendChild(del);
-        container.appendChild(wrap);
-      });
     },
     bindPresetButtons() {
-      this.el.querySelectorAll(".preview-preset").forEach((btn) => {
+      this.el.querySelectorAll(".preset-sorted, .preview-preset").forEach((btn) => {
         if (btn.dataset.bound === "true") return;
         btn.dataset.bound = "true";
         btn.addEventListener("click", () => {
-          const preset = this.allPresets()[btn.dataset.preset];
+          const preset = PresetManager.getAll()[btn.dataset.preset];
           if (!preset) return;
           localStorage.setItem("icon_preview_color", preset.color);
           localStorage.setItem("icon_preview_bg", JSON.stringify(preset.bg));
@@ -9014,7 +9112,7 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
           if (this.textInput) this.textInput.value = preset.color;
           if (this.bgColorInput && preset.bg !== "checker") this.bgColorInput.value = preset.bg;
           if (this.bgColorText && preset.bg !== "checker") this.bgColorText.value = preset.bg;
-          const customs = this.loadCustomPresets();
+          const customs = PresetManager.getCustoms();
           const nameInput = this.el.querySelector(".custom-preset-name");
           if (nameInput) {
             if (customs[btn.dataset.preset]) {
@@ -9026,7 +9124,12 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
           this.applyBg(preset.bg);
           this.updateSvgColors(preset.color);
           this.highlightPreset(btn.dataset.preset);
-          this.renderActivePreset();
+          this.syncComboTrigger();
+          const dd = this.el.querySelector(".preview-preset-dropdown");
+          if (dd) dd.classList.add("hidden");
+          const customArea = this.el.querySelector(".preview-custom-area");
+          const isCustom = !!PresetManager.getCustoms()[btn.dataset.preset];
+          if (customArea) customArea.style.display = isCustom ? "" : "none";
         });
       });
     },
@@ -9052,69 +9155,32 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
         if (this.colorInput) this.colorInput.value = savedColor;
         if (this.textInput) this.textInput.value = savedColor;
         if (this.bgColorInput && savedBg !== "checker") this.bgColorInput.value = savedBg;
-        if (this.bgColorText && savedBg !== "checker") this.bgColorText.value = savedBg;
+        if (this.bgColorText) this.bgColorText.value = savedBg === "checker" ? "transparent" : savedBg;
         this.applyBg(savedBg);
         this.highlightPreset(savedPreset);
-        this.renderActivePreset();
-        this.collapsePresets();
+        this.syncComboTrigger();
+        const customArea = this.el.querySelector(".preview-custom-area");
+        const isCustom = savedPreset && !!PresetManager.getCustoms()[savedPreset];
+        if (customArea) {
+          customArea.style.display = isCustom ? "" : "none";
+          if (isCustom) {
+            const nameInput = this.el.querySelector(".custom-preset-name");
+            const customs = PresetManager.getCustoms();
+            if (nameInput && customs[savedPreset]) nameInput.value = customs[savedPreset].label || "";
+          }
+        }
       });
     },
-    collapsePresets() {
-      const list = this.el.querySelector(".preview-preset-list");
-      const customArea = this.el.querySelector(".preview-custom-area");
-      if (list) {
-        list.dataset.expanded = "false";
-        list.style.display = "none";
-      }
-      this.updateToggleButton(false);
-      if (customArea) customArea.style.display = "none";
+    syncComboTrigger() {
+      PresetManager.syncTrigger(
+        this.el.querySelector(".preview-preset-swatch"),
+        this.el.querySelector(".preview-preset-label")
+      );
     },
-    expandPresets() {
-      const list = this.el.querySelector(".preview-preset-list");
-      const customArea = this.el.querySelector(".preview-custom-area");
-      if (list) {
-        list.dataset.expanded = "true";
-        list.style.display = "";
-      }
-      this.updateToggleButton(true);
-      if (customArea) customArea.style.display = "";
-    },
-    updateToggleButton(expanded) {
-      const label = this.el.querySelector(".preview-preset-toggle-label");
-      const icon = this.el.querySelector(".preview-preset-toggle-icon");
-      if (label) label.textContent = expanded ? "Less" : "More";
-      if (icon) icon.style.transform = expanded ? "rotate(180deg)" : "";
-    },
-    renderActivePreset() {
-      const container = this.el.querySelector(".preview-preset-active");
-      if (!container) return;
-      container.innerHTML = "";
-      const activeKey = localStorage.getItem("icon_preview_preset");
-      const all = this.allPresets();
-      const preset = activeKey ? all[activeKey] : null;
-      if (!preset) {
-        const span = document.createElement("span");
-        span.className = "text-xs text-base-content/50 italic";
-        span.textContent = "Custom";
-        container.appendChild(span);
-        return;
-      }
-      const sourceBtn = this.el.querySelector(`.preview-preset-list .preview-preset[data-preset="${activeKey}"]`);
-      const clone2 = document.createElement("div");
-      clone2.className = "inline-flex items-center rounded text-xs font-medium border border-primary overflow-hidden ring-2 ring-primary ring-offset-1";
-      const label = document.createElement("span");
-      label.className = "px-2.5 py-1";
-      if (preset.bg === "checker") {
-        label.style.backgroundImage = "repeating-conic-gradient(#e5e7eb 0% 25%, #fff 0% 50%)";
-        label.style.backgroundSize = "8px 8px";
-        label.style.color = preset.color;
-      } else {
-        label.style.backgroundColor = preset.bg;
-        label.style.color = preset.color;
-      }
-      label.textContent = preset.label || sourceBtn?.textContent?.replace("\xD7", "").trim() || activeKey;
-      clone2.appendChild(label);
-      container.appendChild(clone2);
+    rebuildDropdown() {
+      const dropdown = this.el.querySelector(".preview-preset-dropdown");
+      PresetManager.renderDropdown(dropdown);
+      this.bindPresetButtons();
     },
     applyBg(bg) {
       document.querySelectorAll(".svg-container").forEach((c) => {
@@ -9177,7 +9243,7 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
       const colorMethod = this.el.dataset.colorMethod || "fill";
       const iconSet = this.el.dataset.iconSet || "";
       const presetKey = localStorage.getItem("icon_preview_preset");
-      const presetLabel = presetKey ? this.allPresets()[presetKey]?.label || presetKey : "Custom";
+      const presetLabel = presetKey ? PresetManager.getAll()[presetKey]?.label || presetKey : "Custom";
       const cssClass = presetLabel.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "custom";
       let scopedSelector, globalSelector, scopedUsage, globalUsage;
       if (iconSet === "fontawesome") {
@@ -9396,6 +9462,54 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
     },
     hide(popover) {
       popover.classList.remove("popover-open");
+    }
+  };
+  Hooks2.QuickPresets = {
+    mounted() {
+      this.trigger = this.el.querySelector(".quick-preset-trigger");
+      this.dropdown = this.el.querySelector(".quick-preset-dropdown");
+      window.addEventListener("iconColorChanged", () => this.syncTrigger());
+      this.swatch = this.el.querySelector(".quick-preset-swatch");
+      this.label = this.el.querySelector(".quick-preset-label");
+      this.dropdown.querySelectorAll(".quick-preset").forEach((el) => el.classList.add("quick-preset-builtin", "hidden"));
+      this.rebuildDropdown();
+      this.syncTrigger();
+      this.trigger.addEventListener("click", (e) => {
+        e.stopPropagation();
+        this.rebuildDropdown();
+        this.dropdown.classList.toggle("hidden");
+      });
+      this._onOutsideClick = (e) => {
+        if (!this.el.contains(e.target)) this.dropdown.classList.add("hidden");
+      };
+      document.addEventListener("click", this._onOutsideClick);
+      this.dropdown.addEventListener("click", (e) => {
+        const btn = e.target.closest(".preset-sorted") || e.target.closest(".quick-preset");
+        if (!btn) return;
+        localStorage.setItem("icon_preview_color", btn.dataset.color);
+        localStorage.setItem("icon_preview_bg", JSON.stringify(btn.dataset.bg));
+        localStorage.setItem("icon_preview_preset", btn.dataset.preset);
+        window.dispatchEvent(new CustomEvent("iconColorChanged"));
+        this.syncTrigger();
+        this.dropdown.classList.add("hidden");
+      });
+    },
+    updated() {
+      this.trigger = this.el.querySelector(".quick-preset-trigger");
+      this.dropdown = this.el.querySelector(".quick-preset-dropdown");
+      this.swatch = this.el.querySelector(".quick-preset-swatch");
+      this.label = this.el.querySelector(".quick-preset-label");
+      this.rebuildDropdown();
+      this.syncTrigger();
+    },
+    destroyed() {
+      if (this._onOutsideClick) document.removeEventListener("click", this._onOutsideClick);
+    },
+    rebuildDropdown() {
+      PresetManager.renderDropdown(this.dropdown);
+    },
+    syncTrigger() {
+      PresetManager.syncTrigger(this.swatch, this.label);
     }
   };
   Hooks2.IconSizeSlider = {
