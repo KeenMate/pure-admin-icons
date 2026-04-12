@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-04-12 — Theme switcher, metrics tracking, event loop fix
+
+### Collapsible theme switcher
+- Theme switcher is now collapsible: collapsed state shows a small box with "Theme" label + active theme name and icon
+- Clicking opens a vertical panel that slides up above the trigger with all 5 options
+- Clicking outside closes the panel
+- Distinct icons per theme: outline sun (Morning), solid sun (Day), outline moon (Evening), solid moon (Night), clock (Auto)
+- Active theme icon displayed in the collapsed trigger, updates on selection
+
+### Designer download metrics tracking
+- PNG ZIP and SVG downloads from the Download Designer now tracked via `track_download` with `platform: "designer:png-zip"` / `"designer:svg"`
+
+### ColorPicker event loop fix
+- `updateSvgColors()` no longer dispatches `iconColorChanged` — callers dispatch explicitly when they intend to notify the grid
+- Eliminates infinite loop where ColorPicker's `iconColorChanged` listener called `updateSvgColors` → dispatched `iconColorChanged` → re-entered the listener
+- Modal preview SVGs still update correctly on external color changes (QuickPresets, DownloadDesigner import)
+
+---
+
 ## 2026-04-12 — Download Designer
 
 ### Download Designer section in icon detail modal

@@ -8874,7 +8874,19 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
       window.addEventListener("iconColorChanged", () => {
         this.rebuildDropdown();
         this.syncComboTrigger();
-        this.applySaved();
+        const color = localStorage.getItem("icon_preview_color") || "#212121";
+        let bg = "#ffffff";
+        try {
+          bg = JSON.parse(localStorage.getItem("icon_preview_bg") || '"#ffffff"');
+        } catch {
+          bg = localStorage.getItem("icon_preview_bg") || "#ffffff";
+        }
+        if (this.colorInput) this.colorInput.value = color;
+        if (this.textInput) this.textInput.value = color;
+        if (this.bgColorInput && bg !== "checker") this.bgColorInput.value = bg;
+        if (this.bgColorText) this.bgColorText.value = bg === "checker" ? "transparent" : bg;
+        this.applyBg(bg);
+        this.updateSvgColors(color);
       });
       const comboTrigger = this.el.querySelector(".preview-preset-trigger");
       const comboDropdown = this.el.querySelector(".preview-preset-dropdown");
@@ -8899,6 +8911,7 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
           this.highlightPreset(null);
           this.syncComboTrigger();
           this.updateSvgColors(e.target.value);
+          window.dispatchEvent(new CustomEvent("iconColorChanged"));
         });
       }
       if (this.textInput) {
@@ -8914,6 +8927,7 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
             this.highlightPreset(null);
             this.syncComboTrigger();
             this.updateSvgColors(color);
+            window.dispatchEvent(new CustomEvent("iconColorChanged"));
           }
         });
       }
@@ -9014,6 +9028,7 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
           if (nameInput2) nameInput2.value = parsed.label;
           this.applyBg(parsed.bg);
           this.updateSvgColors(parsed.color);
+          window.dispatchEvent(new CustomEvent("iconColorChanged"));
           this.highlightPreset(key);
           this.syncComboTrigger();
           const customArea = this.el.querySelector(".preview-custom-area");
@@ -9128,6 +9143,7 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
           }
           this.applyBg(preset.bg);
           this.updateSvgColors(preset.color);
+          window.dispatchEvent(new CustomEvent("iconColorChanged"));
           this.highlightPreset(btn.dataset.preset);
           this.syncComboTrigger();
           const dd = this.el.querySelector(".preview-preset-dropdown");
@@ -9162,6 +9178,8 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
         if (this.bgColorInput && savedBg !== "checker") this.bgColorInput.value = savedBg;
         if (this.bgColorText) this.bgColorText.value = savedBg === "checker" ? "transparent" : savedBg;
         this.applyBg(savedBg);
+        this.updateSvgColors(savedColor);
+        window.dispatchEvent(new CustomEvent("iconColorChanged"));
         this.highlightPreset(savedPreset);
         this.syncComboTrigger();
         const customArea = this.el.querySelector(".preview-custom-area");
@@ -9342,7 +9360,6 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
           if (currentStroke && currentStroke !== "none") el.setAttribute("stroke", color);
         });
       }
-      window.dispatchEvent(new CustomEvent("iconColorChanged"));
     }
   };
   Hooks2.InlineSvg = {
@@ -9811,6 +9828,14 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(a.href);
+        const metricsEl = document.getElementById("metrics-tracker");
+        if (metricsEl?._pushEvent) {
+          metricsEl._pushEvent("track_download", {
+            "icon-id": this.el.id?.replace("download-designer-", "") || "",
+            size: sizes.join(","),
+            naming: "designer:png-zip"
+          });
+        }
       } catch (err) {
         console.error("[DownloadDesigner] PNG ZIP failed:", err);
       } finally {
@@ -9866,6 +9891,14 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(a.href);
+      const metricsEl = document.getElementById("metrics-tracker");
+      if (metricsEl?._pushEvent) {
+        metricsEl._pushEvent("track_download", {
+          "icon-id": this.el.id?.replace("download-designer-", "") || "",
+          size: "0",
+          naming: "designer:svg"
+        });
+      }
     },
     importSettings(manifest) {
       const s = manifest.settings;

@@ -285,11 +285,20 @@ Hooks.ColorPicker = {
     this.bindPresetButtons()
     this.applySaved()
 
-    // Sync combo trigger when colors change externally (e.g. DownloadDesigner import)
+    // Sync when colors change externally (e.g. DownloadDesigner import, QuickPresets)
     window.addEventListener('iconColorChanged', () => {
       this.rebuildDropdown()
       this.syncComboTrigger()
-      this.applySaved()
+      // Update inputs + modal preview (no re-dispatch since updateSvgColors is now pure)
+      const color = localStorage.getItem('icon_preview_color') || '#212121'
+      let bg = '#ffffff'
+      try { bg = JSON.parse(localStorage.getItem('icon_preview_bg') || '"#ffffff"') } catch { bg = localStorage.getItem('icon_preview_bg') || '#ffffff' }
+      if (this.colorInput) this.colorInput.value = color
+      if (this.textInput) this.textInput.value = color
+      if (this.bgColorInput && bg !== 'checker') this.bgColorInput.value = bg
+      if (this.bgColorText) this.bgColorText.value = bg === 'checker' ? 'transparent' : bg
+      this.applyBg(bg)
+      this.updateSvgColors(color)
     })
 
     // Preset combo dropdown
@@ -318,6 +327,7 @@ Hooks.ColorPicker = {
         this.highlightPreset(null)
         this.syncComboTrigger()
         this.updateSvgColors(e.target.value)
+        window.dispatchEvent(new CustomEvent('iconColorChanged'))
       })
     }
     if (this.textInput) {
@@ -330,6 +340,7 @@ Hooks.ColorPicker = {
           this.highlightPreset(null)
         this.syncComboTrigger()
           this.updateSvgColors(color)
+          window.dispatchEvent(new CustomEvent('iconColorChanged'))
         }
       })
     }
@@ -436,6 +447,7 @@ Hooks.ColorPicker = {
         if (nameInput) nameInput.value = parsed.label
         this.applyBg(parsed.bg)
         this.updateSvgColors(parsed.color)
+        window.dispatchEvent(new CustomEvent('iconColorChanged'))
         this.highlightPreset(key)
         this.syncComboTrigger()
         // Show custom area so user can see the imported preset's fields
@@ -555,6 +567,7 @@ Hooks.ColorPicker = {
         }
         this.applyBg(preset.bg)
         this.updateSvgColors(preset.color)
+        window.dispatchEvent(new CustomEvent('iconColorChanged'))
         this.highlightPreset(btn.dataset.preset)
         this.syncComboTrigger()
         const dd = this.el.querySelector('.preview-preset-dropdown')
@@ -586,6 +599,8 @@ Hooks.ColorPicker = {
       if (this.bgColorInput && savedBg !== 'checker') this.bgColorInput.value = savedBg
       if (this.bgColorText) this.bgColorText.value = savedBg === 'checker' ? 'transparent' : savedBg
       this.applyBg(savedBg)
+      this.updateSvgColors(savedColor)
+      window.dispatchEvent(new CustomEvent('iconColorChanged'))
       this.highlightPreset(savedPreset)
       this.syncComboTrigger()
       // Show custom area if active preset is a custom one (so user can edit/delete)
@@ -786,7 +801,9 @@ Hooks.ColorPicker = {
         if (currentStroke && currentStroke !== 'none') el.setAttribute('stroke', color)
       })
     }
-    window.dispatchEvent(new CustomEvent('iconColorChanged'))
+    // NOTE: callers are responsible for dispatching iconColorChanged when they
+    // intend to notify the grid/other hooks. This function only updates the
+    // modal preview SVGs — no event dispatch to avoid re-entry loops.
   }
 }
 
@@ -1298,6 +1315,16 @@ Hooks.DownloadDesigner = {
       a.click()
       document.body.removeChild(a)
       URL.revokeObjectURL(a.href)
+
+      // Track in metrics
+      const metricsEl = document.getElementById('metrics-tracker')
+      if (metricsEl?._pushEvent) {
+        metricsEl._pushEvent('track_download', {
+          'icon-id': this.el.id?.replace('download-designer-', '') || '',
+          size: sizes.join(','),
+          naming: 'designer:png-zip'
+        })
+      }
     } catch (err) {
       console.error('[DownloadDesigner] PNG ZIP failed:', err)
     } finally {
@@ -1366,6 +1393,16 @@ Hooks.DownloadDesigner = {
     a.click()
     document.body.removeChild(a)
     URL.revokeObjectURL(a.href)
+
+    // Track in metrics
+    const metricsEl = document.getElementById('metrics-tracker')
+    if (metricsEl?._pushEvent) {
+      metricsEl._pushEvent('track_download', {
+        'icon-id': this.el.id?.replace('download-designer-', '') || '',
+        size: '0',
+        naming: 'designer:svg'
+      })
+    }
   },
   importSettings(manifest) {
     const s = manifest.settings
