@@ -11,7 +11,7 @@ defmodule PureAdminIconsWeb.Layouts do
 
   def logo(assigns) do
     ~H"""
-    <a href="/" class="font-bold hover:opacity-80 transition-opacity">
+    <a href="/" class="font-bold hover:opacity-80 transition-opacity text-base-content">
       <span class={@class}>icons.</span><span class={["text-primary", @class]}>pure</span><span class={@class}>admin.io</span>
     </a>
     """
@@ -38,6 +38,12 @@ defmodule PureAdminIconsWeb.Layouts do
             class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-base-content/80 hover:text-primary hover:bg-base-200 transition-colors"
           >
             <.icon name="hero-code-bracket" class="size-4" /> API
+          </a>
+          <a
+            href="/stats"
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-base-content/80 hover:text-primary hover:bg-base-200 transition-colors"
+          >
+            <.icon name="hero-chart-bar" class="size-4" /> Stats
           </a>
           <a
             href="https://pureadmin.io"
@@ -82,6 +88,12 @@ defmodule PureAdminIconsWeb.Layouts do
           class="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-base-content/80 hover:text-primary hover:bg-base-300 transition-colors"
         >
           <.icon name="hero-code-bracket" class="size-4" /> API
+        </a>
+        <a
+          href="/stats"
+          class="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-base-content/80 hover:text-primary hover:bg-base-300 transition-colors"
+        >
+          <.icon name="hero-chart-bar" class="size-4" /> Stats
         </a>
         <a
           href="https://pureadmin.io"

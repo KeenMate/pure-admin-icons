@@ -21,8 +21,8 @@ defmodule PureAdminIcons.SearchMetricsCollector do
   @doc """
   Record a search query metric. This is non-blocking.
   """
-  def record(query, size, style, result_count, icon_set_code \\ nil) do
-    GenServer.cast(__MODULE__, {:record, query, size, style, result_count, icon_set_code})
+  def record(query, size, style, result_count, source_code, icon_set_code \\ nil) do
+    GenServer.cast(__MODULE__, {:record, query, size, style, result_count, source_code, icon_set_code})
   end
 
   # Server Callbacks
@@ -34,12 +34,13 @@ defmodule PureAdminIcons.SearchMetricsCollector do
   end
 
   @impl true
-  def handle_cast({:record, query, size, style, result_count, icon_set_code}, buffer) do
+  def handle_cast({:record, query, size, style, result_count, source_code, icon_set_code}, buffer) do
     entry = %{
       query: query,
       size: size,
       style: style,
       result_count: result_count,
+      source_code: source_code,
       icon_set_code: icon_set_code
     }
 
@@ -81,6 +82,7 @@ defmodule PureAdminIcons.SearchMetricsCollector do
       DbContext.track_search(
         entry.query,
         entry.result_count,
+        entry.source_code,
         entry.size || :eg_value_not_provided,
         entry.style || :eg_value_not_provided,
         entry.icon_set_code || :eg_value_not_provided

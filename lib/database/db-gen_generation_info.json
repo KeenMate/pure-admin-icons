@@ -1,6 +1,6 @@
 {
   "version": "LOCAL",
-  "time": "2026-04-10T21:25:13.8360526+02:00",
+  "time": "2026-04-11T17:12:57.5200718+02:00",
   "routines": [
     {
       "RowNumber": 1,
@@ -1901,55 +1901,6 @@
     {
       "RowNumber": 1,
       "RoutineSchema": "public",
-      "RoutineNameWithParams": "export_translations(text)",
-      "HasOverload": true,
-      "RoutineName": "export_translations",
-      "SpecificName": "",
-      "DataType": "record",
-      "UdtTypeScheme": "pg_catalog",
-      "UdtTypeName": "record",
-      "ParamCount": 4,
-      "FuncType": "function",
-      "InParameters": [
-        {
-          "OrdinalPosition": 1,
-          "Name": "_data_group",
-          "Mode": "IN",
-          "UDTName": "text",
-          "IsNullable": false,
-          "IsOptional": false
-        }
-      ],
-      "OutParameters": [
-        {
-          "OrdinalPosition": 2,
-          "Name": "__lang_code",
-          "Mode": "OUT",
-          "UDTName": "text",
-          "IsNullable": false,
-          "IsOptional": false
-        },
-        {
-          "OrdinalPosition": 3,
-          "Name": "__translations",
-          "Mode": "OUT",
-          "UDTName": "json",
-          "IsNullable": false,
-          "IsOptional": false
-        },
-        {
-          "OrdinalPosition": 4,
-          "Name": "__count",
-          "Mode": "OUT",
-          "UDTName": "int8",
-          "IsNullable": false,
-          "IsOptional": false
-        }
-      ]
-    },
-    {
-      "RowNumber": 2,
-      "RoutineSchema": "public",
       "RoutineNameWithParams": "export_translations(int8,text)",
       "HasOverload": true,
       "RoutineName": "export_translations",
@@ -2004,6 +1955,55 @@
         },
         {
           "OrdinalPosition": 6,
+          "Name": "__count",
+          "Mode": "OUT",
+          "UDTName": "int8",
+          "IsNullable": false,
+          "IsOptional": false
+        }
+      ]
+    },
+    {
+      "RowNumber": 2,
+      "RoutineSchema": "public",
+      "RoutineNameWithParams": "export_translations(text)",
+      "HasOverload": true,
+      "RoutineName": "export_translations",
+      "SpecificName": "",
+      "DataType": "record",
+      "UdtTypeScheme": "pg_catalog",
+      "UdtTypeName": "record",
+      "ParamCount": 4,
+      "FuncType": "function",
+      "InParameters": [
+        {
+          "OrdinalPosition": 1,
+          "Name": "_data_group",
+          "Mode": "IN",
+          "UDTName": "text",
+          "IsNullable": false,
+          "IsOptional": false
+        }
+      ],
+      "OutParameters": [
+        {
+          "OrdinalPosition": 2,
+          "Name": "__lang_code",
+          "Mode": "OUT",
+          "UDTName": "text",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 3,
+          "Name": "__translations",
+          "Mode": "OUT",
+          "UDTName": "json",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 4,
           "Name": "__count",
           "Mode": "OUT",
           "UDTName": "int8",
@@ -2460,14 +2460,14 @@
     {
       "RowNumber": 1,
       "RoutineSchema": "public",
-      "RoutineNameWithParams": "get_popular_icon_sets(text,text)",
+      "RoutineNameWithParams": "get_popular_icon_sets(text,text,text)",
       "HasOverload": false,
       "RoutineName": "get_popular_icon_sets",
       "SpecificName": "",
       "DataType": "record",
       "UdtTypeScheme": "pg_catalog",
       "UdtTypeName": "record",
-      "ParamCount": 5,
+      "ParamCount": 6,
       "FuncType": "function",
       "InParameters": [
         {
@@ -2485,11 +2485,19 @@
           "UDTName": "text",
           "IsNullable": false,
           "IsOptional": true
+        },
+        {
+          "OrdinalPosition": 3,
+          "Name": "_source_code",
+          "Mode": "IN",
+          "UDTName": "text",
+          "IsNullable": false,
+          "IsOptional": true
         }
       ],
       "OutParameters": [
         {
-          "OrdinalPosition": 3,
+          "OrdinalPosition": 4,
           "Name": "__icon_set_code",
           "Mode": "OUT",
           "UDTName": "text",
@@ -2497,7 +2505,7 @@
           "IsOptional": false
         },
         {
-          "OrdinalPosition": 4,
+          "OrdinalPosition": 5,
           "Name": "__icon_set_title",
           "Mode": "OUT",
           "UDTName": "text",
@@ -2505,7 +2513,7 @@
           "IsOptional": false
         },
         {
-          "OrdinalPosition": 5,
+          "OrdinalPosition": 6,
           "Name": "__count",
           "Mode": "OUT",
           "UDTName": "int8",
@@ -2517,14 +2525,14 @@
     {
       "RowNumber": 1,
       "RoutineSchema": "public",
-      "RoutineNameWithParams": "get_popular_icons(text,text,text,text,int4)",
+      "RoutineNameWithParams": "get_popular_icons(text,text,text,text,text,int4)",
       "HasOverload": false,
       "RoutineName": "get_popular_icons",
       "SpecificName": "",
       "DataType": "record",
       "UdtTypeScheme": "pg_catalog",
       "UdtTypeName": "record",
-      "ParamCount": 10,
+      "ParamCount": 11,
       "FuncType": "function",
       "InParameters": [
         {
@@ -2561,6 +2569,14 @@
         },
         {
           "OrdinalPosition": 5,
+          "Name": "_source_code",
+          "Mode": "IN",
+          "UDTName": "text",
+          "IsNullable": false,
+          "IsOptional": true
+        },
+        {
+          "OrdinalPosition": 6,
           "Name": "_limit",
           "Mode": "IN",
           "UDTName": "int4",
@@ -2570,7 +2586,7 @@
       ],
       "OutParameters": [
         {
-          "OrdinalPosition": 6,
+          "OrdinalPosition": 7,
           "Name": "__icon_id",
           "Mode": "OUT",
           "UDTName": "int8",
@@ -2578,7 +2594,7 @@
           "IsOptional": false
         },
         {
-          "OrdinalPosition": 7,
+          "OrdinalPosition": 8,
           "Name": "__icon_set_code",
           "Mode": "OUT",
           "UDTName": "text",
@@ -2586,7 +2602,7 @@
           "IsOptional": false
         },
         {
-          "OrdinalPosition": 8,
+          "OrdinalPosition": 9,
           "Name": "__name",
           "Mode": "OUT",
           "UDTName": "text",
@@ -2594,7 +2610,7 @@
           "IsOptional": false
         },
         {
-          "OrdinalPosition": 9,
+          "OrdinalPosition": 10,
           "Name": "__style_code",
           "Mode": "OUT",
           "UDTName": "text",
@@ -2602,10 +2618,66 @@
           "IsOptional": false
         },
         {
-          "OrdinalPosition": 10,
+          "OrdinalPosition": 11,
           "Name": "__count",
           "Mode": "OUT",
-          "UDTName": "int4",
+          "UDTName": "int8",
+          "IsNullable": false,
+          "IsOptional": false
+        }
+      ]
+    },
+    {
+      "RowNumber": 1,
+      "RoutineSchema": "public",
+      "RoutineNameWithParams": "get_stats_overview()",
+      "HasOverload": false,
+      "RoutineName": "get_stats_overview",
+      "SpecificName": "",
+      "DataType": "record",
+      "UdtTypeScheme": "pg_catalog",
+      "UdtTypeName": "record",
+      "ParamCount": 5,
+      "FuncType": "function",
+      "InParameters": null,
+      "OutParameters": [
+        {
+          "OrdinalPosition": 1,
+          "Name": "__source_code",
+          "Mode": "OUT",
+          "UDTName": "text",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 2,
+          "Name": "__period_code",
+          "Mode": "OUT",
+          "UDTName": "text",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 3,
+          "Name": "__copies",
+          "Mode": "OUT",
+          "UDTName": "int8",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 4,
+          "Name": "__downloads",
+          "Mode": "OUT",
+          "UDTName": "int8",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 5,
+          "Name": "__searches",
+          "Mode": "OUT",
+          "UDTName": "int8",
           "IsNullable": false,
           "IsOptional": false
         }
@@ -2691,11 +2763,11 @@
       "HasOverload": false,
       "RoutineName": "refresh_icon_metrics_cube",
       "SpecificName": "",
-      "DataType": "void",
-      "UdtTypeScheme": "pg_catalog",
-      "UdtTypeName": "void",
+      "DataType": "",
+      "UdtTypeScheme": "",
+      "UdtTypeName": "",
       "ParamCount": 0,
-      "FuncType": "function",
+      "FuncType": "procedure",
       "InParameters": null,
       "OutParameters": null
     },
@@ -3491,14 +3563,14 @@
     {
       "RowNumber": 1,
       "RoutineSchema": "public",
-      "RoutineNameWithParams": "track_icon_action(int8,text,int4,text)",
+      "RoutineNameWithParams": "track_icon_action(int8,text,text,int4,text)",
       "HasOverload": false,
       "RoutineName": "track_icon_action",
       "SpecificName": "",
       "DataType": "",
       "UdtTypeScheme": "",
       "UdtTypeName": "",
-      "ParamCount": 4,
+      "ParamCount": 5,
       "FuncType": "procedure",
       "InParameters": [
         {
@@ -3519,6 +3591,14 @@
         },
         {
           "OrdinalPosition": 3,
+          "Name": "_source_code",
+          "Mode": "IN",
+          "UDTName": "text",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 4,
           "Name": "_size",
           "Mode": "IN",
           "UDTName": "int4",
@@ -3526,7 +3606,7 @@
           "IsOptional": true
         },
         {
-          "OrdinalPosition": 4,
+          "OrdinalPosition": 5,
           "Name": "_platform_code",
           "Mode": "IN",
           "UDTName": "text",
@@ -3539,14 +3619,14 @@
     {
       "RowNumber": 1,
       "RoutineSchema": "public",
-      "RoutineNameWithParams": "track_search(text,int4,int4,text,text)",
+      "RoutineNameWithParams": "track_search(text,int4,text,int4,text,text)",
       "HasOverload": false,
       "RoutineName": "track_search",
       "SpecificName": "",
       "DataType": "",
       "UdtTypeScheme": "",
       "UdtTypeName": "",
-      "ParamCount": 5,
+      "ParamCount": 6,
       "FuncType": "procedure",
       "InParameters": [
         {
@@ -3567,6 +3647,14 @@
         },
         {
           "OrdinalPosition": 3,
+          "Name": "_source_code",
+          "Mode": "IN",
+          "UDTName": "text",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 4,
           "Name": "_size",
           "Mode": "IN",
           "UDTName": "int4",
@@ -3574,7 +3662,7 @@
           "IsOptional": true
         },
         {
-          "OrdinalPosition": 4,
+          "OrdinalPosition": 5,
           "Name": "_style",
           "Mode": "IN",
           "UDTName": "text",
@@ -3582,7 +3670,7 @@
           "IsOptional": true
         },
         {
-          "OrdinalPosition": 5,
+          "OrdinalPosition": 6,
           "Name": "_icon_set_code",
           "Mode": "IN",
           "UDTName": "text",

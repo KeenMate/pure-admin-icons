@@ -283,7 +283,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
     naming = params["naming"] || "original"
     Logger.info("[metrics] track_download icon_id=#{icon_id} size=#{size} naming=#{naming}")
     Task.start(fn ->
-      case Icons.track_action(String.to_integer(icon_id), "download", size: String.to_integer(size), platform: "download:#{naming}") do
+      case Icons.track_action(String.to_integer(icon_id), "download", "web", size: String.to_integer(size), platform: "download:#{naming}") do
         :ok -> Logger.info("[metrics] track_download OK icon_id=#{icon_id}")
         {:error, reason} -> Logger.error("[metrics] track_download FAILED icon_id=#{icon_id}: #{inspect(reason)}")
       end
@@ -298,7 +298,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
     Task.start(fn ->
       opts = [platform: platform]
       opts = if size, do: [{:size, String.to_integer(size)} | opts], else: opts
-      case Icons.track_action(String.to_integer(icon_id), "copy", opts) do
+      case Icons.track_action(String.to_integer(icon_id), "copy", "web", opts) do
         :ok -> Logger.info("[metrics] track_copy OK icon_id=#{icon_id} platform=#{platform}")
         {:error, reason} -> Logger.error("[metrics] track_copy FAILED icon_id=#{icon_id}: #{inspect(reason)}")
       end

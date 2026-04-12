@@ -1,5 +1,43 @@
 # Changelog
 
+## 2026-04-12 — Stats page, source tracking, SVG hash, version detection
+
+### Stats page (`/stats`)
+- New `AdminStatsLive` page showing overview metrics (copies, downloads, searches) broken down by source (web/api) and period (today, 7d, 30d, all time)
+- Popular icons table with period toggle (1d/7d/30d/all) and source filter (all/web/api)
+- Auto-refreshes every 30s; cube refreshes every 3 min (prod) / 10s (dev)
+- New `get_stats_overview()` DB function, model, and processor
+- Stats link added to desktop and mobile nav
+
+### Source tracking
+- `source_code` added to `icon_metric`, `icon_metric_cube`, and `search_metric` tables — all callers now pass `"web"` or `"api"` explicitly
+- `track_icon_action` and `track_search` require `source_code` as 3rd parameter (no default)
+- Cube groups by `source_code` as a new dimension; `get_popular_icons` and `get_popular_icon_sets` gained optional `_source_code` filter
+- Updated `Icons.track_action/4`, `SearchMetricsCollector.record/6`, LiveView handlers (`"web"`), API controller (`"api"`)
+
+### SVG content hash
+- Each sync adapter now computes SHA-256 of actual SVG file content during `parse()` and includes `:svg_hash` in the icon map
+- Multi-size icons (FluentUI, Heroicons) hash all size variants concatenated in sorted order
+- Worker's `compute_icon_hash` prefers the adapter's `svg_hash` over the legacy metadata-only MD5
+- DB migration added `svg_hash` column to `public.icon` and `first_seen_version` to `public.icon`; `stage._process_icons()` compares and stores it
+
+### Version detection
+- Worker's `detect_version/1` scans `package.json`/`lerna.json` in the extracted directory to find the package version
+- Version is passed in `job_data` when creating the job run; DB procedure reads it to populate `first_seen_version` on new icons and `last_synced_version` on `const.icon_set`
+- Download step moved before job run creation so version is available in the job_data
+
+### Metrics cube refresher
+- New `MetricsCubeRefresher` GenServer replaces reliance on Quantum for frequent cube updates
+- Dev: refreshes every 10s; Prod: every 3 min; disabled when config not set
+
+### Logo dark theme fix
+- Added `text-base-content` to the logo `<a>` tag so non-"pure" text follows the theme (white in dark themes, black in light themes)
+
+### Download naming tracking
+- Download events now include the filename convention (original/kebab/snake/pascal) in `platform_code` as `"download:{convention}"`
+
+---
+
 ## 2026-04-10 — Styled error pages, per-icon popover fix
 
 ### Custom error pages

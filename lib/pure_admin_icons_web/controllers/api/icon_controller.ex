@@ -49,7 +49,7 @@ defmodule PureAdminIconsWeb.API.IconController do
 
     # Record search metrics (batched, non-blocking) - include first icon_set if filtered
     icon_set_code = if icon_sets != [], do: hd(icon_sets), else: nil
-    SearchMetricsCollector.record(query, size, style, result_count, icon_set_code)
+    SearchMetricsCollector.record(query, size, style, result_count, "api", icon_set_code)
 
     format_response(conn, format, %{query: query, icons: icons})
   end

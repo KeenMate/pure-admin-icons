@@ -29,6 +29,7 @@ defmodule PureAdminIconsWeb.Router do
     live "/docs/api", Docs.ApiDocsLive
     live "/docs/mcp", Docs.McpDocsLive
     live "/docs/llms", Docs.LlmsDocsLive
+    live "/stats", AdminStatsLive
     live "/sync/discrepancies", SyncDiscrepanciesLive
   end
 

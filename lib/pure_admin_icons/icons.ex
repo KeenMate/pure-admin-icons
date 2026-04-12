@@ -112,10 +112,10 @@ defmodule PureAdminIcons.Icons do
     end
   end
 
-  def track_action(icon_id, action, opts \\ []) do
+  def track_action(icon_id, action, source, opts \\ []) do
     size = opts[:size] || :eg_value_not_provided
     platform = opts[:platform] || :eg_value_not_provided
-    case DbContext.track_icon_action(icon_id, action, size, platform) do
+    case DbContext.track_icon_action(icon_id, action, source, size, platform) do
       {:ok, _} -> :ok
       {:error, _} = error -> error
     end
@@ -138,14 +138,28 @@ defmodule PureAdminIcons.Icons do
     end
   end
 
+  def stats_overview do
+    case DbContext.get_stats_overview() do
+      {:ok, results} -> {:ok, results}
+      {:error, _} = error -> error
+    end
+  end
+
   def popular_icons_from_cube(opts \\ []) do
     period = opts[:period] || "30d"
     action = opts[:action] || "copy"
     limit = opts[:limit] || 20
-    case DbContext.get_popular_icons(period, action, limit) do
-      {:ok, results} -> {:ok, results}
-      {:error, _} = error -> error
-    end
+    # Pass nil (not :eg_value_not_provided) so positional params stay aligned —
+    # the DB function treats NULL as "no filter" for optional params
+    icon_set = opts[:icon_set]
+    style = opts[:style]
+    source = opts[:source]
+
+    Repo.query(
+      "select * from public.get_popular_icons($1, $2, $3, $4, $5, $6)",
+      [period, action, icon_set, style, source, limit]
+    )
+    |> Database.Processors.GetPopularIconsProcessor.parse_result()
   end
 
   def get_last_sync(icon_set_code \\ nil) do

@@ -355,8 +355,8 @@ defmodule Database.DbContext do
   Returns: {:ok, [%Models.GetPopularIconsModel{}]} | {:error, any()}
   
   """
-  @spec get_popular_icons(String.t() | :eg_value_not_provided, String.t() | :eg_value_not_provided, String.t() | :eg_value_not_provided, String.t() | :eg_value_not_provided, integer() | :eg_value_not_provided, keyword()) :: {:ok, [%Models.GetPopularIconsModel{}]} | {:error, any()}
-  def get_popular_icons(period_code \\ :eg_value_not_provided, action_code \\ :eg_value_not_provided, icon_set_code \\ :eg_value_not_provided, style_code \\ :eg_value_not_provided, limit \\ :eg_value_not_provided, query_opts \\ []) do
+  @spec get_popular_icons(String.t() | :eg_value_not_provided, String.t() | :eg_value_not_provided, String.t() | :eg_value_not_provided, String.t() | :eg_value_not_provided, String.t() | :eg_value_not_provided, integer() | :eg_value_not_provided, keyword()) :: {:ok, [%Models.GetPopularIconsModel{}]} | {:error, any()}
+  def get_popular_icons(period_code \\ :eg_value_not_provided, action_code \\ :eg_value_not_provided, icon_set_code \\ :eg_value_not_provided, style_code \\ :eg_value_not_provided, source_code \\ :eg_value_not_provided, limit \\ :eg_value_not_provided, query_opts \\ []) do
     Logger.debug("Calling database routine", routine_name: "get_popular_icons")
 
     sql_params_str =
@@ -365,6 +365,7 @@ defmodule Database.DbContext do
         {"_action_code", action_code},
         {"_icon_set_code", icon_set_code},
         {"_style_code", style_code},
+        {"_source_code", source_code},
         {"_limit", limit}
       ]
       |> Enum.filter(fn {_name, value} -> value != :eg_value_not_provided end)
@@ -378,6 +379,7 @@ defmodule Database.DbContext do
         action_code,
         icon_set_code,
         style_code,
+        source_code,
         limit
       ]
       |> Enum.filter(fn value -> value != :eg_value_not_provided end)
@@ -394,7 +396,25 @@ defmodule Database.DbContext do
 
 
   @doc """
-  Calls database function public.refresh_icon_metrics_cube
+  Calls database function public.get_stats_overview
+
+  Returns: {:ok, [%Models.GetStatsOverviewModel{}]} | {:error, any()}
+  """
+  @spec get_stats_overview(keyword()) :: {:ok, [%Models.GetStatsOverviewModel{}]} | {:error, any()}
+  def get_stats_overview(query_opts \\ []) do
+    Logger.debug("Calling database routine", routine_name: "get_stats_overview")
+
+    query(
+      "select * from public.get_stats_overview()",
+      [],
+      query_opts
+    )
+    |> Processors.GetStatsOverviewProcessor.parse_result()
+  end
+
+
+  @doc """
+  Calls database procedure public.refresh_icon_metrics_cube
   
   Returns: {:ok, any()} | {:error, any()}
   
@@ -473,14 +493,15 @@ defmodule Database.DbContext do
   Returns: {:ok, any()} | {:error, any()}
   
   """
-  @spec track_icon_action(integer(), String.t(), integer() | :eg_value_not_provided, String.t() | :eg_value_not_provided, keyword()) :: {:ok, any()} | {:error, any()}
-  def track_icon_action(icon_id, action_code, size \\ :eg_value_not_provided, platform_code \\ :eg_value_not_provided, query_opts \\ []) do
+  @spec track_icon_action(integer(), String.t(), String.t(), integer() | :eg_value_not_provided, String.t() | :eg_value_not_provided, keyword()) :: {:ok, any()} | {:error, any()}
+  def track_icon_action(icon_id, action_code, source_code, size \\ :eg_value_not_provided, platform_code \\ :eg_value_not_provided, query_opts \\ []) do
     Logger.debug("Calling database routine", routine_name: "track_icon_action")
 
     sql_params_str =
       [
         {"_icon_id", icon_id},
         {"_action_code", action_code},
+        {"_source_code", source_code},
         {"_size", size},
         {"_platform_code", platform_code}
       ]
@@ -493,6 +514,7 @@ defmodule Database.DbContext do
       [
         icon_id,
         action_code,
+        source_code,
         size,
         platform_code
       ]
@@ -513,14 +535,15 @@ defmodule Database.DbContext do
   Returns: {:ok, any()} | {:error, any()}
   
   """
-  @spec track_search(String.t(), integer(), integer() | :eg_value_not_provided, String.t() | :eg_value_not_provided, String.t() | :eg_value_not_provided, keyword()) :: {:ok, any()} | {:error, any()}
-  def track_search(query, result_count, size \\ :eg_value_not_provided, style \\ :eg_value_not_provided, icon_set_code \\ :eg_value_not_provided, query_opts \\ []) do
+  @spec track_search(String.t(), integer(), String.t(), integer() | :eg_value_not_provided, String.t() | :eg_value_not_provided, String.t() | :eg_value_not_provided, keyword()) :: {:ok, any()} | {:error, any()}
+  def track_search(query, result_count, source_code, size \\ :eg_value_not_provided, style \\ :eg_value_not_provided, icon_set_code \\ :eg_value_not_provided, query_opts \\ []) do
     Logger.debug("Calling database routine", routine_name: "track_search")
 
     sql_params_str =
       [
         {"_query", query},
         {"_result_count", result_count},
+        {"_source_code", source_code},
         {"_size", size},
         {"_style", style},
         {"_icon_set_code", icon_set_code}
@@ -534,6 +557,7 @@ defmodule Database.DbContext do
       [
         query,
         result_count,
+        source_code,
         size,
         style,
         icon_set_code
