@@ -46,6 +46,19 @@ curl 'https://icons.pureadmin.io/api/icons/search?q=pen&format=text'
 
 **Docs:** [icons.pureadmin.io/docs/api](https://icons.pureadmin.io/docs/api) · [llms.txt](https://icons.pureadmin.io/llms.txt)
 
+## Download Designer
+
+The icon detail modal includes a Download Designer for generating customized icon exports:
+
+- **Colors** — apply any color preset (built-in or custom) to the icon and background
+- **Padding** — adjustable gap around the icon (0–40%)
+- **Rounded corners** — adjustable radius (0–50%, where 50% = circle)
+- **PNG ZIP** — export at multiple sizes (32–1024px + custom) as a ZIP with manifest.json and readme.txt
+- **SVG export** — single SVG with colors, padding, and rounded background baked in
+- **Import settings** — restore all settings from a previous manifest.json
+
+Ideal for generating app icons, favicons, or presentation-ready icon assets.
+
 ## MCP Server (for Claude Desktop / Claude Code)
 
 ```json

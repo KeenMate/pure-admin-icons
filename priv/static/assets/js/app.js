@@ -8871,6 +8871,11 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
       this.renderCustomPresets();
       this.bindPresetButtons();
       this.applySaved();
+      window.addEventListener("iconColorChanged", () => {
+        this.rebuildDropdown();
+        this.syncComboTrigger();
+        this.applySaved();
+      });
       const comboTrigger = this.el.querySelector(".preview-preset-trigger");
       const comboDropdown = this.el.querySelector(".preview-preset-dropdown");
       if (comboTrigger && comboDropdown) {
@@ -9543,6 +9548,390 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
       });
     }
   };
+  Hooks2.DownloadDesigner = {
+    mounted() {
+      this.canvas = this.el.querySelector(".designer-preview");
+      this.ctx = this.canvas?.getContext("2d");
+      this.svgUrl = this.el.dataset.svgUrl;
+      this.baseName = (this.el.dataset.name || "icon").toLowerCase().replace(/\s+/g, "-");
+      this.colorsCheckbox = this.el.querySelector(".designer-include-colors");
+      this.paddingSlider = this.el.querySelector(".designer-padding");
+      this.paddingLabel = this.el.querySelector(".designer-padding-label");
+      this.radiusSlider = this.el.querySelector(".designer-radius");
+      this.radiusLabel = this.el.querySelector(".designer-radius-label");
+      this.colorsCheckbox.checked = localStorage.getItem("designer_include_colors") !== "false";
+      this.paddingSlider.value = localStorage.getItem("designer_padding") || "10";
+      this.radiusSlider.value = localStorage.getItem("designer_radius") || "20";
+      this.loadSvg().then(() => this.renderPreview());
+      const save = () => {
+        localStorage.setItem("designer_include_colors", this.colorsCheckbox.checked);
+        localStorage.setItem("designer_padding", this.paddingSlider.value);
+        localStorage.setItem("designer_radius", this.radiusSlider.value);
+        this.renderPreview();
+      };
+      this.colorsCheckbox.addEventListener("change", save);
+      this.paddingSlider.addEventListener("input", () => {
+        this.paddingLabel.textContent = this.paddingSlider.value + "%";
+        save();
+      });
+      this.radiusSlider.addEventListener("input", () => {
+        this.radiusLabel.textContent = this.radiusSlider.value + "%";
+        save();
+      });
+      this.paddingLabel.textContent = this.paddingSlider.value + "%";
+      this.radiusLabel.textContent = this.radiusSlider.value + "%";
+      this._onColorChange = () => this.renderPreview();
+      window.addEventListener("iconColorChanged", this._onColorChange);
+      this.el.querySelector(".designer-download-png")?.addEventListener("click", () => this.downloadPngZip());
+      this.el.querySelector(".designer-download-svg")?.addEventListener("click", () => this.downloadSvg());
+      const importInput = this.el.querySelector(".designer-import-file");
+      if (importInput) {
+        importInput.addEventListener("change", (e) => {
+          const file = e.target.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = () => {
+            try {
+              const manifest = JSON.parse(reader.result);
+              this.importSettings(manifest);
+            } catch (err) {
+              console.error("[DownloadDesigner] Invalid manifest:", err);
+            }
+          };
+          reader.readAsText(file);
+          importInput.value = "";
+        });
+      }
+    },
+    destroyed() {
+      if (this._onColorChange) window.removeEventListener("iconColorChanged", this._onColorChange);
+    },
+    async loadSvg() {
+      try {
+        const resp = await fetch(this.svgUrl);
+        this.rawSvg = await resp.text();
+      } catch (err) {
+        console.error("[DownloadDesigner] Failed to load SVG:", err);
+      }
+    },
+    getSettings() {
+      const includeColors = this.colorsCheckbox?.checked;
+      const padding = parseInt(this.paddingSlider?.value || "10") / 100;
+      const radius = parseInt(this.radiusSlider?.value || "20") / 100;
+      const color = includeColors ? localStorage.getItem("icon_preview_color") || "#212121" : null;
+      let bg = null;
+      if (includeColors) {
+        try {
+          bg = JSON.parse(localStorage.getItem("icon_preview_bg") || '"#ffffff"');
+        } catch {
+          bg = localStorage.getItem("icon_preview_bg") || "#ffffff";
+        }
+        if (bg === "checker") bg = null;
+      }
+      return { includeColors, padding, radius, color, bg };
+    },
+    colorizeSvg(svgText, color) {
+      const parser = new DOMParser();
+      const doc2 = parser.parseFromString(svgText, "image/svg+xml");
+      const svg = doc2.querySelector("svg");
+      if (!svg || !color) return svgText;
+      const colorize = (el) => {
+        const fill = el.getAttribute("fill");
+        if (fill && fill !== "none") el.setAttribute("fill", color);
+        const stroke = el.getAttribute("stroke");
+        if (stroke && stroke !== "none") el.setAttribute("stroke", color);
+      };
+      colorize(svg);
+      svg.querySelectorAll("path, circle, rect, line, polyline, polygon, ellipse, g").forEach(colorize);
+      return new XMLSerializer().serializeToString(doc2);
+    },
+    renderPreview() {
+      if (!this.ctx || !this.rawSvg) return;
+      const size = 128;
+      const { color, bg, padding, radius } = this.getSettings();
+      const canvas = this.canvas;
+      canvas.width = size * 2;
+      canvas.height = size * 2;
+      const ctx = this.ctx;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const s = size * 2;
+      const r = radius * s / 2;
+      ctx.beginPath();
+      ctx.roundRect(0, 0, s, s, r);
+      ctx.clip();
+      if (bg) {
+        ctx.fillStyle = bg;
+        ctx.fillRect(0, 0, s, s);
+      } else {
+        const sq = 8;
+        for (let y = 0; y < s; y += sq) {
+          for (let x = 0; x < s; x += sq) {
+            ctx.fillStyle = (x + y) / sq % 2 === 0 ? "#e5e7eb" : "#ffffff";
+            ctx.fillRect(x, y, sq, sq);
+          }
+        }
+      }
+      const svgText = color ? this.colorizeSvg(this.rawSvg, color) : this.rawSvg;
+      const blob = new Blob([svgText], { type: "image/svg+xml" });
+      const url = URL.createObjectURL(blob);
+      const img = new Image();
+      img.onload = () => {
+        const pad = padding * s;
+        ctx.drawImage(img, pad, pad, s - pad * 2, s - pad * 2);
+        URL.revokeObjectURL(url);
+      };
+      img.src = url;
+    },
+    renderToCanvas(size) {
+      return new Promise((resolve) => {
+        const { color, bg, padding, radius } = this.getSettings();
+        const canvas = document.createElement("canvas");
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext("2d");
+        const r = radius * size / 2;
+        ctx.beginPath();
+        ctx.roundRect(0, 0, size, size, r);
+        ctx.clip();
+        if (bg) {
+          ctx.fillStyle = bg;
+          ctx.fillRect(0, 0, size, size);
+        }
+        const svgText = color ? this.colorizeSvg(this.rawSvg, color) : this.rawSvg;
+        const blob = new Blob([svgText], { type: "image/svg+xml" });
+        const url = URL.createObjectURL(blob);
+        const img = new Image();
+        img.onload = () => {
+          const pad = padding * size;
+          ctx.drawImage(img, pad, pad, size - pad * 2, size - pad * 2);
+          URL.revokeObjectURL(url);
+          canvas.toBlob((blob2) => resolve(blob2), "image/png");
+        };
+        img.src = url;
+      });
+    },
+    getSelectedSizes() {
+      const sizes = [];
+      this.el.querySelectorAll(".designer-size:checked").forEach((cb) => sizes.push(parseInt(cb.value)));
+      const custom = parseInt(this.el.querySelector(".designer-custom-size")?.value);
+      if (custom > 0 && custom <= 4096) sizes.push(custom);
+      return [...new Set(sizes)].sort((a, b) => a - b);
+    },
+    async downloadPngZip() {
+      if (!window.JSZip || !this.rawSvg) return;
+      const sizes = this.getSelectedSizes();
+      if (sizes.length === 0) return;
+      const btn = this.el.querySelector(".designer-download-png");
+      const orig = btn.innerHTML;
+      btn.innerHTML = "Generating...";
+      btn.disabled = true;
+      try {
+        const zip = new JSZip();
+        for (const size of sizes) {
+          const blob = await this.renderToCanvas(size);
+          zip.file(`${this.baseName}-${size}.png`, blob);
+        }
+        const { color, bg, padding, radius } = this.getSettings();
+        const activePreset = PresetManager.active();
+        const activeKey = PresetManager.activeKey();
+        const manifest = {
+          generator: "icons.pureadmin.io \u2014 Download Designer",
+          url: window.location.origin,
+          icon: this.baseName,
+          source_svg: window.location.origin + this.svgUrl,
+          created: (/* @__PURE__ */ new Date()).toISOString(),
+          settings: {
+            include_colors: this.colorsCheckbox?.checked || false,
+            icon_color: color || "original",
+            background: bg || "transparent",
+            padding_percent: parseInt(this.paddingSlider?.value || "10"),
+            corner_radius_percent: parseInt(this.radiusSlider?.value || "20"),
+            preset_name: activePreset?.label || "Custom",
+            preset_key: activeKey || null
+          },
+          files: sizes.map((s) => ({ filename: `${this.baseName}-${s}.png`, size: s, format: "png" }))
+        };
+        zip.file("manifest.json", JSON.stringify(manifest, null, 2));
+        const sep = "=".repeat(60);
+        const readme = [
+          `${this.el.dataset.name} - PNG Icon Pack`,
+          sep,
+          ``,
+          `Generated by icons.pureadmin.io Download Designer`,
+          `${window.location.origin}`,
+          ``,
+          ``,
+          `ICON`,
+          `-`.repeat(40),
+          `Name:       ${this.el.dataset.name}`,
+          `Source SVG: ${window.location.origin}${this.svgUrl}`,
+          `Created:    ${(/* @__PURE__ */ new Date()).toLocaleString()}`,
+          ``,
+          ``,
+          `SETTINGS`,
+          `-`.repeat(40),
+          `Colors:        ${manifest.settings.include_colors ? "Yes" : "No (original)"}`,
+          manifest.settings.include_colors ? `Icon color:    ${manifest.settings.icon_color}` : null,
+          manifest.settings.include_colors ? `Background:    ${manifest.settings.background}` : null,
+          manifest.settings.include_colors ? `Preset:        ${manifest.settings.preset_name}` : null,
+          `Padding:       ${manifest.settings.padding_percent}%`,
+          `Corner radius: ${manifest.settings.corner_radius_percent}%`,
+          ``,
+          ``,
+          `FILES`,
+          `-`.repeat(40),
+          ...sizes.map((s) => `  ${this.baseName}-${s}.png  (${s} x ${s} px)`),
+          ``,
+          ``,
+          `RE-IMPORTING THESE SETTINGS`,
+          `-`.repeat(40),
+          `To recreate these icons with the same settings:`,
+          ``,
+          `  1. Go to ${window.location.origin}`,
+          `  2. Open any icon's detail dialog`,
+          `  3. In the Download Designer section, click "Import Settings"`,
+          `  4. Select the manifest.json file from this ZIP`,
+          ``,
+          `All settings (colors, padding, corners, sizes) will be restored.`,
+          ``,
+          ``,
+          `LICENSE`,
+          `-`.repeat(40),
+          `The icon SVG retains its original license from the source icon set.`,
+          `Colors and formatting applied by icons.pureadmin.io are not subject`,
+          `to additional licensing.`,
+          ``
+        ].filter(Boolean).join("\n");
+        zip.file("readme.txt", readme);
+        const zipBlob = await zip.generateAsync({ type: "blob" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(zipBlob);
+        a.download = `${this.baseName}-pngs.zip`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(a.href);
+      } catch (err) {
+        console.error("[DownloadDesigner] PNG ZIP failed:", err);
+      } finally {
+        btn.innerHTML = orig;
+        btn.disabled = false;
+      }
+    },
+    async downloadSvg() {
+      if (!this.rawSvg) return;
+      const { color, bg, padding, radius } = this.getSettings();
+      const parser = new DOMParser();
+      const doc2 = parser.parseFromString(this.rawSvg, "image/svg+xml");
+      const svg = doc2.querySelector("svg");
+      if (!svg) return;
+      const vb = svg.getAttribute("viewBox")?.split(/\s+/).map(Number) || [0, 0, 24, 24];
+      const [vx, vy, vw, vh] = vb;
+      if (color) {
+        const colorize = (el) => {
+          const fill = el.getAttribute("fill");
+          if (fill && fill !== "none") el.setAttribute("fill", color);
+          const stroke = el.getAttribute("stroke");
+          if (stroke && stroke !== "none") el.setAttribute("stroke", color);
+        };
+        colorize(svg);
+        svg.querySelectorAll("path, circle, rect, line, polyline, polygon, ellipse, g").forEach(colorize);
+      }
+      if (bg || padding > 0 || radius > 0) {
+        const pad = padding * Math.max(vw, vh);
+        const newW = vw + pad * 2;
+        const newH = vh + pad * 2;
+        const r = radius * Math.max(newW, newH) / 2;
+        const g = doc2.createElementNS("http://www.w3.org/2000/svg", "g");
+        g.setAttribute("transform", `translate(${pad}, ${pad})`);
+        while (svg.firstChild) g.appendChild(svg.firstChild);
+        svg.setAttribute("viewBox", `0 0 ${newW} ${newH}`);
+        if (bg) {
+          const rect = doc2.createElementNS("http://www.w3.org/2000/svg", "rect");
+          rect.setAttribute("width", newW);
+          rect.setAttribute("height", newH);
+          rect.setAttribute("rx", r);
+          rect.setAttribute("ry", r);
+          rect.setAttribute("fill", bg);
+          svg.appendChild(rect);
+        }
+        svg.appendChild(g);
+      }
+      const serializer = new XMLSerializer();
+      const blob = new Blob([serializer.serializeToString(doc2)], { type: "image/svg+xml" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `${this.baseName}-designed.svg`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(a.href);
+    },
+    importSettings(manifest) {
+      const s = manifest.settings;
+      if (!s) return;
+      if (this.colorsCheckbox) this.colorsCheckbox.checked = !!s.include_colors;
+      if (this.paddingSlider) {
+        this.paddingSlider.value = s.padding_percent ?? 10;
+        this.paddingLabel.textContent = this.paddingSlider.value + "%";
+      }
+      if (this.radiusSlider) {
+        this.radiusSlider.value = s.corner_radius_percent ?? 20;
+        this.radiusLabel.textContent = this.radiusSlider.value + "%";
+      }
+      if (s.include_colors) {
+        if (s.icon_color && s.icon_color !== "original") localStorage.setItem("icon_preview_color", s.icon_color);
+        if (s.background && s.background !== "transparent") {
+          localStorage.setItem("icon_preview_bg", JSON.stringify(s.background));
+        } else {
+          localStorage.setItem("icon_preview_bg", JSON.stringify("checker"));
+        }
+        if (s.preset_name && s.preset_name !== "Custom") {
+          const all = PresetManager.getAll();
+          const existingKey = Object.entries(all).find(([, p]) => p.label === s.preset_name)?.[0];
+          if (existingKey) {
+            localStorage.setItem("icon_preview_preset", existingKey);
+          } else {
+            const key = `custom-${Date.now()}`;
+            const customs = PresetManager.getCustoms();
+            customs[key] = {
+              color: s.icon_color || "#212121",
+              bg: s.background === "transparent" ? "checker" : s.background || "#ffffff",
+              label: s.preset_name
+            };
+            PresetManager.saveCustoms(customs);
+            localStorage.setItem("icon_preview_preset", key);
+          }
+        }
+        window.dispatchEvent(new CustomEvent("iconColorChanged"));
+      }
+      localStorage.setItem("designer_include_colors", s.include_colors);
+      localStorage.setItem("designer_padding", s.padding_percent ?? 10);
+      localStorage.setItem("designer_radius", s.corner_radius_percent ?? 20);
+      if (manifest.files) {
+        const importedSizes = new Set(manifest.files.map((f) => f.size));
+        this.el.querySelectorAll(".designer-size").forEach((cb) => {
+          cb.checked = importedSizes.has(parseInt(cb.value));
+        });
+        const standardSizes = /* @__PURE__ */ new Set([32, 64, 128, 256, 512, 1024]);
+        const customSize = [...importedSizes].find((s2) => !standardSizes.has(s2));
+        const customInput = this.el.querySelector(".designer-custom-size");
+        if (customInput && customSize) customInput.value = customSize;
+      }
+      this.renderPreview();
+      const btn = this.el.querySelector(".designer-download-png");
+      if (btn) {
+        const label = btn.closest(".flex")?.querySelector(".designer-import-status");
+        if (!label) {
+          const status = document.createElement("span");
+          status.className = "designer-import-status text-xs text-success";
+          status.textContent = `Settings imported${s.preset_name && s.preset_name !== "Custom" ? ` (preset: ${s.preset_name})` : ""}`;
+          btn.closest(".flex")?.appendChild(status);
+          setTimeout(() => status.remove(), 4e3);
+        }
+      }
+    }
+  };
   Hooks2.DownloadNaming = {
     mounted() {
       this.select = this.el.querySelector(".download-naming-select");
@@ -9556,12 +9945,67 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
         localStorage.setItem("download_naming", this.select.value);
         this.applyNaming(this.select.value);
       });
+      this.el.addEventListener("click", (e) => {
+        const link = e.target.closest(".download-link");
+        if (!link) return;
+        const designerColors = document.querySelector(".designer-include-colors");
+        if (!designerColors?.checked) return;
+        e.preventDefault();
+        this.downloadWithColors(link);
+      });
     },
     updated() {
       this.select = this.el.querySelector(".download-naming-select");
       this.name = this.el.dataset.name;
       this.style = this.el.dataset.style;
       if (this.select) this.applyNaming(this.select.value || "original");
+    },
+    async downloadWithColors(link) {
+      const url = link.getAttribute("href");
+      const filename = link.getAttribute("download") || "icon.svg";
+      const color = localStorage.getItem("icon_preview_color") || "#212121";
+      let bg = "#ffffff";
+      try {
+        bg = JSON.parse(localStorage.getItem("icon_preview_bg") || '"#ffffff"');
+      } catch {
+        bg = localStorage.getItem("icon_preview_bg") || "#ffffff";
+      }
+      try {
+        const resp = await fetch(url);
+        const svgText = await resp.text();
+        const parser = new DOMParser();
+        const doc2 = parser.parseFromString(svgText, "image/svg+xml");
+        const svg = doc2.querySelector("svg");
+        if (!svg) return;
+        const colorize = (el) => {
+          const fill = el.getAttribute("fill");
+          if (fill && fill !== "none") el.setAttribute("fill", color);
+          const stroke = el.getAttribute("stroke");
+          if (stroke && stroke !== "none") el.setAttribute("stroke", color);
+        };
+        colorize(svg);
+        svg.querySelectorAll("path, circle, rect, line, polyline, polygon, ellipse, g").forEach(colorize);
+        if (bg && bg !== "checker") {
+          const rect = doc2.createElementNS("http://www.w3.org/2000/svg", "rect");
+          rect.setAttribute("width", "100%");
+          rect.setAttribute("height", "100%");
+          rect.setAttribute("fill", bg);
+          svg.insertBefore(rect, svg.firstChild);
+        }
+        const serializer = new XMLSerializer();
+        const blob = new Blob([serializer.serializeToString(doc2)], { type: "image/svg+xml" });
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = blobUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(blobUrl);
+      } catch (err) {
+        console.error("[DownloadNaming] Failed to download with colors:", err);
+        window.location.href = url;
+      }
     },
     applyNaming(convention) {
       const toSnake = (s) => s.toLowerCase().replace(/\s+/g, "_");

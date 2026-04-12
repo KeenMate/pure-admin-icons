@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-04-12 — Download Designer
+
+### Download Designer section in icon detail modal
+- New section between icon previews and platform identifiers for generating customized icon exports
+- **Live preview** (128px retina canvas) — updates in real-time as settings change
+- **Include colors** — applies the active preset's icon color + background
+- **Padding** — 0–40% slider for gap around the icon
+- **Corner radius** — 0–50% slider for rounded corners (50% = circle, good for app icons)
+- **Size selection** — checkboxes for 32/64/128/256/512/1024px + custom size input (1–4096px)
+- **Download PNG ZIP** — renders at all selected sizes with padding, corners, and colors baked into PNGs, packed into a ZIP with:
+  - `manifest.json` — machine-readable settings (colors, padding, radius, preset name, file list, source URL, timestamp)
+  - `readme.txt` — human-readable summary with icon info, settings, file list, re-import instructions, license note
+- **Download SVG** — exports a single SVG with expanded viewBox for padding, `<rect rx>` rounded background, and colorized paths
+- **Import Settings** — file picker for `manifest.json` from a previous ZIP; restores all settings (padding, radius, sizes, colors). If the preset name doesn't exist locally, auto-creates a custom preset with that name and colors
+- All settings persist to localStorage; preview listens for `iconColorChanged` events so preset changes in the combo are reflected immediately
+- Vendored JSZip 3.10.1 (~98KB UMD) for client-side ZIP generation
+
+### SVG download with colors (per-size buttons)
+- The individual SVG download buttons per size still respect the designer's "Include colors" checkbox — fetches the SVG, colorizes, and downloads the modified file as a blob
+
+---
+
 ## 2026-04-12 — Preset system rework, UI polish
 
 ### PresetManager — single source of truth for color presets

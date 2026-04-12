@@ -255,6 +255,71 @@ defmodule PureAdminIconsWeb.IconModalComponent do
               <% end %>
             </div>
 
+            <!-- Download Designer -->
+            <div class="mb-6" id={"download-designer-#{@icon.icon_id}"} phx-hook="DownloadDesigner"
+                 data-name={@icon.name}
+                 data-svg-url={if Map.get(@icon, :is_scalable, false), do: Icon.svg_url(@icon, 0), else: Icon.svg_url(@icon, List.first(@icon.sizes))}>
+              <h3 class="text-sm font-medium text-base-content mb-3">Download Designer</h3>
+              <div class="bg-base-100 rounded-lg p-4 space-y-4">
+                <div class="flex gap-4">
+                  <!-- Live preview -->
+                  <div class="flex-shrink-0">
+                    <canvas class="designer-preview rounded-lg border border-base-300" width="128" height="128" style="width: 128px; height: 128px;"></canvas>
+                  </div>
+                  <!-- Controls -->
+                  <div class="flex-1 space-y-3 text-xs">
+                    <!-- Include colors -->
+                    <label class="flex items-center gap-2 cursor-pointer text-base-content/70" title="Apply current preview colors (icon color + background)">
+                      <input type="checkbox" class="designer-include-colors w-3.5 h-3.5 rounded border-base-300" />
+                      <span>Include colors</span>
+                    </label>
+                    <!-- Padding -->
+                    <div class="flex items-center gap-2">
+                      <span class="text-base-content/70 w-16">Padding</span>
+                      <input type="range" min="0" max="40" value="10" class="designer-padding range range-xs range-primary flex-1" />
+                      <span class="designer-padding-label text-base-content/50 w-8">10%</span>
+                    </div>
+                    <!-- Corner radius -->
+                    <div class="flex items-center gap-2">
+                      <span class="text-base-content/70 w-16">Corners</span>
+                      <input type="range" min="0" max="50" value="20" class="designer-radius range range-xs range-primary flex-1" />
+                      <span class="designer-radius-label text-base-content/50 w-8">20%</span>
+                    </div>
+                  </div>
+                </div>
+                <!-- Sizes -->
+                <div class="flex flex-wrap items-center gap-2">
+                  <span class="text-xs text-base-content/70">Sizes:</span>
+                  <%= for size <- [32, 64, 128, 256, 512, 1024] do %>
+                    <label class="inline-flex items-center gap-1 cursor-pointer text-xs">
+                      <input type="checkbox" checked class="designer-size w-3.5 h-3.5 rounded border-base-300" value={size} />
+                      <span class="text-base-content/70"><%= size %></span>
+                    </label>
+                  <% end %>
+                  <div class="flex items-center gap-1">
+                    <input type="number" min="1" max="4096" placeholder="Custom" class="designer-custom-size w-16 px-2 py-0.5 text-xs border border-base-300 rounded" />
+                    <span class="text-xs text-base-content/50">px</span>
+                  </div>
+                </div>
+                <!-- Download buttons -->
+                <div class="flex flex-wrap items-center gap-2">
+                  <button type="button" class="designer-download-png px-3 py-1.5 rounded text-xs font-medium cursor-pointer bg-primary text-primary-content hover:opacity-80 inline-flex items-center gap-1.5">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                    Download PNG ZIP
+                  </button>
+                  <button type="button" class="designer-download-svg px-3 py-1.5 rounded text-xs font-medium cursor-pointer border border-base-300 hover:bg-base-200 inline-flex items-center gap-1.5">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                    Download SVG
+                  </button>
+                  <label class="px-3 py-1.5 rounded text-xs font-medium cursor-pointer border border-base-300 hover:bg-base-200 inline-flex items-center gap-1.5" title="Import settings from a manifest.json (from a previous Download Designer ZIP)">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                    Import Settings
+                    <input type="file" accept=".json" class="designer-import-file hidden" />
+                  </label>
+                </div>
+              </div>
+            </div>
+
             <!-- Platform Identifiers -->
             <div class="space-y-4">
               <div class="flex items-center justify-between">
