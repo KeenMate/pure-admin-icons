@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-04-12 — Modal LiveComponent extraction, SVG preservation fix
+
+### Icon modal extracted to LiveComponent
+- Moved the ~570-line `defp icon_modal/1` from `IconSearchLive` into a standalone `IconModalComponent` (`lib/pure_admin_icons_web/live/icon_modal_component.ex`)
+- Stateful LiveComponent with `id="icon-modal"` — provides a rendering boundary so modal open/close only re-renders the component, not the parent grid/list
+- Events (`close_modal`, `toggle_platform`, `track_download`, `track_copy`) bubble to the parent LiveView — existing handlers work unchanged
+- Helper functions (Formatter wrappers, color/preset helpers) are self-contained in the component
+- Modal conditional wrapped in stable `<div id="modal-container">` to prevent morphdom sibling count changes
+- Parent `icon_search_live.ex` shrunk by ~560 lines
+
+### SVG preservation with `phx-update="ignore"`
+- Root cause: LiveView's morphdom was wiping JS-loaded SVG innerHTML from icon preview elements on modal open/close, but `updated()` only fired on open (not close), so SVGs were never restored after closing
+- Grid view appeared unaffected because hidden (`display:none`) elements never had SVGs loaded by IntersectionObserver in the first place
+- Fix: each icon's SVG container now has `phx-update="ignore"` with a unique ID (`grid-svg-{id}`, `list-svg-{id}`, `mobile-svg-{id}`), telling LiveView to never touch the element after initial render
+- `IconColorFilter.updated()` cleaned up — `loadAllSvgs` only runs when icons actually change (new search/page), no more band-aid reload on every patch
+
+---
+
 ## 2026-04-12 — Stats page, source tracking, SVG hash, version detection
 
 ### Stats page (`/stats`)

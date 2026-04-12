@@ -21,16 +21,17 @@ Hooks.IconColorFilter = {
     })
   },
   updated() {
-    // Only re-process if the icon list actually changed (skip modal open/close)
+    // SVG containers use phx-update="ignore" so morphdom won't wipe them.
+    // Only re-process if the icon list actually changed (new search/page).
     const icons = this.el.querySelectorAll('.inline-svg-icon')
     const iconCount = icons.length
     const firstUrl = icons[0]?.dataset?.svgUrl || ''
     const sig = `${iconCount}:${firstUrl}`
     if (sig !== this._lastSig) {
       this._lastSig = sig
+      this.loadAllSvgs()
       this.updateAllColors()
       this.applyPreviewBg()
-      this.loadAllSvgs()
     }
   },
   applyPreviewBg() {
