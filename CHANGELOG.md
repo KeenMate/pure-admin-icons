@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-04-12 — DesignerExport shared module, quick download from popovers
+
+### DesignerExport shared JS module
+- Extracted `colorizeSvg`, `renderToCanvas`, `downloadPngZip` (with manifest + readme generation) from the DownloadDesigner hook into a standalone `DesignerExport` module
+- Reads all settings (padding, radius, colors, sizes) from localStorage — works without the DownloadDesigner hook being mounted
+- DownloadDesigner hook now delegates to `DesignerExport` for all export operations
+
+### Quick PNG ZIP download from grid/list popovers
+- Every floating popover (hover tooltip on size pills and checkmarks) now includes a download icon button at the end
+- Clicking it calls `DesignerExport.downloadPngZip()` with the icon's SVG URL and saved designer settings — one-click export without opening the detail modal
+- Button dims while generating; handler is delegated via the FloatingPopover hook
+
+### Designer size persistence
+- Size checkboxes and custom size input now persist to localStorage across dialog close/reopen
+- Custom size field widened to `w-28` with "Custom size" placeholder
+
+---
+
 ## 2026-04-12 — Theme switcher, metrics tracking, event loop fix
 
 ### Collapsible theme switcher

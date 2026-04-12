@@ -297,7 +297,7 @@ defmodule PureAdminIconsWeb.IconModalComponent do
                     </label>
                   <% end %>
                   <div class="flex items-center gap-1">
-                    <input type="number" min="1" max="4096" placeholder="Custom" class="designer-custom-size w-16 px-2 py-0.5 text-xs border border-base-300 rounded" />
+                    <input type="number" min="1" max="4096" placeholder="Custom size" class="designer-custom-size w-28 px-2 py-0.5 text-xs border border-base-300 rounded" />
                     <span class="text-xs text-base-content/50">px</span>
                   </div>
                 </div>

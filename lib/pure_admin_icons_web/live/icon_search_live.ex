@@ -874,6 +874,15 @@ defmodule PureAdminIconsWeb.IconSearchLive do
                         <.platform_icon name={to_string(platform)} class="w-5 h-5" />
                       </button>
                     <% end %>
+                    <button
+                      type="button"
+                      class="quick-designer-download floating-popover-btn text-base-content/60"
+                      title="Download PNG ZIP with designer settings"
+                      data-svg-url={Icon.svg_url(icon, default_size(icon.sizes))}
+                      data-name={icon.name}
+                    >
+                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                    </button>
                   </div>
                 </div>
               <% else %>
@@ -891,6 +900,15 @@ defmodule PureAdminIconsWeb.IconSearchLive do
                           <.platform_icon name={to_string(platform)} class="w-5 h-5" />
                         </button>
                       <% end %>
+                      <button
+                        type="button"
+                        class="quick-designer-download floating-popover-btn text-base-content/60"
+                        title="Download PNG ZIP with designer settings"
+                        data-svg-url={Icon.svg_url(icon, size)}
+                        data-name={icon.name}
+                      >
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                      </button>
                     </div>
                   </div>
                 <% end %>
@@ -993,6 +1011,9 @@ defmodule PureAdminIconsWeb.IconSearchLive do
                             <.platform_icon name={to_string(platform)} class="w-5 h-5" />
                           </button>
                         <% end %>
+                        <button type="button" class="quick-designer-download floating-popover-btn text-base-content/60" title="Download PNG ZIP with designer settings" data-svg-url={Icon.svg_url(icon, default_size(icon.sizes))} data-name={icon.name}>
+                          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                        </button>
                       </div>
                     </div>
                   </td>
@@ -1014,6 +1035,9 @@ defmodule PureAdminIconsWeb.IconSearchLive do
                                 <.platform_icon name={to_string(platform)} class="w-5 h-5" />
                               </button>
                             <% end %>
+                            <button type="button" class="quick-designer-download floating-popover-btn text-base-content/60" title="Download PNG ZIP with designer settings" data-svg-url={Icon.svg_url(icon, size)} data-name={icon.name}>
+                              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                            </button>
                           </div>
                         </div>
                       <% else %>
