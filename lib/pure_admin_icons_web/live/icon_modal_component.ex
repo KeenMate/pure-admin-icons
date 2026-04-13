@@ -51,7 +51,7 @@ defmodule PureAdminIconsWeb.IconModalComponent do
             <div class="text-center mb-6">
               <h2 class="text-2xl font-bold text-base-content" id="modal-title"><%= @icon.name %></h2>
               <div class="flex justify-center gap-2 mt-2">
-                <span class={["inline-block px-2.5 py-1 rounded text-sm font-medium", icon_set_color(@icon.icon_set_code)]}><%= @icon.icon_set_code %></span>
+                <span class="inline-block px-2.5 py-1 rounded text-sm font-medium" style={PureAdminIcons.IconSets.Color.badge_style(@icon.icon_set_code)}><%= @icon.icon_set_code %></span>
                 <span class="inline-block px-2.5 py-1 rounded text-sm font-medium badge-style capitalize"><%= @icon.style_code %></span>
               </div>
 
@@ -181,7 +181,7 @@ defmodule PureAdminIconsWeb.IconModalComponent do
                  data-name={@icon.name} data-style={@icon.style_code}>
               <div class="flex items-center justify-between mb-3">
                 <h3 class="text-sm font-medium text-base-content">
-                  <%= if Map.get(@icon, :is_scalable, false) do %>
+                  <%= if Map.get(@icon, :has_single_source, false) do %>
                     Preview <span class="text-base-content/50">— Scalable, renders at any size</span>
                   <% else %>
                     Available Sizes
@@ -197,7 +197,7 @@ defmodule PureAdminIconsWeb.IconModalComponent do
                   </select>
                 </label>
               </div>
-              <%= if Map.get(@icon, :is_scalable, false) do %>
+              <%= if Map.get(@icon, :has_single_source, false) do %>
                 <div class="flex justify-center"
                      id={"icon-preview-#{@icon.icon_id}"}
                      phx-hook="InlineSvg"
@@ -258,7 +258,7 @@ defmodule PureAdminIconsWeb.IconModalComponent do
             <!-- Download Designer -->
             <div class="mb-6" id={"download-designer-#{@icon.icon_id}"} phx-hook="DownloadDesigner"
                  data-name={@icon.name}
-                 data-svg-url={if Map.get(@icon, :is_scalable, false), do: Icon.svg_url(@icon, 0), else: Icon.svg_url(@icon, List.first(@icon.sizes))}>
+                 data-svg-url={if Map.get(@icon, :has_single_source, false), do: Icon.svg_url(@icon, 0), else: Icon.svg_url(@icon, List.first(@icon.sizes))}>
               <h3 class="text-sm font-medium text-base-content mb-3">Download Designer</h3>
               <div class="bg-base-100 rounded-lg p-4 space-y-4">
                 <div class="flex gap-4">
@@ -392,7 +392,7 @@ defmodule PureAdminIconsWeb.IconModalComponent do
               <%= if @platform_prefs.ios do %>
                 <% {ios_pkg_name, ios_pkg_url} = ios_package(@icon) %>
                 <%= if ios_pkg_name do %>
-                  <.platform_section icon={@icon} platform="ios" pkg_name={ios_pkg_name} pkg_url={ios_pkg_url} color="text-primary" identifiers={@icon.ios_identifiers || %{}} />
+                  <.platform_section icon={@icon} platform="ios" pkg_name={ios_pkg_name} pkg_url={ios_pkg_url} color="text-primary" identifiers={Icon.platform_ids(@icon, "ios")} />
                 <% end %>
               <% end %>
 
@@ -400,7 +400,7 @@ defmodule PureAdminIconsWeb.IconModalComponent do
               <%= if @platform_prefs.android do %>
                 <% {android_pkg_name, android_pkg_url} = android_package(@icon) %>
                 <%= if android_pkg_name do %>
-                  <.platform_section icon={@icon} platform="android" pkg_name={android_pkg_name} pkg_url={android_pkg_url} color="text-success" identifiers={@icon.android_identifiers || %{}} />
+                  <.platform_section icon={@icon} platform="android" pkg_name={android_pkg_name} pkg_url={android_pkg_url} color="text-success" identifiers={Icon.platform_ids(@icon, "android")} />
                 <% end %>
               <% end %>
 
@@ -469,7 +469,7 @@ defmodule PureAdminIconsWeb.IconModalComponent do
               <%= if @platform_prefs.filename do %>
                 <div class="bg-base-100 rounded-lg p-4" id={"filename-section-#{@icon.icon_id}"} phx-hook="FilenameTemplate"
                      data-name={@icon.name} data-style={@icon.style_code}
-                     data-sizes={Jason.encode!(if Map.get(@icon, :is_scalable, false), do: [0], else: @icon.sizes)}
+                     data-sizes={Jason.encode!(if Map.get(@icon, :has_single_source, false), do: [0], else: @icon.sizes)}
                      data-filenames={Jason.encode!(@icon.filenames || %{})}>
                   <div class="flex items-center justify-between mb-2">
                     <span class="text-sm font-medium text-base-content/70 flex items-center gap-1.5">
@@ -568,12 +568,6 @@ defmodule PureAdminIconsWeb.IconModalComponent do
   defp svelte_package(icon), do: Formatter.svelte_package(icon)
   defp cssclass_package(icon), do: Formatter.cssclass_package(icon)
 
-  defp icon_set_color("fluentui"), do: "bg-blue-600 text-white"
-  defp icon_set_color("heroicons"), do: "bg-violet-600 text-white"
-  defp icon_set_color("lucide"), do: "bg-orange-500 text-white"
-  defp icon_set_color("tabler"), do: "bg-cyan-600 text-white"
-  defp icon_set_color("fontawesome"), do: "bg-yellow-500 text-black"
-  defp icon_set_color(_), do: "bg-base-300 text-base-content"
 
   defp color_method_label("fill"), do: "CSS: fill / color"
   defp color_method_label("stroke"), do: "CSS: stroke / color"

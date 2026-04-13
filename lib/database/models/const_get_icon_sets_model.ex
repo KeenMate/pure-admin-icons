@@ -15,8 +15,11 @@ defmodule Database.Models.ConstGetIconSetsModel do
     :styles,
     :sizes,
     :default_size,
-    :style_color_methods,
+    :has_single_source,
     :is_scalable,
+    :style_color_methods,
+    :native_style_names,
+    :brand_color,
     :icon_count
   ]
 
@@ -34,8 +37,11 @@ defmodule Database.Models.ConstGetIconSetsModel do
     styles: list(String.t()),
     sizes: list(integer()),
     default_size: integer(),
-    style_color_methods: map() | list(),
+    has_single_source: boolean(),
     is_scalable: boolean(),
+    style_color_methods: map() | list(),
+    native_style_names: map() | list(),
+    brand_color: String.t(),
     icon_count: integer()
   }
 

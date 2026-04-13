@@ -1,6 +1,6 @@
 {
   "version": "LOCAL",
-  "time": "2026-04-11T17:12:57.5200718+02:00",
+  "time": "2026-04-13T22:34:28.038849+02:00",
   "routines": [
     {
       "RowNumber": 1,
@@ -563,7 +563,7 @@
       "DataType": "record",
       "UdtTypeScheme": "pg_catalog",
       "UdtTypeName": "record",
-      "ParamCount": 12,
+      "ParamCount": 15,
       "FuncType": "function",
       "InParameters": [
         {
@@ -642,9 +642,9 @@
         },
         {
           "OrdinalPosition": 10,
-          "Name": "__style_color_methods",
+          "Name": "__has_single_source",
           "Mode": "OUT",
-          "UDTName": "jsonb",
+          "UDTName": "bool",
           "IsNullable": false,
           "IsOptional": false
         },
@@ -658,6 +658,30 @@
         },
         {
           "OrdinalPosition": 12,
+          "Name": "__style_color_methods",
+          "Mode": "OUT",
+          "UDTName": "jsonb",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 13,
+          "Name": "__native_style_names",
+          "Mode": "OUT",
+          "UDTName": "jsonb",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 14,
+          "Name": "__brand_color",
+          "Mode": "OUT",
+          "UDTName": "text",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 15,
           "Name": "__icon_count",
           "Mode": "OUT",
           "UDTName": "int8",
@@ -1901,6 +1925,55 @@
     {
       "RowNumber": 1,
       "RoutineSchema": "public",
+      "RoutineNameWithParams": "export_translations(text)",
+      "HasOverload": true,
+      "RoutineName": "export_translations",
+      "SpecificName": "",
+      "DataType": "record",
+      "UdtTypeScheme": "pg_catalog",
+      "UdtTypeName": "record",
+      "ParamCount": 4,
+      "FuncType": "function",
+      "InParameters": [
+        {
+          "OrdinalPosition": 1,
+          "Name": "_data_group",
+          "Mode": "IN",
+          "UDTName": "text",
+          "IsNullable": false,
+          "IsOptional": false
+        }
+      ],
+      "OutParameters": [
+        {
+          "OrdinalPosition": 2,
+          "Name": "__lang_code",
+          "Mode": "OUT",
+          "UDTName": "text",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 3,
+          "Name": "__translations",
+          "Mode": "OUT",
+          "UDTName": "json",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 4,
+          "Name": "__count",
+          "Mode": "OUT",
+          "UDTName": "int8",
+          "IsNullable": false,
+          "IsOptional": false
+        }
+      ]
+    },
+    {
+      "RowNumber": 2,
+      "RoutineSchema": "public",
       "RoutineNameWithParams": "export_translations(int8,text)",
       "HasOverload": true,
       "RoutineName": "export_translations",
@@ -1955,55 +2028,6 @@
         },
         {
           "OrdinalPosition": 6,
-          "Name": "__count",
-          "Mode": "OUT",
-          "UDTName": "int8",
-          "IsNullable": false,
-          "IsOptional": false
-        }
-      ]
-    },
-    {
-      "RowNumber": 2,
-      "RoutineSchema": "public",
-      "RoutineNameWithParams": "export_translations(text)",
-      "HasOverload": true,
-      "RoutineName": "export_translations",
-      "SpecificName": "",
-      "DataType": "record",
-      "UdtTypeScheme": "pg_catalog",
-      "UdtTypeName": "record",
-      "ParamCount": 4,
-      "FuncType": "function",
-      "InParameters": [
-        {
-          "OrdinalPosition": 1,
-          "Name": "_data_group",
-          "Mode": "IN",
-          "UDTName": "text",
-          "IsNullable": false,
-          "IsOptional": false
-        }
-      ],
-      "OutParameters": [
-        {
-          "OrdinalPosition": 2,
-          "Name": "__lang_code",
-          "Mode": "OUT",
-          "UDTName": "text",
-          "IsNullable": false,
-          "IsOptional": false
-        },
-        {
-          "OrdinalPosition": 3,
-          "Name": "__translations",
-          "Mode": "OUT",
-          "UDTName": "json",
-          "IsNullable": false,
-          "IsOptional": false
-        },
-        {
-          "OrdinalPosition": 4,
           "Name": "__count",
           "Mode": "OUT",
           "UDTName": "int8",
@@ -2198,7 +2222,7 @@
         },
         {
           "OrdinalPosition": 9,
-          "Name": "__is_scalable",
+          "Name": "__has_single_source",
           "Mode": "OUT",
           "UDTName": "bool",
           "IsNullable": false,
@@ -2206,6 +2230,14 @@
         },
         {
           "OrdinalPosition": 10,
+          "Name": "__is_scalable",
+          "Mode": "OUT",
+          "UDTName": "bool",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 11,
           "Name": "__filenames",
           "Mode": "OUT",
           "UDTName": "jsonb",
@@ -2213,16 +2245,8 @@
           "IsOptional": false
         },
         {
-          "OrdinalPosition": 11,
-          "Name": "__ios_identifiers",
-          "Mode": "OUT",
-          "UDTName": "jsonb",
-          "IsNullable": false,
-          "IsOptional": false
-        },
-        {
           "OrdinalPosition": 12,
-          "Name": "__android_identifiers",
+          "Name": "__platform_identifiers",
           "Mode": "OUT",
           "UDTName": "jsonb",
           "IsNullable": false,
@@ -2884,7 +2908,7 @@
         },
         {
           "OrdinalPosition": 13,
-          "Name": "__is_scalable",
+          "Name": "__has_single_source",
           "Mode": "OUT",
           "UDTName": "bool",
           "IsNullable": false,
@@ -2892,6 +2916,14 @@
         },
         {
           "OrdinalPosition": 14,
+          "Name": "__is_scalable",
+          "Mode": "OUT",
+          "UDTName": "bool",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 15,
           "Name": "__filenames",
           "Mode": "OUT",
           "UDTName": "jsonb",
@@ -2899,16 +2931,8 @@
           "IsOptional": false
         },
         {
-          "OrdinalPosition": 15,
-          "Name": "__ios_identifiers",
-          "Mode": "OUT",
-          "UDTName": "jsonb",
-          "IsNullable": false,
-          "IsOptional": false
-        },
-        {
           "OrdinalPosition": 16,
-          "Name": "__android_identifiers",
+          "Name": "__platform_identifiers",
           "Mode": "OUT",
           "UDTName": "jsonb",
           "IsNullable": false,

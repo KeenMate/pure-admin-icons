@@ -396,24 +396,6 @@ defmodule Database.DbContext do
 
 
   @doc """
-  Calls database function public.get_stats_overview
-
-  Returns: {:ok, [%Models.GetStatsOverviewModel{}]} | {:error, any()}
-  """
-  @spec get_stats_overview(keyword()) :: {:ok, [%Models.GetStatsOverviewModel{}]} | {:error, any()}
-  def get_stats_overview(query_opts \\ []) do
-    Logger.debug("Calling database routine", routine_name: "get_stats_overview")
-
-    query(
-      "select * from public.get_stats_overview()",
-      [],
-      query_opts
-    )
-    |> Processors.GetStatsOverviewProcessor.parse_result()
-  end
-
-
-  @doc """
   Calls database procedure public.refresh_icon_metrics_cube
   
   Returns: {:ok, any()} | {:error, any()}

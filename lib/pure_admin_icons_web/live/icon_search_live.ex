@@ -3,6 +3,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
 
   alias PureAdminIcons.Icons
   alias PureAdminIcons.Icons.Icon
+  alias PureAdminIcons.IconSets
   alias Phoenix.LiveView.JS
 
   import PureAdminIconsWeb.Components.PlatformIcons
@@ -565,7 +566,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
           <div>
             <span class="text-sm font-semibold text-base-content block mb-2">Sizes</span>
             <div class="flex flex-wrap gap-x-4 gap-y-2">
-              <%= if Enum.any?(@icon_sets, & &1.is_scalable) do %>
+              <%= if Enum.any?(@icon_sets, & &1.has_single_source) do %>
                 <label class="inline-flex items-center cursor-pointer gap-1.5">
                   <input
                     type="checkbox"
@@ -603,7 +604,8 @@ defmodule PureAdminIconsWeb.IconSearchLive do
                 type="button"
                 phx-click="toggle_icon_set"
                 phx-value-set={icon_set}
-                class={["badge badge-sm gap-1 cursor-pointer hover:opacity-80", icon_set_color(icon_set)]}
+                class="badge badge-sm gap-1 cursor-pointer hover:opacity-80"
+                style={IconSets.Color.badge_style(icon_set)}
               >
                 <%= icon_set %>
                 <span class="text-lg leading-none">&times;</span>
@@ -844,7 +846,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
           title={"#{icon.icon_set_code} / #{icon.name}"}
         >
           <!-- Top accent bar — colored by icon set, follows the rounded card corners -->
-          <div class={["h-1.5 w-full rounded-t-lg", icon_set_color(icon.icon_set_code)]}></div>
+          <div class="h-1.5 w-full rounded-t-lg" style={IconSets.Color.bar_style(icon.icon_set_code)}></div>
 
           <div class="icon-card-body">
             <div class="icon-card-name" title={icon.name}><%= icon.name %></div>
@@ -860,7 +862,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
             </div>
 
             <div class="icon-card-sizes">
-              <%= if Map.get(icon, :is_scalable, false) do %>
+              <%= if Map.get(icon, :has_single_source, false) do %>
                 <div class="has-popover text-2xl leading-none font-bold" title="Scalable — renders at any size">
                   ∞
                   <div class="floating-popover">
@@ -941,13 +943,13 @@ defmodule PureAdminIconsWeb.IconSearchLive do
             <div class="flex-1 min-w-0">
               <div class="font-medium text-base-content truncate mb-1"><%= icon.name %></div>
               <div class="flex flex-wrap gap-1 mt-0.5">
-                <span class={["badge badge-sm", icon_set_color(icon.icon_set_code)]}><%= icon.icon_set_code %></span>
+                <span class="badge badge-sm" style={IconSets.Color.badge_style(icon.icon_set_code)}><%= icon.icon_set_code %></span>
                 <span class="badge badge-sm badge-neutral capitalize"><%= icon.style_code %></span>
               </div>
             </div>
           </div>
           <div class="flex flex-wrap gap-1 mt-1">
-            <%= if Map.get(icon, :is_scalable, false) do %>
+            <%= if Map.get(icon, :has_single_source, false) do %>
               <span class="badge badge-sm badge-ghost" title="Scalable — renders at any size">∞</span>
             <% else %>
               <%= for size <- icon.sizes do %>
@@ -989,13 +991,13 @@ defmodule PureAdminIconsWeb.IconSearchLive do
                   </div>
                 </td>
                 <td class="px-4 py-3">
-                  <span class={["badge badge-sm", icon_set_color(icon.icon_set_code)]}><%= icon.icon_set_code %></span>
+                  <span class="badge badge-sm" style={IconSets.Color.badge_style(icon.icon_set_code)}><%= icon.icon_set_code %></span>
                 </td>
                 <td class="px-4 py-3 font-medium text-base-content"><%= icon.name %></td>
                 <td class="px-4 py-3 text-center">
                   <span class="px-2 py-0.5 rounded text-xs bg-base-200 text-base-content/70 capitalize"><%= icon.style_code %></span>
                 </td>
-                <%= if Map.get(icon, :is_scalable, false) do %>
+                <%= if Map.get(icon, :has_single_source, false) do %>
                   <td class="px-2 py-3 text-center" colspan={length(@display_sizes)}>
                     <div class="has-popover inline-block text-base-content/80 font-bold text-lg" title="Scalable — renders at any size">
                       ∞ Scalable
@@ -1062,12 +1064,12 @@ defmodule PureAdminIconsWeb.IconSearchLive do
 
   defp get_ios_id(icon) do
     size = default_size(icon.sizes) |> to_string()
-    Map.get(icon.ios_identifiers, size, "N/A")
+    Map.get(Icon.platform_ids(icon, "ios"), size, "N/A")
   end
 
   defp get_android_id(icon) do
     size = default_size(icon.sizes) |> to_string()
-    Map.get(icon.android_identifiers, size, "N/A")
+    Map.get(Icon.platform_ids(icon, "android"), size, "N/A")
   end
 
   # Get the first N enabled platforms from user preferences
@@ -1151,10 +1153,10 @@ defmodule PureAdminIconsWeb.IconSearchLive do
   end
 
   defp get_platform_id_for_size(icon, :ios, size) do
-    Map.get(icon.ios_identifiers, to_string(size), "N/A")
+    Map.get(Icon.platform_ids(icon, "ios"), to_string(size), "N/A")
   end
   defp get_platform_id_for_size(icon, :android, size) do
-    Map.get(icon.android_identifiers, to_string(size), "N/A")
+    Map.get(Icon.platform_ids(icon, "android"), to_string(size), "N/A")
   end
   defp get_platform_id_for_size(icon, :react, size), do: react_identifier(icon, size)
   defp get_platform_id_for_size(icon, :vue, size), do: vue_identifier(icon, size)
@@ -1199,14 +1201,6 @@ defmodule PureAdminIconsWeb.IconSearchLive do
   defp color_method_class("stroke"), do: "bg-emerald-100 text-emerald-700"
   defp color_method_class("multicolor"), do: "bg-amber-100 text-amber-700"
   defp color_method_class(_), do: "bg-base-200 text-base-content/70"
-
-  # Icon set badge colors
-  defp icon_set_color("fluentui"), do: "bg-blue-600 text-white"
-  defp icon_set_color("heroicons"), do: "bg-violet-600 text-white"
-  defp icon_set_color("lucide"), do: "bg-orange-500 text-white"
-  defp icon_set_color("tabler"), do: "bg-cyan-600 text-white"
-  defp icon_set_color("fontawesome"), do: "bg-yellow-500 text-black"
-  defp icon_set_color(_), do: "bg-base-300 text-base-content"
 
   # Format numbers with k/m suffixes (1000 -> 1k, 3400 -> 3.4k, 1500000 -> 1.5m)
   defp format_number(n) when n >= 1_000_000 do

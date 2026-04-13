@@ -32,7 +32,7 @@ defmodule PureAdminIcons.Sync.Adapters.Lucide do
   def github_url, do: "https://github.com/lucide-icons/lucide"
 
   @impl true
-  def styles, do: ["regular"]
+  def styles, do: ["outline"]
 
   @impl true
   def sizes, do: [24]
@@ -115,7 +115,7 @@ defmodule PureAdminIcons.Sync.Adapters.Lucide do
             icon_set: icon_set_id(),
             name: display_name,
             name_lower: name,
-            style: "regular",
+            style: "outline",
             sizes: [24],
             filenames: %{"24" => filename},
             ios_identifiers: %{"24" => to_camel_case(name)},
@@ -135,7 +135,7 @@ defmodule PureAdminIcons.Sync.Adapters.Lucide do
   @impl true
   def move_svgs(extracted_path, output_dir) do
     icons_dir = Path.join([extracted_path, "lucide-main", "icons"])
-    target_dir = Path.join([output_dir, icon_set_id(), "regular"])
+    target_dir = Path.join([output_dir, icon_set_id(), "outline"])
 
     File.rm_rf(target_dir)
     File.mkdir_p!(target_dir)

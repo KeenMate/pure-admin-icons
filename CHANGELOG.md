@@ -1,5 +1,37 @@
 # Changelog
 
+## 2026-04-13 — Three new icon sets, canonical style vocabulary, brand colors
+
+### New icon sets
+- `phosphor` — Phosphor Icons (MIT), 6 weights: thin/light/regular/bold/filled/duotone
+- `remix` — Remix Icon (Apache 2.0), styles: outline/filled
+- `material` — Material Symbols (Apache 2.0), styles: filled/outline/rounded/sharp/duotone
+- All three are scalable (`has_single_source: true`), single SVG per icon
+
+### Canonical style vocabulary
+- Unified style codes across all sets: `outline`, `filled`, `thin`, `light`, `regular`, `bold`, `rounded`, `sharp`, `duotone`, `color`, `brands`
+- Adapter renames: fluentui `regular`→`outline`, lucide `regular`→`outline`, heroicons `solid`→`filled`, fontawesome `solid`→`filled`/`regular`→`outline`, phosphor `fill`→`filled`, remix `line`/`fill`→`outline`/`filled`, material `outlined`/`round`/`twotone`→`outline`/`rounded`/`duotone`
+- On-disk SVG dirs use canonical names; native names preserved per-set in `const.icon_set.native_style_names`
+
+### Schema-driven brand colors
+- New `PureAdminIcons.IconSets.Color` module reads `const.icon_set.brand_color` and renders inline `style="background-color: …; color: …"` with auto-contrast text
+- Removed 4 hardcoded `icon_set_color/1` clause stacks from LiveViews
+- Cache via `:persistent_term`, refreshed automatically after `Sync.Worker.sync_all`
+- New sets get the right colors with no code change
+
+### `has_single_source` / `is_scalable` split
+- `is_scalable` (renamed in DB to `has_single_source`) split into two flags: `has_single_source` = single SVG renders any size (drives ∞ pill + size-filter bypass); `is_scalable` = vector vs raster
+- LiveViews + API + `Icon.scalable?/1` updated to read `has_single_source` for the "ignore size" semantic
+
+### Unified `platform_identifiers`
+- Replaces per-platform `ios_identifiers` / `android_identifiers` columns with one `platform_identifiers jsonb` (`{"ios":…, "android":…}`)
+- New `Icon.platform_ids/2` helper centralizes the lookup; tolerates both old and new shapes during transition
+- Worker collapses adapter-emitted `ios_identifiers`/`android_identifiers` into the unified jsonb at COPY time — no adapter changes needed
+
+### Sync pipeline fixes
+- Material/Remix dedupe on the DB's normalized identity (lowercase + strip `[-_\s]`), matching `nrm_original_name`. Fixes `add_chart`/`addchart` collision in Material's multi-category source tree
+- Worker COPY column list updated to `platform_identifiers` (was `ios_identifiers, android_identifiers`)
+
 ## 2026-04-13 — Floating UI dropdowns, cursor polish
 
 ### Theme switcher uses Floating UI

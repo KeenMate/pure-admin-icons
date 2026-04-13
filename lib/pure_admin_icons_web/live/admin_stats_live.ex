@@ -152,7 +152,7 @@ defmodule PureAdminIconsWeb.AdminStatsLive do
                   <tr class="border-t border-base-300">
                     <td class="py-2 text-base-content/50"><%= idx %></td>
                     <td class="py-2 font-medium"><%= icon.name %></td>
-                    <td class="py-2"><span class={["badge badge-sm", icon_set_color(icon.icon_set_code)]}><%= icon.icon_set_code %></span></td>
+                    <td class="py-2"><span class="badge badge-sm" style={PureAdminIcons.IconSets.Color.badge_style(icon.icon_set_code)}><%= icon.icon_set_code %></span></td>
                     <td class="py-2 capitalize text-base-content/70"><%= icon.style_code %></td>
                     <td class="py-2 text-right tabular-nums font-semibold"><%= format_count(icon.count) %></td>
                   </tr>
@@ -189,10 +189,4 @@ defmodule PureAdminIconsWeb.AdminStatsLive do
   end
   defp format_count(n), do: to_string(n)
 
-  defp icon_set_color("fluentui"), do: "bg-blue-600 text-white"
-  defp icon_set_color("heroicons"), do: "bg-violet-600 text-white"
-  defp icon_set_color("lucide"), do: "bg-orange-600 text-white"
-  defp icon_set_color("tabler"), do: "bg-cyan-600 text-white"
-  defp icon_set_color("fontawesome"), do: "bg-yellow-600 text-white"
-  defp icon_set_color(_), do: "bg-base-300"
 end

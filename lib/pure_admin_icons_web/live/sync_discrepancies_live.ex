@@ -82,7 +82,7 @@ defmodule PureAdminIconsWeb.SyncDiscrepanciesLive do
                     <tr class="hover">
                       <td>
                         <% icon_set = List.first(issues)["icon_set"] || "unknown" %>
-                        <span class={["badge badge-sm", icon_set_color(icon_set)]}><%= icon_set %></span>
+                        <span class="badge badge-sm" style={PureAdminIcons.IconSets.Color.badge_style(icon_set)}><%= icon_set %></span>
                       </td>
                       <td class="whitespace-nowrap">
                         <span class="font-medium text-primary"><%= icon_name %></span>
@@ -123,13 +123,6 @@ defmodule PureAdminIconsWeb.SyncDiscrepanciesLive do
     </div>
     """
   end
-
-  defp icon_set_color("fluentui"), do: "bg-blue-600 text-white"
-  defp icon_set_color("heroicons"), do: "bg-violet-600 text-white"
-  defp icon_set_color("lucide"), do: "bg-orange-500 text-white"
-  defp icon_set_color("tabler"), do: "bg-cyan-600 text-white"
-  defp icon_set_color("fontawesome"), do: "bg-yellow-500 text-black"
-  defp icon_set_color(_), do: "bg-base-300 text-base-content"
 
   defp count_by_style(discrepancies) do
     discrepancies

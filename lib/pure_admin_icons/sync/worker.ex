@@ -43,6 +43,9 @@ defmodule PureAdminIcons.Sync.Worker do
 
     Logger.info("Sync complete: #{length(successes)} succeeded, #{length(failures)} failed")
 
+    # Brand colors / icon-set metadata may have changed; refresh the cache.
+    PureAdminIcons.IconSets.Color.refresh()
+
     if failures == [] do
       {:ok, results}
     else
@@ -167,7 +170,7 @@ defmodule PureAdminIcons.Sync.Worker do
     Repo.query!("DELETE FROM stage.icon WHERE job_run_id = $1", [job_run_id])
 
     # Use PostgreSQL COPY for fast bulk loading
-    columns = ~w(job_run_id icon_set_code original_name style_code sizes filenames ios_identifiers android_identifiers hash)
+    columns = ~w(job_run_id icon_set_code original_name style_code sizes filenames platform_identifiers hash)
 
     sql = """
     COPY stage.icon(#{Enum.join(columns, ", ")})
@@ -196,13 +199,32 @@ defmodule PureAdminIcons.Sync.Worker do
       icon[:style],
       encode_pg_array(icon[:sizes] || []),
       Jason.encode!(icon[:filenames] || %{}),
-      Jason.encode!(icon[:ios_identifiers] || %{}),
-      Jason.encode!(icon[:android_identifiers] || %{}),
+      Jason.encode!(build_platform_identifiers(icon)),
       hash
     ]
     |> Enum.join(@copy_delimiter)
     |> Kernel.<>("\n")
   end
+
+  # Collapse the adapter's per-platform identifier maps into a single jsonb.
+  # Adapter contract still emits `ios_identifiers`/`android_identifiers` (size → id maps);
+  # the new public.icon.platform_identifiers stores them under "ios"/"android" keys.
+  # If an adapter ever emits `platform_identifiers` directly, that wins.
+  defp build_platform_identifiers(icon) do
+    case icon[:platform_identifiers] do
+      pi when is_map(pi) and map_size(pi) > 0 ->
+        pi
+
+      _ ->
+        %{}
+        |> maybe_put_platform("ios", icon[:ios_identifiers])
+        |> maybe_put_platform("android", icon[:android_identifiers])
+    end
+  end
+
+  defp maybe_put_platform(acc, _key, nil), do: acc
+  defp maybe_put_platform(acc, _key, m) when m == %{}, do: acc
+  defp maybe_put_platform(acc, key, m) when is_map(m), do: Map.put(acc, key, m)
 
   defp insert_synonyms_to_stage(synonyms, _icon_set, _job_run_id) when map_size(synonyms) == 0 do
     # No synonyms to insert

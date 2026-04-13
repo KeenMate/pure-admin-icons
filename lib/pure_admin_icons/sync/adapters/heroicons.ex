@@ -21,7 +21,7 @@ defmodule PureAdminIcons.Sync.Adapters.Heroicons do
   # Style configurations: {style_name, [{size, folder_name}]}
   @style_configs [
     {"outline", [{24, "24/outline"}]},
-    {"solid", [{24, "24/solid"}, {20, "20/solid"}, {16, "16/solid"}]}
+    {"filled", [{24, "24/solid"}, {20, "20/solid"}, {16, "16/solid"}]}
   ]
 
   # Adapter callbacks
@@ -42,7 +42,7 @@ defmodule PureAdminIcons.Sync.Adapters.Heroicons do
   def github_url, do: "https://github.com/tailwindlabs/heroicons"
 
   @impl true
-  def styles, do: ["outline", "solid"]
+  def styles, do: ["outline", "filled"]
 
   @impl true
   def sizes, do: [16, 20, 24]

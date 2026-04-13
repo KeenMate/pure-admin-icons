@@ -44,7 +44,7 @@ defmodule PureAdminIcons.Icons do
       sizes when is_list(sizes) ->
         # Special: size 0 means "scalable icons only"
         if 0 in sizes do
-          criteria = Map.put(criteria, "is_scalable", true)
+          criteria = Map.put(criteria, "has_single_source", true)
           # If there are also pixel sizes, include them too
           pixel_sizes = Enum.reject(sizes, &(&1 == 0))
           case pixel_sizes do

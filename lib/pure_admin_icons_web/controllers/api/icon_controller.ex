@@ -102,6 +102,7 @@ defmodule PureAdminIconsWeb.API.IconController do
         default_size: set.default_size,
         style_color_methods: set.style_color_methods,
         is_scalable: set.is_scalable,
+        has_single_source: set.has_single_source,
         icon_count: set.icon_count
       }
     end)
@@ -144,15 +145,16 @@ defmodule PureAdminIconsWeb.API.IconController do
       style_color_method: icon.style_color_method,
       sizes: icon.sizes,
       is_scalable: Map.get(icon, :is_scalable, false),
-      ios: icon.ios_identifiers,
-      android: icon.android_identifiers,
+      has_single_source: Map.get(icon, :has_single_source, false),
+      ios: Icon.platform_ids(icon, "ios"),
+      android: Icon.platform_ids(icon, "android"),
       svg_url: Icon.svg_url(icon, default_size(icon.sizes))
     }
   end
 
   # Full format for icon detail
   defp format_icon_detail(icon) do
-    scalable = Map.get(icon, :is_scalable, false)
+    single_source = Map.get(icon, :has_single_source, false)
 
     %{
       id: icon.icon_id,
@@ -162,14 +164,15 @@ defmodule PureAdminIconsWeb.API.IconController do
       style: icon.style_code,
       style_color_method: icon.style_color_method,
       sizes: icon.sizes,
-      is_scalable: scalable,
+      is_scalable: Map.get(icon, :is_scalable, false),
+      has_single_source: single_source,
       filenames: icon.filenames,
-      ios: icon.ios_identifiers,
-      android: icon.android_identifiers,
+      ios: Icon.platform_ids(icon, "ios"),
+      android: Icon.platform_ids(icon, "android"),
       categories: icon.categories,
       phrases: icon.phrases,
       svg_urls:
-        if scalable do
+        if single_source do
           [%{size: nil, url: Icon.svg_url(icon, 0)}]
         else
           Enum.map(icon.sizes, fn size -> %{size: size, url: Icon.svg_url(icon, size)} end)

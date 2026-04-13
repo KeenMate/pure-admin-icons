@@ -4,7 +4,7 @@ defmodule PureAdminIcons.Icons.Icon do
   Works with both the generated Database.Models.SearchIconsModel and other icon data.
   """
 
-  @icon_sets ~w(fluentui lucide tabler heroicons phosphor bootstrap remix)
+  @icon_sets ~w(fluentui lucide tabler heroicons fontawesome phosphor bootstrap remix material)
 
   # Define struct matching the database model fields
   defstruct [
@@ -110,10 +110,37 @@ defmodule PureAdminIcons.Icons.Icon do
   end
 
   @doc """
-  Returns true if the icon is scalable (single SVG that scales to any size).
+  Returns the per-size identifier map for a platform (e.g. "ios", "android").
+  Reads from the new `platform_identifiers` jsonb if present, falls back to the
+  legacy per-platform fields (`ios_identifiers`/`android_identifiers`) so the
+  helper works during the schema transition.
   """
-  def scalable?(%{is_scalable: true}), do: true
-  def scalable?(%{"is_scalable" => true}), do: true
+  def platform_ids(icon, platform) when is_binary(platform) do
+    case get_platform_map(icon) do
+      pi when is_map(pi) and map_size(pi) > 0 ->
+        Map.get(pi, platform, %{})
+
+      _ ->
+        legacy_platform_ids(icon, platform)
+    end
+  end
+
+  defp get_platform_map(%{platform_identifiers: pi}), do: pi
+  defp get_platform_map(%{"platform_identifiers" => pi}), do: pi
+  defp get_platform_map(_), do: nil
+
+  defp legacy_platform_ids(%{ios_identifiers: m}, "ios") when is_map(m), do: m
+  defp legacy_platform_ids(%{"ios_identifiers" => m}, "ios") when is_map(m), do: m
+  defp legacy_platform_ids(%{android_identifiers: m}, "android") when is_map(m), do: m
+  defp legacy_platform_ids(%{"android_identifiers" => m}, "android") when is_map(m), do: m
+  defp legacy_platform_ids(_, _), do: %{}
+
+  @doc """
+  Returns true if the icon has a single source SVG that renders at any size
+  (so the size argument is ignored when looking up filenames/identifiers).
+  """
+  def scalable?(%{has_single_source: true}), do: true
+  def scalable?(%{"has_single_source" => true}), do: true
   def scalable?(_), do: false
 
   # Helper functions to extract fields from various icon representations

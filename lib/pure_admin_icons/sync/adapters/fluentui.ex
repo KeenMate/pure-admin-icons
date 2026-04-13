@@ -10,7 +10,16 @@ defmodule PureAdminIcons.Sync.Adapters.Fluentui do
   require Logger
 
   @github_zip_url "https://github.com/microsoft/fluentui-system-icons/archive/refs/heads/main.zip"
+  # Native style names used by FluentUI filenames (ic_fluent_foo_24_<native>.svg).
   @valid_styles ~w(regular filled color light)
+  # Translate native → canonical for emitted icon records and on-disk dirs.
+  @native_to_canonical %{
+    "regular" => "outline",
+    "filled" => "filled",
+    "color" => "color",
+    "light" => "light"
+  }
+  @canonical_styles ~w(outline filled color light)
 
   # Adapter callbacks
 
@@ -30,7 +39,7 @@ defmodule PureAdminIcons.Sync.Adapters.Fluentui do
   def github_url, do: "https://github.com/microsoft/fluentui-system-icons"
 
   @impl true
-  def styles, do: @valid_styles
+  def styles, do: @canonical_styles
 
   @impl true
   def sizes, do: [16, 20, 24, 28, 32, 48]
@@ -130,8 +139,8 @@ defmodule PureAdminIcons.Sync.Adapters.Fluentui do
   def move_svgs(extracted_path, output_dir) do
     icon_set_dir = Path.join(output_dir, icon_set_id())
 
-    # Clean up and recreate style directories
-    for style <- @valid_styles do
+    # Clean up and recreate style directories (canonical names on disk)
+    for style <- @canonical_styles do
       style_dir = Path.join(icon_set_dir, style)
       File.rm_rf(style_dir)
       File.mkdir_p!(style_dir)
@@ -159,10 +168,10 @@ defmodule PureAdminIcons.Sync.Adapters.Fluentui do
         end
 
         filename = Path.basename(svg_path)
-        style = extract_style_from_filename(filename)
+        native_style = extract_style_from_filename(filename)
 
-        if style do
-          target_path = Path.join([icon_set_dir, style, filename])
+        if native_style do
+          target_path = Path.join([icon_set_dir, Map.fetch!(@native_to_canonical, native_style), filename])
           case File.copy(svg_path, target_path) do
             {:ok, _} -> :ok
             {:error, _} -> :error
@@ -321,7 +330,7 @@ defmodule PureAdminIcons.Sync.Adapters.Fluentui do
             icon_set: icon_set_id(),
             name: name,
             name_lower: String.downcase(name),
-            style: style,
+            style: Map.fetch!(@native_to_canonical, style),
             sizes: Enum.sort(actual_sizes),
             filenames: filenames,
             ios_identifiers: build_ios_identifiers(name, actual_sizes, style),

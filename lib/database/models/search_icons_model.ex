@@ -16,10 +16,10 @@ defmodule Database.Models.SearchIconsModel do
     :style_code,
     :style_color_method,
     :sizes,
+    :has_single_source,
     :is_scalable,
     :filenames,
-    :ios_identifiers,
-    :android_identifiers,
+    :platform_identifiers,
     :categories,
     :total_items
   ]
@@ -39,10 +39,10 @@ defmodule Database.Models.SearchIconsModel do
     style_code: String.t(),
     style_color_method: String.t(),
     sizes: list(integer()),
+    has_single_source: boolean(),
     is_scalable: boolean(),
     filenames: map() | list(),
-    ios_identifiers: map() | list(),
-    android_identifiers: map() | list(),
+    platform_identifiers: map() | list(),
     categories: map() | list(),
     total_items: integer()
   }

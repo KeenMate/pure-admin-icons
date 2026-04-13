@@ -103,6 +103,6 @@ defmodule PureAdminIcons.IconSets.Formatter do
     if scalable?(icon), do: [0], else: [List.first(icon.sizes) || 24]
   end
 
-  defp scalable?(%{is_scalable: true}), do: true
+  defp scalable?(%{has_single_source: true}), do: true
   defp scalable?(_), do: false
 end

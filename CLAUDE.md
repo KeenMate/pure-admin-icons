@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-PureAdminIcons is a Phoenix 1.8 / LiveView web application that aggregates SVG icons from multiple icon libraries (FluentUI, Lucide, Tabler, Heroicons) into a searchable catalog. It provides a web UI for browsing/searching icons, a JSON API, and a sync pipeline that downloads, parses, and imports icons into a PostgreSQL database.
+PureAdminIcons is a Phoenix 1.8 / LiveView web application that aggregates SVG icons from multiple icon libraries (FluentUI System Icons, Font Awesome Free, Heroicons, Lucide Icons, Tabler Icons) into a searchable catalog. It provides a web UI for browsing/searching icons, a JSON API, and a sync pipeline that downloads, parses, and imports icons into a PostgreSQL database.
 
 ## Common Commands
 
@@ -31,7 +31,7 @@ The import pipeline uses PostgreSQL stage tables:
 ### Sync System (`lib/pure_admin_icons/sync/`)
 
 - **`Adapter` behaviour** — each icon set implements `download/0`, `parse/1`, `move_svgs/2`, `cleanup/1`
-- **Adapters** in `sync/adapters/` for fluentui, lucide, tabler, heroicons
+- **Adapters** in `sync/adapters/` for fluentui, font_awesome, heroicons, lucide, tabler
 - **`Worker`** orchestrates full sync: download → parse → stage insert → DB import → SVG storage
 - **`SvgDownloader`** handles HTTP downloads and zip extraction
 - Dev caching available via `:use_icon_cache` config to avoid re-downloading

@@ -86,7 +86,10 @@ defmodule PureAdminIcons.Sync.Adapter do
     "lucide" => PureAdminIcons.Sync.Adapters.Lucide,
     "tabler" => PureAdminIcons.Sync.Adapters.Tabler,
     "heroicons" => PureAdminIcons.Sync.Adapters.Heroicons,
-    "fontawesome" => PureAdminIcons.Sync.Adapters.Fontawesome
+    "fontawesome" => PureAdminIcons.Sync.Adapters.Fontawesome,
+    "phosphor" => PureAdminIcons.Sync.Adapters.Phosphor,
+    "remix" => PureAdminIcons.Sync.Adapters.Remix,
+    "material" => PureAdminIcons.Sync.Adapters.Material
   }
 
   @doc """

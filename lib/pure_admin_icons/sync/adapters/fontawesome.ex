@@ -35,7 +35,10 @@ defmodule PureAdminIcons.Sync.Adapters.Fontawesome do
   def github_url, do: "https://github.com/FortAwesome/Font-Awesome"
 
   @impl true
-  def styles, do: ["solid", "regular", "brands"]
+  def styles, do: ["filled", "outline", "brands"]
+
+  # canonical style → native directory under package/svgs/
+  @style_dirs %{"filled" => "solid", "outline" => "regular", "brands" => "brands"}
 
   @impl true
   def sizes, do: [24]
@@ -131,9 +134,9 @@ defmodule PureAdminIcons.Sync.Adapters.Fontawesome do
       Logger.info("[FontAwesome] Parsing icons from #{svgs_dir}...")
 
       icons =
-        styles()
-        |> Enum.flat_map(fn style ->
-          style_dir = Path.join(svgs_dir, style)
+        @style_dirs
+        |> Enum.flat_map(fn {style, native_dir} ->
+          style_dir = Path.join(svgs_dir, native_dir)
 
           if File.dir?(style_dir) do
             style_dir
@@ -151,7 +154,7 @@ defmodule PureAdminIcons.Sync.Adapters.Fontawesome do
                 sizes: [24],
                 filenames: %{"24" => filename},
                 ios_identifiers: %{"24" => to_fa_camel_case(name)},
-                android_identifiers: %{"24" => "ic_fa_#{String.replace(name, "-", "_")}_#{style}"},
+                android_identifiers: %{"24" => "ic_fa_#{String.replace(name, "-", "_")}_#{native_dir}"},
                 svg_hash: hash_file(Path.join(style_dir, filename))
               }
             end)
@@ -179,9 +182,9 @@ defmodule PureAdminIcons.Sync.Adapters.Fontawesome do
     icon_set_dir = Path.join(output_dir, icon_set_id())
 
     total_moved =
-      styles()
-      |> Enum.map(fn style ->
-        source_dir = Path.join(svgs_dir, style)
+      @style_dirs
+      |> Enum.map(fn {style, native_dir} ->
+        source_dir = Path.join(svgs_dir, native_dir)
         target_dir = Path.join(icon_set_dir, style)
 
         File.rm_rf(target_dir)
