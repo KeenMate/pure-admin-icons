@@ -668,7 +668,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
                 <span class="quick-preset-label text-xs">Classic Light</span>
                 <svg class="w-3 h-3 text-base-content/50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
               </button>
-              <div class="quick-preset-dropdown hidden absolute top-full right-0 mt-1 py-1 rounded-lg bg-base-100 border border-base-content/20 shadow-xl z-50 min-w-44 max-h-64 overflow-y-auto">
+              <div class="quick-preset-dropdown hidden py-1 rounded-lg bg-base-100 border border-base-content/20 shadow-xl z-50 w-44 max-h-64 overflow-y-auto" style="position: fixed; top: 0; left: 0;">
                   <%= for preset <- Enum.sort_by(preview_presets(), & &1["label"]) do %>
                     <button
                       type="button"

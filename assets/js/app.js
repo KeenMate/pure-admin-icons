@@ -1137,12 +1137,12 @@ Hooks.QuickPresets = {
     this.trigger.addEventListener('click', (e) => {
       e.stopPropagation()
       this.rebuildDropdown() // refresh in case user added presets in the modal
-      this.dropdown.classList.toggle('hidden')
+      this.dropdown.classList.contains('hidden') ? this.openDropdown() : this.closeDropdown()
     })
 
     // Close on outside click
     this._onOutsideClick = (e) => {
-      if (!this.el.contains(e.target)) this.dropdown.classList.add('hidden')
+      if (!this.el.contains(e.target)) this.closeDropdown()
     }
     document.addEventListener('click', this._onOutsideClick)
 
@@ -1155,7 +1155,7 @@ Hooks.QuickPresets = {
       localStorage.setItem('icon_preview_preset', btn.dataset.preset)
       window.dispatchEvent(new CustomEvent('iconColorChanged'))
       this.syncTrigger()
-      this.dropdown.classList.add('hidden')
+      this.closeDropdown()
     })
   },
   updated() {
@@ -1168,6 +1168,30 @@ Hooks.QuickPresets = {
   },
   destroyed() {
     if (this._onOutsideClick) document.removeEventListener('click', this._onOutsideClick)
+    if (this._cleanupAutoUpdate) this._cleanupAutoUpdate()
+  },
+  positionDropdown() {
+    if (!window.FloatingUIDOM) return
+    const { computePosition, offset, flip, shift } = window.FloatingUIDOM
+    computePosition(this.trigger, this.dropdown, {
+      strategy: 'fixed',
+      placement: 'bottom-end',
+      middleware: [offset(4), flip({ padding: 8 }), shift({ padding: 8 })]
+    }).then(({ x, y }) => {
+      this.dropdown.style.left = `${x}px`
+      this.dropdown.style.top = `${y}px`
+    })
+  },
+  openDropdown() {
+    this.dropdown.classList.remove('hidden')
+    this.positionDropdown()
+    if (window.FloatingUIDOM && window.FloatingUIDOM.autoUpdate) {
+      this._cleanupAutoUpdate = window.FloatingUIDOM.autoUpdate(this.trigger, this.dropdown, () => this.positionDropdown())
+    }
+  },
+  closeDropdown() {
+    this.dropdown.classList.add('hidden')
+    if (this._cleanupAutoUpdate) { this._cleanupAutoUpdate(); this._cleanupAutoUpdate = null }
   },
   rebuildDropdown() {
     PresetManager.renderDropdown(this.dropdown)
@@ -1841,8 +1865,9 @@ window.liveSocket = liveSocket
 
 
 // Time-of-day theme manager
-import { startAutoUpdate, initThemeEvents } from "./theme-manager"
+import { startAutoUpdate, initThemeEvents, initThemeSwitcherDropdown } from "./theme-manager"
 startAutoUpdate()
 initThemeEvents()
+initThemeSwitcherDropdown()
 // Theme transitions disabled — instant switch
 // setTimeout(() => document.documentElement.classList.add("theme-transitions"), 100)

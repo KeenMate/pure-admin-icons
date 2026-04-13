@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-04-13 — Floating UI dropdowns, cursor polish
+
+### Theme switcher uses Floating UI
+- Collapsible theme switcher panel is now positioned with Floating UI (`placement: top-end`, `flip`, `shift`, `autoUpdate`) so it stays on screen on narrow viewports
+- Inline `onclick` toggle and inline `<script>` in `root.html.heex` replaced by `initThemeSwitcherDropdown()` in `theme-manager.js`
+- Outside-click and Escape close the panel; active label/icon update moved into the module
+
+### Preset dropdown uses Floating UI
+- `QuickPresets` dropdown ("Road Sign"/preset picker above the icon list) switched from `absolute right-0` to Floating UI `bottom-end` with `flip` + `shift`, fixing mobile clipping off the left edge
+- Dropdown width pinned to `w-44` so fixed-positioning doesn't let content expand it
+
+### Cursor polish
+- Added `cursor-pointer` to the three "Copy" buttons in the icon detail modal (Svelte identifier + CSS Class blocks)
+
+---
+
 ## 2026-04-12 — DesignerExport shared module, quick download from popovers
 
 ### DesignerExport shared JS module

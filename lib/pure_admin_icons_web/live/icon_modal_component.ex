@@ -442,7 +442,7 @@ defmodule PureAdminIconsWeb.IconModalComponent do
                     <%= for size <- Formatter.svelte_identifier_sizes(@icon) do %>
                       <div class="flex items-center justify-between bg-base-200 rounded px-3 py-2 border border-base-300">
                         <code id={"svelte-#{@icon.icon_id}-#{size}"} class="text-sm text-orange-600 whitespace-pre-line" data-size={size}><%= Formatter.svelte_identifier(@icon, size) %></code>
-                        <button type="button" phx-click={Phoenix.LiveView.JS.dispatch("phx:copy", to: "#svelte-#{@icon.icon_id}-#{size}")} class="text-xs text-base-content/70 hover:text-base-content px-2 py-1 rounded hover:bg-base-200">Copy</button>
+                        <button type="button" phx-click={Phoenix.LiveView.JS.dispatch("phx:copy", to: "#svelte-#{@icon.icon_id}-#{size}")} class="text-xs text-base-content/70 hover:text-base-content px-2 py-1 rounded hover:bg-base-200 cursor-pointer">Copy</button>
                       </div>
                     <% end %>
                   </div>
@@ -520,7 +520,7 @@ defmodule PureAdminIconsWeb.IconModalComponent do
         <%= for {size, id} <- @identifiers do %>
           <div class="flex items-center justify-between bg-base-200 rounded px-3 py-2 border border-base-300">
             <code class={["text-sm", @color]}><%= id %></code>
-            <button type="button" phx-click={Phoenix.LiveView.JS.dispatch("phx:copy", to: "##{@platform}-#{@icon.icon_id}-#{size}")} class="text-xs text-base-content/70 hover:text-base-content px-2 py-1 rounded hover:bg-base-200">Copy</button>
+            <button type="button" phx-click={Phoenix.LiveView.JS.dispatch("phx:copy", to: "##{@platform}-#{@icon.icon_id}-#{size}")} class="text-xs text-base-content/70 hover:text-base-content px-2 py-1 rounded hover:bg-base-200 cursor-pointer">Copy</button>
             <span id={"#{@platform}-#{@icon.icon_id}-#{size}"} class="hidden"><%= id %></span>
           </div>
         <% end %>
@@ -542,7 +542,7 @@ defmodule PureAdminIconsWeb.IconModalComponent do
         <%= for size <- @sizes do %>
           <div class="flex items-center justify-between bg-base-200 rounded px-3 py-2 border border-base-300">
             <code id={"#{@platform}-#{@icon.icon_id}-#{size}"} class={["text-sm whitespace-pre-line", @color]}><%= @identifier_fn.(size) %></code>
-            <button type="button" phx-click={Phoenix.LiveView.JS.dispatch("phx:copy", to: "##{@platform}-#{@icon.icon_id}-#{size}")} class="text-xs text-base-content/70 hover:text-base-content px-2 py-1 rounded hover:bg-base-200">Copy</button>
+            <button type="button" phx-click={Phoenix.LiveView.JS.dispatch("phx:copy", to: "##{@platform}-#{@icon.icon_id}-#{size}")} class="text-xs text-base-content/70 hover:text-base-content px-2 py-1 rounded hover:bg-base-200 cursor-pointer">Copy</button>
           </div>
         <% end %>
       </div>
