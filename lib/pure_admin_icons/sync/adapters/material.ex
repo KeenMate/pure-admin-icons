@@ -166,11 +166,7 @@ defmodule PureAdminIcons.Sync.Adapters.Material do
       |> Enum.uniq_by(fn {name, style, _cat, _path} -> {normalize_name(name), style} end)
       |> Enum.map(fn {name, style, _category, source} ->
         target = Path.join([icon_set_dir, style, "#{name}.svg"])
-
-        case File.copy(source, target) do
-          {:ok, _} -> :ok
-          {:error, _} -> :error
-        end
+        write_themed_svg(source, target)
       end)
 
     ok_count = Enum.count(moved, &(&1 == :ok))
@@ -196,6 +192,32 @@ defmodule PureAdminIcons.Sync.Adapters.Material do
   # Mirror of the DB's nrm_original_name: lowercase, strip separators.
   defp normalize_name(name) do
     name |> String.downcase() |> String.replace(~r/[_\-\s]/, "")
+  end
+
+  # Material SVGs ship without a fill on their root <svg>, so paths fall back
+  # to the SVG default (black) and don't respond to CSS color theming.
+  # Inject `fill="currentColor"` on the root tag during copy so the icons
+  # inherit text color like Lucide/Tabler/etc do.
+  defp write_themed_svg(source, target) do
+    with {:ok, content} <- File.read(source),
+         themed = inject_current_color(content),
+         :ok <- File.write(target, themed) do
+      :ok
+    else
+      _ -> :error
+    end
+  end
+
+  defp inject_current_color(svg) do
+    cond do
+      # Already has a root-level fill — leave it alone.
+      Regex.match?(~r/\A\s*<svg\b[^>]*\sfill\s*=/, svg) ->
+        svg
+
+      # Insert fill="currentColor" right after the opening <svg tag.
+      true ->
+        String.replace(svg, ~r/<svg\b/, ~S(<svg fill="currentColor"), global: false)
+    end
   end
 
   # Finds the `src/` dir under material-design-icons-{master,main}.

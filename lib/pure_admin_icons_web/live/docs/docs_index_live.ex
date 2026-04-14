@@ -26,6 +26,13 @@ defmodule PureAdminIconsWeb.Docs.DocsIndexLive do
           />
 
           <.doc_card
+            href="/docs/icon-sets"
+            icon="hero-squares-2x2"
+            title="Icon Sets"
+            description="Every aggregated icon set: styles, sizes, counts, license, source links, and integration notes."
+          />
+
+          <.doc_card
             href="/docs/mcp"
             icon="hero-puzzle-piece"
             title="MCP Server"

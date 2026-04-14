@@ -9,6 +9,9 @@ defmodule Database.Models.ConstGetIconSetsModel do
   @fields [
     :code,
     :title,
+    :display_title,
+    :description,
+    :notes,
     :license,
     :homepage_url,
     :github_url,
@@ -31,6 +34,9 @@ defmodule Database.Models.ConstGetIconSetsModel do
   @type t() :: %__MODULE__{
     code: String.t(),
     title: String.t(),
+    display_title: String.t(),
+    description: String.t(),
+    notes: String.t(),
     license: String.t(),
     homepage_url: String.t(),
     github_url: String.t(),

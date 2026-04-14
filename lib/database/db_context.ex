@@ -63,13 +63,14 @@ defmodule Database.DbContext do
   Returns: {:ok, [%Models.ConstGetIconSetsModel{}]} | {:error, any()}
   
   """
-  @spec const_get_icon_sets(String.t() | :eg_value_not_provided, keyword()) :: {:ok, [%Models.ConstGetIconSetsModel{}]} | {:error, any()}
-  def const_get_icon_sets(display_language_code \\ :eg_value_not_provided, query_opts \\ []) do
+  @spec const_get_icon_sets(String.t() | :eg_value_not_provided, integer() | :eg_value_not_provided, keyword()) :: {:ok, [%Models.ConstGetIconSetsModel{}]} | {:error, any()}
+  def const_get_icon_sets(display_language_code \\ :eg_value_not_provided, tenant_id \\ :eg_value_not_provided, query_opts \\ []) do
     Logger.debug("Calling database routine", routine_name: "get_icon_sets")
 
     sql_params_str =
       [
-        {"_display_language_code", display_language_code}
+        {"_display_language_code", display_language_code},
+        {"_tenant_id", tenant_id}
       ]
       |> Enum.filter(fn {_name, value} -> value != :eg_value_not_provided end)
       |> Enum.with_index(1)
@@ -78,7 +79,8 @@ defmodule Database.DbContext do
 
     sql_query_params =
       [
-        display_language_code
+        display_language_code,
+        tenant_id
       ]
       |> Enum.filter(fn value -> value != :eg_value_not_provided end)
 
