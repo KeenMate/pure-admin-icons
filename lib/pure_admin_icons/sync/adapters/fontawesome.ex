@@ -15,6 +15,8 @@ defmodule PureAdminIcons.Sync.Adapters.Fontawesome do
 
   require Logger
 
+  alias PureAdminIcons.Naming
+
   @npm_registry_url "https://registry.npmjs.org/@fortawesome/fontawesome-free"
 
   # Adapter callbacks
@@ -144,7 +146,7 @@ defmodule PureAdminIcons.Sync.Adapters.Fontawesome do
             |> Enum.filter(&String.ends_with?(&1, ".svg"))
             |> Enum.map(fn filename ->
               name = String.replace_suffix(filename, ".svg", "")
-              display_name = name |> String.replace("-", " ") |> title_case()
+              display_name = Naming.title_case(name)
 
               %{
                 icon_set: icon_set_id(),
@@ -153,7 +155,7 @@ defmodule PureAdminIcons.Sync.Adapters.Fontawesome do
                 style: style,
                 sizes: [24],
                 filenames: %{"24" => filename},
-                ios_identifiers: %{"24" => to_fa_camel_case(name)},
+                ios_identifiers: %{"24" => "fa" <> Naming.pascal_case(name)},
                 android_identifiers: %{"24" => "ic_fa_#{String.replace(name, "-", "_")}_#{native_dir}"},
                 svg_hash: hash_file(Path.join(style_dir, filename))
               }
@@ -303,24 +305,6 @@ defmodule PureAdminIcons.Sync.Adapters.Fontawesome do
       :ok -> :ok
       {:error, reason} -> {:error, "Erlang tgz extract failed: #{inspect(reason)}"}
     end
-  end
-
-  defp title_case(string) do
-    string
-    |> String.split(~r/[\s-]+/)
-    |> Enum.map(&String.capitalize/1)
-    |> Enum.join(" ")
-  end
-
-  # Font Awesome uses `fa` prefix + camelCase: arrow-right -> faArrowRight
-  defp to_fa_camel_case(name) do
-    camel =
-      name
-      |> String.split("-")
-      |> Enum.map(&String.capitalize/1)
-      |> Enum.join()
-
-    "fa#{camel}"
   end
 
   defp hash_file(path) do

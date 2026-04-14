@@ -1,5 +1,45 @@
 # Changelog
 
+## 2026-04-14 — Material platform identifiers, Naming helper, modal gating fix
+
+### Material platform identifiers
+- Dedicated `PureAdminIcons.IconSets.Material` formatter registered —
+  Material icons now surface iOS, Android, React, CSS class, and HTML tag
+  identifiers in the detail modal
+  - CSS class: `material-symbols-{outlined,rounded,sharp}` (modern Symbols
+    convention); `filled` / `outline` both map to `-outlined` since FILL
+    is a font-variation axis, not a separate class. `duotone` falls back
+    to legacy `material-icons-two-tone`
+  - HTML tag: `<span class="material-symbols-outlined">close</span>` — uses
+    the icon name as ligature text. New optional `htmltag_identifier/2`
+    callback on `IconSets.Formatter` behaviour lets per-set modules override
+    the generic `<i class="...">` wrapping
+  - React: `@mui/icons-material` with PascalCase + style suffix
+    (e.g. `import AddHomeOutlined from '@mui/icons-material/AddHomeOutlined'`)
+  - iOS: `UIImage(named: "add_home")` — snake_case name
+  - Android: `@drawable/add_home_24` — name + default size (Google Fonts
+    Icons default when downloading vector drawables)
+- Material adapter updated to emit matching `ios_identifiers` /
+  `android_identifiers` shapes; requires a re-sync to propagate
+
+### Naming helper
+- New `PureAdminIcons.Naming` module with `snake_case`, `kebab_case`,
+  `pascal_case`, `camel_case`, `title_case` — all accept mixed separator
+  input (`[-_\s]+`)
+- Removed 10 duplicated private helpers (`to_camel_case`, `title_case`,
+  `to_snake_case`, `to_lower_camel_case`, `to_fa_camel_case`) across 8
+  adapters + `ZipParser` + Material formatter. Single source of truth for
+  casing semantics
+
+### Modal gating fix
+- Svelte and React platform sections now correctly gate on *both* the
+  user's platform preference AND the current icon set having a non-nil
+  package. Previously, toggling Svelte on for a Lucide icon and then
+  opening a Material icon would render an empty Svelte block; Material
+  doesn't ship a canonical Svelte package so the section shouldn't show.
+  iOS / Android / Vue / CSS Class / HTML Tag already had this guard;
+  React and Svelte were the odd ones out
+
 ## 2026-04-14 — Runtime translations (DB-backed, per-locale, cached)
 
 ### Translation subsystem

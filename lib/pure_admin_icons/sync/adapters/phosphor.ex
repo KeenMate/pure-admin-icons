@@ -18,6 +18,8 @@ defmodule PureAdminIcons.Sync.Adapters.Phosphor do
 
   require Logger
 
+  alias PureAdminIcons.Naming
+
   @github_zip_url "https://github.com/phosphor-icons/core/archive/refs/heads/main.zip"
   @valid_styles ~w(thin light regular bold filled duotone)
   # Map canonical style code → native directory name under assets/
@@ -127,7 +129,7 @@ defmodule PureAdminIcons.Sync.Adapters.Phosphor do
             |> Enum.map(fn filename ->
               base = String.replace_suffix(filename, ".svg", "")
               name = strip_native_suffix(base, native_dir)
-              display_name = name |> String.replace("-", " ") |> title_case()
+              display_name = Naming.title_case(name)
 
               %{
                 icon_set: icon_set_id(),
@@ -137,7 +139,7 @@ defmodule PureAdminIcons.Sync.Adapters.Phosphor do
                 is_scalable: true,
                 sizes: [],
                 filenames: %{"0" => filename},
-                ios_identifiers: %{"0" => to_camel_case(name)},
+                ios_identifiers: %{"0" => Naming.camel_case(name)},
                 android_identifiers: %{"0" => "ic_phosphor_#{String.replace(name, "-", "_")}"},
                 svg_hash: hash_file(Path.join(style_dir, filename))
               }
@@ -257,23 +259,6 @@ defmodule PureAdminIcons.Sync.Adapters.Phosphor do
       {:ok, _} -> :ok
       {:error, reason} -> {:error, "Erlang unzip failed: #{inspect(reason)}"}
     end
-  end
-
-  defp title_case(string) do
-    string
-    |> String.split(~r/[\s-]+/)
-    |> Enum.map(&String.capitalize/1)
-    |> Enum.join(" ")
-  end
-
-  defp to_camel_case(name) do
-    name
-    |> String.split("-")
-    |> Enum.with_index()
-    |> Enum.map(fn {word, idx} ->
-      if idx == 0, do: word, else: String.capitalize(word)
-    end)
-    |> Enum.join()
   end
 
   defp hash_file(path) do

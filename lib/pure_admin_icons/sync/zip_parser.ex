@@ -14,6 +14,8 @@ defmodule PureAdminIcons.Sync.ZipParser do
 
   require Logger
 
+  alias PureAdminIcons.Naming
+
   @doc """
   Parse all icons from an extracted ZIP directory.
 
@@ -111,7 +113,7 @@ defmodule PureAdminIcons.Sync.ZipParser do
   end
 
   defp build_verified_icons(name, claimed_sizes, claimed_styles, actual_svgs) do
-    name_snake = to_snake_case(name)
+    name_snake = Naming.snake_case(name)
     normalized_styles = Enum.map(claimed_styles, &String.downcase/1)
 
     # Build a set of actual {size, style} combinations from SVG filenames
@@ -170,7 +172,7 @@ defmodule PureAdminIcons.Sync.ZipParser do
 
   defp build_ios_identifiers(name, sizes, style) do
     # Convert "Add Circle" to "addCircle" then append size and style
-    camel_name = to_lower_camel_case(name)
+    camel_name = Naming.camel_case(name)
     style_suffix = String.capitalize(style)
 
     sizes
@@ -189,23 +191,4 @@ defmodule PureAdminIcons.Sync.ZipParser do
     |> Map.new()
   end
 
-  defp to_lower_camel_case(name) do
-    name
-    |> String.split(~r/[\s_-]+/)
-    |> Enum.with_index()
-    |> Enum.map(fn {word, idx} ->
-      if idx == 0 do
-        String.downcase(word)
-      else
-        String.capitalize(word)
-      end
-    end)
-    |> Enum.join()
-  end
-
-  defp to_snake_case(name) do
-    name
-    |> String.downcase()
-    |> String.replace(~r/[\s-]+/, "_")
-  end
 end

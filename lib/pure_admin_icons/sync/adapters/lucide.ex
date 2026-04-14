@@ -12,6 +12,8 @@ defmodule PureAdminIcons.Sync.Adapters.Lucide do
 
   require Logger
 
+  alias PureAdminIcons.Naming
+
   @github_zip_url "https://github.com/lucide-icons/lucide/archive/refs/heads/main.zip"
 
   # Adapter callbacks
@@ -109,7 +111,7 @@ defmodule PureAdminIcons.Sync.Adapters.Lucide do
         |> Enum.filter(&String.ends_with?(&1, ".svg"))
         |> Enum.map(fn filename ->
           name = String.replace_suffix(filename, ".svg", "")
-          display_name = name |> String.replace("-", " ") |> title_case()
+          display_name = Naming.title_case(name)
 
           %{
             icon_set: icon_set_id(),
@@ -118,7 +120,7 @@ defmodule PureAdminIcons.Sync.Adapters.Lucide do
             style: "outline",
             sizes: [24],
             filenames: %{"24" => filename},
-            ios_identifiers: %{"24" => to_camel_case(name)},
+            ios_identifiers: %{"24" => Naming.camel_case(name)},
             android_identifiers: %{"24" => "ic_lucide_#{String.replace(name, "-", "_")}"},
             svg_hash: hash_file(Path.join(icons_dir, filename))
           }
@@ -222,23 +224,6 @@ defmodule PureAdminIcons.Sync.Adapters.Lucide do
       {:ok, _} -> :ok
       {:error, reason} -> {:error, "Erlang unzip failed: #{inspect(reason)}"}
     end
-  end
-
-  defp title_case(string) do
-    string
-    |> String.split(~r/[\s-]+/)
-    |> Enum.map(&String.capitalize/1)
-    |> Enum.join(" ")
-  end
-
-  defp to_camel_case(name) do
-    name
-    |> String.split("-")
-    |> Enum.with_index()
-    |> Enum.map(fn {word, idx} ->
-      if idx == 0, do: word, else: String.capitalize(word)
-    end)
-    |> Enum.join()
   end
 
   defp hash_file(path) do

@@ -16,6 +16,8 @@ defmodule PureAdminIcons.Sync.Adapters.Heroicons do
 
   require Logger
 
+  alias PureAdminIcons.Naming
+
   @github_zip_url "https://github.com/tailwindlabs/heroicons/archive/refs/heads/master.zip"
 
   # Style configurations: {style_name, [{size, folder_name}]}
@@ -136,7 +138,7 @@ defmodule PureAdminIcons.Sync.Adapters.Heroicons do
         |> Enum.group_by(fn {name, style, _size} -> {name, style} end)
         |> Enum.map(fn {{name, style}, entries} ->
           sizes = Enum.map(entries, fn {_, _, size} -> size end) |> Enum.sort()
-          display_name = name |> String.replace("-", " ") |> title_case()
+          display_name = Naming.title_case(name)
 
           # Hash all SVG files for this icon (one per size)
           svg_hash = hash_multi_svg(src_dir, name, style, sizes)
@@ -274,22 +276,6 @@ defmodule PureAdminIcons.Sync.Adapters.Heroicons do
     end
   end
 
-  defp title_case(string) do
-    string
-    |> String.split(~r/[\s-]+/)
-    |> Enum.map(&String.capitalize/1)
-    |> Enum.join(" ")
-  end
-
-  defp to_camel_case(name) do
-    name
-    |> String.split("-")
-    |> Enum.with_index()
-    |> Enum.map(fn {word, idx} ->
-      if idx == 0, do: word, else: String.capitalize(word)
-    end)
-    |> Enum.join()
-  end
 
   defp build_filenames(name, sizes) do
     sizes
@@ -298,7 +284,7 @@ defmodule PureAdminIcons.Sync.Adapters.Heroicons do
   end
 
   defp build_ios_identifiers(name, sizes) do
-    camel = to_camel_case(name)
+    camel = Naming.camel_case(name)
     sizes
     |> Enum.map(fn size -> {Integer.to_string(size), "#{camel}#{size}"} end)
     |> Map.new()

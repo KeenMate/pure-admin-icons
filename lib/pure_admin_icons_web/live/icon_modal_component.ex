@@ -408,7 +408,9 @@ defmodule PureAdminIconsWeb.IconModalComponent do
               <!-- React -->
               <%= if @platform_prefs.react do %>
                 <% {react_pkg_name, react_pkg_url} = react_package(@icon) %>
-                <.identifier_section icon={@icon} platform="react" pkg_name={react_pkg_name} pkg_url={react_pkg_url} color="text-purple-600" sizes={Formatter.react_identifier_sizes(@icon)} identifier_fn={&Formatter.react_identifier(@icon, &1)} />
+                <%= if react_pkg_name do %>
+                  <.identifier_section icon={@icon} platform="react" pkg_name={react_pkg_name} pkg_url={react_pkg_url} color="text-purple-600" sizes={Formatter.react_identifier_sizes(@icon)} identifier_fn={&Formatter.react_identifier(@icon, &1)} />
+                <% end %>
               <% end %>
 
               <!-- Vue -->
@@ -422,32 +424,34 @@ defmodule PureAdminIconsWeb.IconModalComponent do
               <!-- Svelte -->
               <%= if @platform_prefs.svelte do %>
                 <% {svelte_pkg_name, svelte_pkg_url} = svelte_package(@icon) %>
-                <div class="bg-base-100 rounded-lg p-4" id={"svelte-section-#{@icon.icon_id}"} phx-hook="SvelteColor"
-                     data-name={@icon.name |> String.downcase() |> String.replace(" ", "_")}
-                     data-style={@icon.style_code}
-                     data-icon-set={@icon.icon_set_code}
-                     data-sizes={Jason.encode!(Formatter.svelte_identifier_sizes(@icon))}>
-                  <div class="flex items-center justify-between mb-2">
-                    <span class="text-sm font-medium text-base-content/70 flex items-center gap-1.5">
-                      <.platform_icon name="svelte" class="w-4 h-4" />
-                      Svelte (<%= if svelte_pkg_url do %><a href={svelte_pkg_url} target="_blank" rel="noreferrer" referrerpolicy="unsafe-url" class="text-primary hover:underline"><%= svelte_pkg_name %></a><% else %><%= svelte_pkg_name %><% end %>)
-                    </span>
-                    <%= if @icon.icon_set_code == "fluentui" do %>
-                      <label class="flex items-center gap-1.5 text-xs text-base-content/70 cursor-pointer">
-                        <input type="checkbox" class="svelte-include-color w-3.5 h-3.5 rounded border-base-300" />
-                        Include color
-                      </label>
-                    <% end %>
+                <%= if svelte_pkg_name do %>
+                  <div class="bg-base-100 rounded-lg p-4" id={"svelte-section-#{@icon.icon_id}"} phx-hook="SvelteColor"
+                       data-name={@icon.name |> String.downcase() |> String.replace(" ", "_")}
+                       data-style={@icon.style_code}
+                       data-icon-set={@icon.icon_set_code}
+                       data-sizes={Jason.encode!(Formatter.svelte_identifier_sizes(@icon))}>
+                    <div class="flex items-center justify-between mb-2">
+                      <span class="text-sm font-medium text-base-content/70 flex items-center gap-1.5">
+                        <.platform_icon name="svelte" class="w-4 h-4" />
+                        Svelte (<%= if svelte_pkg_url do %><a href={svelte_pkg_url} target="_blank" rel="noreferrer" referrerpolicy="unsafe-url" class="text-primary hover:underline"><%= svelte_pkg_name %></a><% else %><%= svelte_pkg_name %><% end %>)
+                      </span>
+                      <%= if @icon.icon_set_code == "fluentui" do %>
+                        <label class="flex items-center gap-1.5 text-xs text-base-content/70 cursor-pointer">
+                          <input type="checkbox" class="svelte-include-color w-3.5 h-3.5 rounded border-base-300" />
+                          Include color
+                        </label>
+                      <% end %>
+                    </div>
+                    <div class="space-y-1 svelte-code-list">
+                      <%= for size <- Formatter.svelte_identifier_sizes(@icon) do %>
+                        <div class="flex items-center justify-between bg-base-200 rounded px-3 py-2 border border-base-300">
+                          <code id={"svelte-#{@icon.icon_id}-#{size}"} class="text-sm text-orange-600 whitespace-pre-line" data-size={size}><%= Formatter.svelte_identifier(@icon, size) %></code>
+                          <button type="button" phx-click={Phoenix.LiveView.JS.dispatch("phx:copy", to: "#svelte-#{@icon.icon_id}-#{size}")} class="text-xs text-base-content/70 hover:text-base-content px-2 py-1 rounded hover:bg-base-200 cursor-pointer">{t("common.buttons.copy")}</button>
+                        </div>
+                      <% end %>
+                    </div>
                   </div>
-                  <div class="space-y-1 svelte-code-list">
-                    <%= for size <- Formatter.svelte_identifier_sizes(@icon) do %>
-                      <div class="flex items-center justify-between bg-base-200 rounded px-3 py-2 border border-base-300">
-                        <code id={"svelte-#{@icon.icon_id}-#{size}"} class="text-sm text-orange-600 whitespace-pre-line" data-size={size}><%= Formatter.svelte_identifier(@icon, size) %></code>
-                        <button type="button" phx-click={Phoenix.LiveView.JS.dispatch("phx:copy", to: "#svelte-#{@icon.icon_id}-#{size}")} class="text-xs text-base-content/70 hover:text-base-content px-2 py-1 rounded hover:bg-base-200 cursor-pointer">{t("common.buttons.copy")}</button>
-                      </div>
-                    <% end %>
-                  </div>
-                </div>
+                <% end %>
               <% end %>
 
               <!-- CSS Class -->

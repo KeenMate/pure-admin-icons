@@ -21,6 +21,8 @@ defmodule PureAdminIcons.IconSets.Material do
   """
   @behaviour PureAdminIcons.IconSets.Formatter
 
+  alias PureAdminIcons.Naming
+
   # canonical style → CSS class family
   # Material Symbols uses three classes (outlined/rounded/sharp); FILL is an
   # axis on the variable font, not a separate class. Legacy Material Icons
@@ -76,7 +78,7 @@ defmodule PureAdminIcons.IconSets.Material do
         nil
 
       class ->
-        ligature = String.replace(icon.name_lower, "-", "_")
+        ligature = ligature_name(icon)
         ~s(<span class="#{class}">#{ligature}</span>)
     end
   end
@@ -124,20 +126,14 @@ defmodule PureAdminIcons.IconSets.Material do
 
   # --- helpers ----------------------------------------------------------
 
-  # e.g. "add-home" + "outline" → "AddHomeOutlined"
+  # e.g. "Add Home" + "outline" → "AddHomeOutlined"
   defp mui_component(icon) do
     case @mui_suffix[icon.style_code] do
-      nil ->
-        nil
-
-      suffix ->
-        base =
-          icon.name_lower
-          |> String.split(~r/[-_\s]+/)
-          |> Enum.map(&String.capitalize/1)
-          |> Enum.join()
-
-        base <> suffix
+      nil -> nil
+      suffix -> Naming.pascal_case(icon.name) <> suffix
     end
   end
+
+  # e.g. "Admin Panel Settings" → "admin_panel_settings"
+  defp ligature_name(icon), do: Naming.snake_case(icon.name)
 end

@@ -19,6 +19,8 @@ defmodule PureAdminIcons.Sync.Adapters.Material do
 
   require Logger
 
+  alias PureAdminIcons.Naming
+
   @github_zip_url "https://github.com/google/material-design-icons/archive/refs/heads/master.zip"
 
   # Map variant-dir name to our canonical style code
@@ -124,7 +126,7 @@ defmodule PureAdminIcons.Sync.Adapters.Material do
         # since variants like `add_chart` and `addchart` collide on `nrm_original_name`.
         |> Enum.uniq_by(fn {name, style, _cat, _path} -> {normalize_name(name), style} end)
         |> Enum.map(fn {name, style, category, source_path} ->
-          display_name = name |> String.replace("_", " ") |> title_case()
+          display_name = Naming.title_case(name)
 
           %{
             icon_set: icon_set_id(),
@@ -304,23 +306,6 @@ defmodule PureAdminIcons.Sync.Adapters.Material do
       {:ok, _} -> :ok
       {:error, reason} -> {:error, "Erlang unzip failed: #{inspect(reason)}"}
     end
-  end
-
-  defp title_case(string) do
-    string
-    |> String.split(~r/[\s_-]+/)
-    |> Enum.map(&String.capitalize/1)
-    |> Enum.join(" ")
-  end
-
-  defp to_camel_case(name) do
-    name
-    |> String.split("_")
-    |> Enum.with_index()
-    |> Enum.map(fn {word, idx} ->
-      if idx == 0, do: word, else: String.capitalize(word)
-    end)
-    |> Enum.join()
   end
 
   defp hash_file(path) do

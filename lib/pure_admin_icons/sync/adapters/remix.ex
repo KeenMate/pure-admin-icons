@@ -14,6 +14,8 @@ defmodule PureAdminIcons.Sync.Adapters.Remix do
 
   require Logger
 
+  alias PureAdminIcons.Naming
+
   @github_zip_url "https://github.com/Remix-Design/RemixIcon/archive/refs/heads/master.zip"
   @valid_styles ~w(outline filled)
   # canonical style → native suffix in filenames (e.g. foo-line.svg → outline)
@@ -112,7 +114,7 @@ defmodule PureAdminIcons.Sync.Adapters.Remix do
         |> Enum.flat_map(fn {style, category, filename, full_path} ->
           base = String.replace_suffix(filename, ".svg", "")
           name = String.replace_suffix(base, "-#{@native_suffix[style]}", "")
-          display_name = name |> String.replace("-", " ") |> title_case()
+          display_name = Naming.title_case(name)
 
           [%{
             icon_set: icon_set_id(),
@@ -122,7 +124,7 @@ defmodule PureAdminIcons.Sync.Adapters.Remix do
             is_scalable: true,
             sizes: [],
             filenames: %{"0" => "#{name}.svg"},
-            ios_identifiers: %{"0" => to_camel_case(name)},
+            ios_identifiers: %{"0" => Naming.camel_case(name)},
             android_identifiers: %{"0" => "ic_remix_#{String.replace(name, "-", "_")}"},
             categories: [category],
             svg_hash: hash_file(full_path)
@@ -272,23 +274,6 @@ defmodule PureAdminIcons.Sync.Adapters.Remix do
       {:ok, _} -> :ok
       {:error, reason} -> {:error, "Erlang unzip failed: #{inspect(reason)}"}
     end
-  end
-
-  defp title_case(string) do
-    string
-    |> String.split(~r/[\s-]+/)
-    |> Enum.map(&String.capitalize/1)
-    |> Enum.join(" ")
-  end
-
-  defp to_camel_case(name) do
-    name
-    |> String.split("-")
-    |> Enum.with_index()
-    |> Enum.map(fn {word, idx} ->
-      if idx == 0, do: word, else: String.capitalize(word)
-    end)
-    |> Enum.join()
   end
 
   defp hash_file(path) do

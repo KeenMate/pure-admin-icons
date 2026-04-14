@@ -9,6 +9,8 @@ defmodule PureAdminIcons.Sync.Adapters.Fluentui do
 
   require Logger
 
+  alias PureAdminIcons.Naming
+
   @github_zip_url "https://github.com/microsoft/fluentui-system-icons/archive/refs/heads/main.zip"
   # Native style names used by FluentUI filenames (ic_fluent_foo_24_<native>.svg).
   @valid_styles ~w(regular filled color light)
@@ -302,7 +304,7 @@ defmodule PureAdminIcons.Sync.Adapters.Fluentui do
   end
 
   defp build_verified_icons(name, claimed_sizes, claimed_styles, actual_svgs, svg_dir) do
-    name_snake = to_snake_case(name)
+    name_snake = Naming.snake_case(name)
     normalized_styles = Enum.map(claimed_styles, &String.downcase/1)
     actual_combinations = parse_svg_combinations(actual_svgs)
 
@@ -366,7 +368,7 @@ defmodule PureAdminIcons.Sync.Adapters.Fluentui do
   end
 
   defp build_ios_identifiers(name, sizes, style) do
-    camel_name = to_lower_camel_case(name)
+    camel_name = Naming.camel_case(name)
     style_suffix = String.capitalize(style)
 
     sizes
@@ -382,22 +384,6 @@ defmodule PureAdminIcons.Sync.Adapters.Fluentui do
       {Integer.to_string(size), "ic_fluent_#{name_snake}_#{size}_#{style}"}
     end)
     |> Map.new()
-  end
-
-  defp to_lower_camel_case(name) do
-    name
-    |> String.split(~r/[\s_-]+/)
-    |> Enum.with_index()
-    |> Enum.map(fn {word, idx} ->
-      if idx == 0, do: String.downcase(word), else: String.capitalize(word)
-    end)
-    |> Enum.join()
-  end
-
-  defp to_snake_case(name) do
-    name
-    |> String.downcase()
-    |> String.replace(~r/[\s-]+/, "_")
   end
 
   defp extract_style_from_filename(filename) do
