@@ -27,6 +27,7 @@ defmodule PureAdminIcons.IconSets.Formatter do
   @callback vue_identifier(icon, size :: integer()) :: String.t() | nil
   @callback svelte_identifier(icon, size :: integer()) :: String.t() | nil
   @callback cssclass_identifier(icon, size :: integer()) :: String.t() | nil
+  @callback htmltag_identifier(icon, size :: integer()) :: String.t() | nil
 
   # ---- Packages (npm name + URL) ----
   @callback react_package(icon) :: package
@@ -41,8 +42,10 @@ defmodule PureAdminIcons.IconSets.Formatter do
   @callback vue_identifier_sizes(icon) :: [integer()]
   @callback svelte_identifier_sizes(icon) :: [integer()]
 
-  # Optional callback: most sets don't need it. Default behaviour returns nil.
-  @optional_callbacks []
+  # htmltag_identifier is optional — default implementation wraps the cssclass
+  # in `<i class="...">`. Override per-set when a different element / content
+  # is canonical (Material Symbols use `<span class="…">ligature</span>`).
+  @optional_callbacks [htmltag_identifier: 2]
 
   # Registry: icon_set_code → formatter module
   @formatters %{
@@ -50,6 +53,7 @@ defmodule PureAdminIcons.IconSets.Formatter do
     "fontawesome" => PureAdminIcons.IconSets.Fontawesome,
     "heroicons" => PureAdminIcons.IconSets.Heroicons,
     "lucide" => PureAdminIcons.IconSets.Lucide,
+    "material" => PureAdminIcons.IconSets.Material,
     "tabler" => PureAdminIcons.IconSets.Tabler
   }
 
@@ -69,9 +73,15 @@ defmodule PureAdminIcons.IconSets.Formatter do
   def cssclass_identifier(icon, size), do: for_icon(icon).cssclass_identifier(icon, size)
 
   def htmltag_identifier(icon, size) do
-    case cssclass_identifier(icon, size) do
-      nil -> nil
-      class -> ~s(<i class="#{class}"></i>)
+    mod = for_icon(icon)
+
+    if function_exported?(mod, :htmltag_identifier, 2) do
+      mod.htmltag_identifier(icon, size)
+    else
+      case cssclass_identifier(icon, size) do
+        nil -> nil
+        class -> ~s(<i class="#{class}"></i>)
+      end
     end
   end
 

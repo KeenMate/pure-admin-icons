@@ -134,8 +134,10 @@ defmodule PureAdminIcons.Sync.Adapters.Material do
             is_scalable: true,
             sizes: [],
             filenames: %{"0" => "#{name}.svg"},
-            ios_identifiers: %{"0" => to_camel_case(name)},
-            android_identifiers: %{"0" => "ic_material_#{name}"},
+            # iOS:     UIImage(named: "close")      → "close"   (snake_case name)
+            # Android: @drawable/close_24           → "close_24" (Google Fonts Icons default)
+            ios_identifiers: %{"0" => name},
+            android_identifiers: %{"0" => "#{name}_24"},
             categories: [category],
             svg_hash: hash_file(source_path)
           }
