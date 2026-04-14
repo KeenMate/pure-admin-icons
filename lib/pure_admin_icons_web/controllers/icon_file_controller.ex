@@ -56,10 +56,7 @@ defmodule PureAdminIconsWeb.IconFileController do
             path = Path.join([dir, icon_set, style, filename])
 
             if File.exists?(path) do
-              conn
-              |> put_resp_content_type("image/svg+xml")
-              |> put_resp_header("cache-control", "public, max-age=31536000, immutable")
-              |> send_file(200, path)
+              serve_svg(conn, path)
             else
               # For FluentUI, redirect to GitHub as fallback
               case github_fallback_url(icon_set, style, filename) do
@@ -74,6 +71,30 @@ defmodule PureAdminIconsWeb.IconFileController do
             end
         end
     end
+  end
+
+  # Send the SVG with a strong ETag (size + mtime) so browsers revalidate
+  # cheaply instead of holding stale cached files forever.
+  # Cache-Control is still a year but without `immutable` so If-None-Match can fire.
+  defp serve_svg(conn, path) do
+    etag = file_etag(path)
+
+    conn =
+      conn
+      |> put_resp_content_type("image/svg+xml")
+      |> put_resp_header("cache-control", "public, max-age=31536000, stale-while-revalidate=86400")
+      |> put_resp_header("etag", etag)
+
+    case Plug.Conn.get_req_header(conn, "if-none-match") do
+      [^etag] -> send_resp(conn, 304, "")
+      _ -> send_file(conn, 200, path)
+    end
+  end
+
+  defp file_etag(path) do
+    %File.Stat{size: size, mtime: mtime} = File.stat!(path, time: :posix)
+    # Strong ETag — changes when content replaces (sync rewrites the file).
+    "\"" <> Integer.to_string(size, 16) <> "-" <> Integer.to_string(mtime, 16) <> "\""
   end
 
   defp github_fallback_url("fluentui", style, filename) do
