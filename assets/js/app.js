@@ -1869,5 +1869,9 @@ import { startAutoUpdate, initThemeEvents, initThemeSwitcherDropdown } from "./t
 startAutoUpdate()
 initThemeEvents()
 initThemeSwitcherDropdown()
+
+// Language switcher dropdown
+import { initLanguageSwitcherDropdown } from "./language-switcher"
+initLanguageSwitcherDropdown()
 // Theme transitions disabled — instant switch
 // setTimeout(() => document.documentElement.classList.add("theme-transitions"), 100)

@@ -1,5 +1,40 @@
 # Changelog
 
+## 2026-04-14 — Runtime translations (DB-backed, per-locale, cached)
+
+### Translation subsystem
+- `PureAdminIcons.Translations` module with `t/1`, `t/2`, and `interpolate/2` — mirrors the `keen-pure-admin` pattern. App-configurable callback via `config :pure_admin_icons, :translate`; falls back to `@defaults` (English) when the callback returns `nil`
+- `PureAdminIcons.Translations.DbProvider` — reads from `public.get_group_translations(lang, 'frontend', 'text', tenant_id)`, caches the flat `{code → value}` map per locale in `:persistent_term`. `refresh/0` / `refresh/1` drop the cache after writes
+- `PureAdminIcons.Translations.Locale` — process-dict storage for the current locale (`get/0`, `put/1`, `default/0`); used transparently by `t/2`
+
+### Locale resolution
+- `PureAdminIconsWeb.Plugs.Locale` — plug + LiveView `on_mount` hook. Priority: `?lang=xx` query param → **session cookie** (sticky choice) → `Accept-Language` header → `default_locale` config. Only whitelisted tags in `supported_locales` are accepted; invalid values fall through
+- Plug added to the `:browser` pipeline; live routes wrapped in `live_session :default, on_mount: {Plugs.Locale, :default}` so LiveView processes inherit the session's locale
+- Language choice persists via Phoenix session cookie — picking a locale once sticks across navigation
+
+### Language switcher UI
+- `Layouts.language_switcher/1` component rendered in the site nav (desktop + mobile), visible only when `length(supported_locales) > 1`
+- Positioned with Floating UI (`bottom-end`, `flip`, `shift`, `autoUpdate`) for the same behavior as the theme switcher and preset picker — click to toggle, outside-click / Escape to close
+- `assets/js/language-switcher.js` module mirroring `theme-manager.js`
+- `Icon Sets` link added to nav between Docs and API (desktop + mobile)
+
+### Key convention
+`[domain].[specifier].[identifier]` — e.g. `iconSets.headers.pageTitle`, `iconSearch.messages.resultsRange`, `common.buttons.copy`. ~152 keys seeded across 11 domains; English defaults live in source so the app works without a DB roundtrip for any key. `common.*` absorbs strings repeated across domains (tables headers, buttons, pagination, scalable label)
+
+### Supported languages
+- `en` — English (source of truth, lives in `@defaults`)
+- `cs`, `de`, `fr`, `es` — translations in `priv/translations/<lang>.json`; missing keys fall back to English at runtime
+
+### Seed & tooling
+- `../pure-admin-icons-database/upsert_frontend_translations.sql` — idempotent upsert of all 5 languages (760 rows), ends with `PERFORM internal.refresh_translation_cache()` and a `CALL` of the wrapping procedure
+- `mix translations.gen` — regenerates the SQL from `@defaults` (English) + `priv/translations/*.json` (other languages). Deterministic output grouped by language banner then by domain; add a key to `@defaults`, optionally translate in each JSON, then regenerate
+
+### Migrated pages
+All user-visible strings behind `t(...)` calls in: `/`, `/docs`, `/docs/icon-sets`, `/docs/api`, `/docs/mcp`, `/docs/llms`, `/stats`, `/sync/discrepancies`, the icon detail modal, and the site nav. Long-form doc prose (API examples, MCP install instructions) is deliberately left inline — better suited to document-level translation than key-based
+
+### DB-gen
+- Added `get_group_translations` to `db-gen.json` — generated model + processor handle the single-row flat-map JSONB return shape
+
 ## 2026-04-13 — Three new icon sets, canonical style vocabulary, brand colors
 
 ### New icon sets

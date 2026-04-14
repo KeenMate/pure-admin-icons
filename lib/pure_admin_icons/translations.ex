@@ -72,10 +72,12 @@ defmodule PureAdminIcons.Translations do
 
     # ─────────────────────────── Navigation ───────────────────────
     "nav.buttons.docs" => "Docs",
+    "nav.buttons.iconSets" => "Icon Sets",
     "nav.buttons.api" => "API",
     "nav.buttons.stats" => "Stats",
     "nav.buttons.themes" => "Themes",
     "nav.buttons.keenmate" => "Keenmate",
+    "nav.tooltips.language" => "Change language",
 
     # ─────────────────────────── Docs index — /docs ───────────────
     "docsIndex.headers.pageTitle" => "Documentation",

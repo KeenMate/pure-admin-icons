@@ -8,6 +8,7 @@ defmodule PureAdminIconsWeb.Router do
     plug :put_root_layout, html: {PureAdminIconsWeb.Layouts, :root}
     plug :protect_from_forgery
     plug :put_secure_browser_headers
+    plug PureAdminIconsWeb.Plugs.Locale
   end
 
   pipeline :api do
@@ -24,14 +25,17 @@ defmodule PureAdminIconsWeb.Router do
     pipe_through :browser
 
     get "/errors/:code", ErrorPreviewController, :show
-    live "/", IconSearchLive
-    live "/docs", Docs.DocsIndexLive
-    live "/docs/api", Docs.ApiDocsLive
-    live "/docs/mcp", Docs.McpDocsLive
-    live "/docs/llms", Docs.LlmsDocsLive
-    live "/docs/icon-sets", Docs.IconSetsDocsLive
-    live "/stats", AdminStatsLive
-    live "/sync/discrepancies", SyncDiscrepanciesLive
+
+    live_session :default, on_mount: {PureAdminIconsWeb.Plugs.Locale, :default} do
+      live "/", IconSearchLive
+      live "/docs", Docs.DocsIndexLive
+      live "/docs/api", Docs.ApiDocsLive
+      live "/docs/mcp", Docs.McpDocsLive
+      live "/docs/llms", Docs.LlmsDocsLive
+      live "/docs/icon-sets", Docs.IconSetsDocsLive
+      live "/stats", AdminStatsLive
+      live "/sync/discrepancies", SyncDiscrepanciesLive
+    end
   end
 
   scope "/api", PureAdminIconsWeb.API do

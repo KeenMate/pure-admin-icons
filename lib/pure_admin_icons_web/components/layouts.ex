@@ -36,6 +36,12 @@ defmodule PureAdminIconsWeb.Layouts do
             <.icon name="hero-book-open" class="size-4" /> {t("nav.buttons.docs")}
           </a>
           <a
+            href="/docs/icon-sets"
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-base-content/80 hover:text-primary hover:bg-base-200 transition-colors"
+          >
+            <.icon name="hero-squares-2x2" class="size-4" /> {t("nav.buttons.iconSets")}
+          </a>
+          <a
             href="/docs/api"
             class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-base-content/80 hover:text-primary hover:bg-base-200 transition-colors"
           >
@@ -62,6 +68,7 @@ defmodule PureAdminIconsWeb.Layouts do
           >
             <.icon name="hero-building-office-2" class="size-4" /> {t("nav.buttons.keenmate")}
           </a>
+          <.language_switcher />
         </div>
       </div>
       <%!-- Mobile --%>
@@ -84,6 +91,12 @@ defmodule PureAdminIconsWeb.Layouts do
           class="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-base-content/80 hover:text-primary hover:bg-base-300 transition-colors"
         >
           <.icon name="hero-book-open" class="size-4" /> {t("nav.buttons.docs")}
+        </a>
+        <a
+          href="/docs/icon-sets"
+          class="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-base-content/80 hover:text-primary hover:bg-base-300 transition-colors"
+        >
+          <.icon name="hero-squares-2x2" class="size-4" /> {t("nav.buttons.iconSets")}
         </a>
         <a
           href="/docs/api"
@@ -112,8 +125,62 @@ defmodule PureAdminIconsWeb.Layouts do
         >
           <.icon name="hero-building-office-2" class="size-4" /> {t("nav.buttons.keenmate")}
         </a>
+        <.language_switcher class="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-base-content/80 hover:bg-base-300 transition-colors" />
       </div>
     </nav>
+    """
+  end
+
+  attr :class, :string,
+    default:
+      "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-base-content/80 hover:text-primary hover:bg-base-200 transition-colors"
+
+  @doc """
+  Language switcher — renders only when more than one locale is in
+  `:supported_locales`. Links set `?lang=xx`; the Locale plug stores the
+  choice in the session on first hit so subsequent navigation is clean.
+  """
+  def language_switcher(assigns) do
+    supported = Application.get_env(:pure_admin_icons, :supported_locales, ["en"])
+    current = PureAdminIcons.Translations.Locale.get()
+
+    assigns =
+      assigns
+      |> Map.put(:supported, supported)
+      |> Map.put(:current, current)
+      |> Map.put(:show?, length(supported) > 1)
+
+    ~H"""
+    <%= if @show? do %>
+      <div data-language-switcher class="relative">
+        <button
+          type="button"
+          data-language-switcher-trigger
+          class={@class}
+          title={t("nav.tooltips.language")}
+        >
+          <.icon name="hero-language" class="size-4" />
+          <span class="uppercase">{@current}</span>
+        </button>
+        <div
+          data-language-switcher-panel
+          class="hidden flex flex-col py-1 rounded-lg bg-base-100 border border-base-300 shadow-lg z-50 min-w-20"
+          style="position: fixed; top: 0; left: 0;"
+        >
+          <%= for code <- @supported do %>
+            <a
+              href={"?lang=#{code}"}
+              class={[
+                "px-3 py-1.5 text-sm hover:bg-base-200 uppercase text-center",
+                code == @current && "font-semibold text-primary"
+              ]}
+            >
+              {code}
+            </a>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
     """
   end
 

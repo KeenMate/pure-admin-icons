@@ -9,7 +9,11 @@ import Config
 
 config :pure_admin_icons,
   generators: [timestamp_type: :utc_datetime],
-  ecto_repos: [PureAdminIcons.Repo]
+  ecto_repos: [PureAdminIcons.Repo],
+  # Translations — DB-backed provider reads from public.get_group_translations
+  translate: &PureAdminIcons.Translations.DbProvider.translate/2,
+  default_locale: "en",
+  supported_locales: ["en", "cs", "de", "fr", "es"]
 
 # Configure the endpoint
 config :pure_admin_icons, PureAdminIconsWeb.Endpoint,

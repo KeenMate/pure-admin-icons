@@ -136,6 +136,48 @@ defmodule Database.DbContext do
 
 
   @doc """
+  Calls database function public.get_group_translations
+  
+  Returns: {:ok, [%Models.GetGroupTranslationsModel{}]} | {:error, any()}
+  
+  """
+  @spec get_group_translations(String.t(), String.t(), String.t() | :eg_value_not_provided, integer() | :eg_value_not_provided, keyword()) :: {:ok, [%Models.GetGroupTranslationsModel{}]} | {:error, any()}
+  def get_group_translations(language_code, data_group, context \\ :eg_value_not_provided, tenant_id \\ :eg_value_not_provided, query_opts \\ []) do
+    Logger.debug("Calling database routine", routine_name: "get_group_translations")
+
+    sql_params_str =
+      [
+        {"_language_code", language_code},
+        {"_data_group", data_group},
+        {"_context", context},
+        {"_tenant_id", tenant_id}
+      ]
+      |> Enum.filter(fn {_name, value} -> value != :eg_value_not_provided end)
+      |> Enum.with_index(1)
+      |> Enum.map(fn {_tuple, index} -> "$#{index}" end)
+      |> Enum.join(", ")
+
+    sql_query_params =
+      [
+        language_code,
+        data_group,
+        context,
+        tenant_id
+      ]
+      |> Enum.filter(fn value -> value != :eg_value_not_provided end)
+
+    query(
+      "select * from public.get_group_translations(#{sql_params_str})",
+      sql_query_params,
+      query_opts
+    )
+    
+    |> Processors.GetGroupTranslationsProcessor.parse_result()
+    
+  end
+
+
+  @doc """
   Calls database function public.get_icon_count
   
   Returns: {:ok, [%Models.GetIconCountModel{}]} | {:error, any()}

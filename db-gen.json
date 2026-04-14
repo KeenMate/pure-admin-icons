@@ -39,7 +39,8 @@
         "create_job_run": true,
         "update_job_run": true,
         "get_icon_count": true,
-        "get_icon_counts_by_set": true
+        "get_icon_counts_by_set": true,
+        "get_group_translations": true
       }
     },
     {

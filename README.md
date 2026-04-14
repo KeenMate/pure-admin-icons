@@ -6,13 +6,20 @@ Search engine for open-source SVG icons. Aggregates multiple icon libraries into
 
 ## Icon Sets
 
+8 aggregated sets, ~39k icons total. Styles use a unified canonical vocabulary (`outline`, `filled`, `thin`, `light`, `regular`, `bold`, `rounded`, `sharp`, `duotone`, `color`, `brands`). Native source-library names are preserved per-set in `const.icon_set.native_style_names`.
+
 | Set | Icons | Styles | Sizes | License |
 |-----|-------|--------|-------|---------|
-| [FluentUI System Icons](https://github.com/microsoft/fluentui-system-icons) | ~5400 | regular, filled, color, light | 16, 20, 24, 28, 32, 48 | MIT |
-| [Font Awesome Free](https://fontawesome.com/) | ~2850 | solid, regular, brands | 24 | CC BY 4.0 / MIT |
-| [Heroicons](https://heroicons.com/) | ~650 | outline, solid | 16, 20, 24 | MIT |
-| [Lucide](https://lucide.dev/) | ~1500 | regular | 24 | ISC |
-| [Tabler Icons](https://tabler.io/icons) | ~5300 | outline, filled | 24 | MIT |
+| [FluentUI System Icons](https://github.com/microsoft/fluentui-system-icons) | ~5400 | outline, filled, color, light | 16, 20, 24, 28, 32, 48 | MIT |
+| [Font Awesome Free](https://fontawesome.com/) | ~2850 | filled, outline, brands | scalable | CC BY 4.0 / MIT |
+| [Heroicons](https://heroicons.com/) | ~650 | outline, filled | 16, 20, 24 | MIT |
+| [Lucide](https://lucide.dev/) | ~1500 | outline | scalable | ISC |
+| [Material Symbols](https://fonts.google.com/icons) | ~10800 | filled, outline, rounded, sharp, duotone | scalable | Apache 2.0 |
+| [Phosphor Icons](https://phosphoricons.com/) | ~9000 | thin, light, regular, bold, filled, duotone | scalable | MIT |
+| [Remix Icon](https://remixicon.com/) | ~3000 | outline, filled | scalable | Apache 2.0 |
+| [Tabler Icons](https://tabler.io/icons) | ~5800 | outline, filled | scalable | MIT |
+
+See [icons.pureadmin.io/docs/icon-sets](https://icons.pureadmin.io/docs/icon-sets) for the live list with per-set notes, color methods, and source links.
 
 ## API
 
@@ -97,6 +104,60 @@ Adding a new icon set requires:
 4. DB row in `const.icon_set` (see [docs/](docs/) for details)
 
 See [`docs/`](docs/) for internal documentation on presets, Copy/Import CSS, and per-set platform prefs.
+
+## Translations
+
+UI strings are pulled from `public.translation` via `public.get_group_translations(lang, 'frontend', 'text', tenant)` and cached per-locale in `:persistent_term`. English defaults live in `lib/pure_admin_icons/translations.ex` as `@defaults` and are used as fallback when the DB has no row for a key/locale.
+
+### Using `t/2` in templates
+
+```elixir
+import PureAdminIcons.Translations, only: [t: 1, t: 2]
+
+t("common.buttons.copy")                              # => "Copy"
+t("iconSearch.messages.resultsRange",
+  %{from: 1, to: 30, total: 392})                     # => "Showing 1-30 of 392 icons"
+```
+
+### Key convention
+
+`[domain].[specifier].[identifier]`
+
+- **domain** — page / feature, or `common` for shared strings (`iconSearch`, `iconSets`, `iconDetail`, `docsIndex`, `apiDocs`, `mcpDocs`, `llmsDocs`, `stats`, `syncDiscrepancies`, `nav`, `common`)
+- **specifier** — string kind (`labels`, `headers`, `tableHeaders`, `placeholders`, `buttons`, `tooltips`, `messages`, `empty`, `links`, `pagination`, `platforms`, `periods`, `filters`, `cards`)
+- **identifier** — camelCase (`iconSet`, `browseIcons`, `copyCss`)
+
+Interpolation uses `%{param}` placeholders — applied by `Translations.interpolate/2` after DB lookup.
+
+### Locale resolution
+
+Per request, `PureAdminIconsWeb.Plugs.Locale` picks the locale in this order:
+
+1. `?lang=xx` query param (explicit opt-in)
+2. `Accept-Language` header's first acceptable tag
+3. `default_locale` from config (default `"en"`)
+
+Only whitelisted tags in `config :pure_admin_icons, :supported_locales` are honored; everything else falls back to default.
+
+LiveView processes inherit the resolved locale via the `live_session :default, on_mount: {Plugs.Locale, :default}` hook in the router, which reads the value stashed in the session by the plug.
+
+### Adding a language
+
+1. Add rows to `public.translation` with `(language_code, data_group='frontend', data_object_code=<full key>, context='text', value=<translated>)`. See `../pure-admin-icons-database/upsert_frontend_translations.sql` for the template / canonical source of all frontend translations.
+2. Refresh the mat view: `SELECT internal.refresh_translation_cache();`
+3. Append the language code to `config :pure_admin_icons, :supported_locales`.
+4. Drop the in-app cache: `PureAdminIcons.Translations.DbProvider.refresh()`.
+
+### Adding a new UI string
+
+1. Call `t("domain.specifier.identifier")` in your template.
+2. Add an English row to `@defaults` in `lib/pure_admin_icons/translations.ex` (fallback when DB has no translation).
+3. Insert the same row into `public.translation` for `en` — and any other active language.
+4. Refresh both the mat view and the in-app cache.
+
+### Writing to the translation table
+
+Use the SP writers (`public.create_translation`, `public.update_translation`, `public.delete_translation`, `public.copy_translations`) — they handle normalization, auditing, and automatic mat-view refresh. After any out-of-band change, call `PureAdminIcons.Translations.DbProvider.refresh()` to drop the in-app cache.
 
 ## Development
 
