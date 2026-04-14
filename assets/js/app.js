@@ -151,21 +151,19 @@ const DesignerExport = {
     return localStorage.getItem('designer_padding') !== null
   },
 
+  // Keep in lockstep with InlineSvg's colorization so the live DOM preview
+  // and the canvas-rendered designer preview render identically. DOM-based
+  // colorize + serialize had subtle inheritance issues for SVGs where only
+  // the root carried `fill="currentColor"` (Material) — rasterizing the
+  // serialized output via `<img src=blob>` didn't always propagate the
+  // root fill to child paths. Regex replace preserves structure exactly.
   colorizeSvg(svgText, color) {
     if (!color) return svgText
-    const parser = new DOMParser()
-    const doc = parser.parseFromString(svgText, 'image/svg+xml')
-    const svg = doc.querySelector('svg')
-    if (!svg) return svgText
-    const colorize = (el) => {
-      const fill = el.getAttribute('fill')
-      if (fill && fill !== 'none') el.setAttribute('fill', color)
-      const stroke = el.getAttribute('stroke')
-      if (stroke && stroke !== 'none') el.setAttribute('stroke', color)
-    }
-    colorize(svg)
-    svg.querySelectorAll('path, circle, rect, line, polyline, polygon, ellipse, g').forEach(colorize)
-    return new XMLSerializer().serializeToString(doc)
+    return svgText
+      .replace(/fill="#[0-9A-Fa-f]{3,6}"/g, `fill="${color}"`)
+      .replace(/fill="currentColor"/g, `fill="${color}"`)
+      .replace(/stroke="#[0-9A-Fa-f]{3,6}"/g, `stroke="${color}"`)
+      .replace(/stroke="currentColor"/g, `stroke="${color}"`)
   },
 
   renderToCanvas(svgText, size, settings) {
