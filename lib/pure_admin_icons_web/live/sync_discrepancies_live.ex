@@ -1,6 +1,8 @@
 defmodule PureAdminIconsWeb.SyncDiscrepanciesLive do
   use PureAdminIconsWeb, :live_view
 
+  import PureAdminIcons.Translations, only: [t: 1, t: 2]
+
   alias PureAdminIcons.Icons
 
   @impl true
@@ -23,7 +25,7 @@ defmodule PureAdminIconsWeb.SyncDiscrepanciesLive do
 
     socket =
       socket
-      |> assign(:page_title, "Sync Discrepancies")
+      |> assign(:page_title, t("syncDiscrepancies.headers.pageTitle"))
       |> assign(:sync_run, latest_sync)
       |> assign(:discrepancies, discrepancies)
       |> assign(:grouped, group_discrepancies(discrepancies))
@@ -43,13 +45,13 @@ defmodule PureAdminIconsWeb.SyncDiscrepanciesLive do
     <Layouts.site_nav />
     <div class="max-w-4xl mx-auto px-4 py-10">
       <div class="rounded-box bg-base-200 overflow-hidden border border-base-300 p-8">
-        <h1 class="text-3xl font-bold mb-2">Sync Discrepancy Report</h1>
+        <h1 class="text-3xl font-bold mb-2">{t("syncDiscrepancies.headers.pageTitle")}</h1>
 
         <%= if @sync_run do %>
           <p class="text-sm text-base-content/50 mb-6">
-            Last sync: <%= Calendar.strftime(@sync_run.finished_at, "%Y-%m-%d %H:%M:%S UTC") %>
+            {t("syncDiscrepancies.labels.lastSync", %{when: Calendar.strftime(@sync_run.finished_at, "%Y-%m-%d %H:%M:%S UTC")})}
             &bull;
-            <span class="font-medium text-warning"><%= length(@discrepancies) %> discrepancies</span>
+            <span class="font-medium text-warning">{t("syncDiscrepancies.labels.discrepancyCount", %{count: length(@discrepancies)})}</span>
           </p>
 
           <%= if length(@discrepancies) == 0 do %>
@@ -57,14 +59,13 @@ defmodule PureAdminIconsWeb.SyncDiscrepanciesLive do
               <svg class="w-16 h-16 mx-auto text-success mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <p class="text-base-content/60">No discrepancies found! All metadata matches actual SVG files.</p>
+              <p class="text-base-content/60">{t("syncDiscrepancies.empty.noDiscrepancies")}</p>
             </div>
           <% else %>
             <div class="mb-4 p-4 bg-warning/10 border border-warning/30 rounded-lg">
               <p class="text-sm text-base-content/80">
-                <strong>What are discrepancies?</strong>
-                These are cases where an icon set's metadata claims certain sizes/styles exist,
-                but the actual SVG files are missing from the repository. This is an upstream data quality issue.
+                <strong>{t("syncDiscrepancies.messages.whatAreDiscrepancies")}</strong>
+                {t("syncDiscrepancies.messages.explanation")}
               </p>
             </div>
 
@@ -72,9 +73,9 @@ defmodule PureAdminIconsWeb.SyncDiscrepanciesLive do
               <table class="table table-sm">
                 <thead>
                   <tr>
-                    <th class="text-base-content/70">Set</th>
-                    <th class="text-base-content/70">Icon</th>
-                    <th class="text-base-content/70">Missing Files</th>
+                    <th class="text-base-content/70">{t("common.tableHeaders.set")}</th>
+                    <th class="text-base-content/70">{t("common.tableHeaders.icon")}</th>
+                    <th class="text-base-content/70">{t("syncDiscrepancies.tableHeaders.missingFiles")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -103,12 +104,12 @@ defmodule PureAdminIconsWeb.SyncDiscrepanciesLive do
             </div>
 
             <div class="mt-6 p-4 bg-base-300/50 rounded-lg">
-              <h3 class="text-sm font-medium text-base-content mb-2">Summary by Style</h3>
+              <h3 class="text-sm font-medium text-base-content mb-2">{t("syncDiscrepancies.headers.summaryByStyle")}</h3>
               <div class="flex flex-wrap gap-4">
                 <%= for {style, count} <- count_by_style(@discrepancies) do %>
                   <div class="text-sm">
                     <span class="font-medium text-base-content"><%= style %>:</span>
-                    <span class="text-base-content/60"><%= count %> missing</span>
+                    <span class="text-base-content/60">{t("syncDiscrepancies.labels.missingCount", %{count: count})}</span>
                   </div>
                 <% end %>
               </div>
@@ -116,7 +117,7 @@ defmodule PureAdminIconsWeb.SyncDiscrepanciesLive do
           <% end %>
         <% else %>
           <div class="text-center py-12">
-            <p class="text-base-content/60">No sync has been completed yet.</p>
+            <p class="text-base-content/60">{t("syncDiscrepancies.empty.noSync")}</p>
           </div>
         <% end %>
       </div>

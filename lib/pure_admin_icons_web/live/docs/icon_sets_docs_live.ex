@@ -1,6 +1,8 @@
 defmodule PureAdminIconsWeb.Docs.IconSetsDocsLive do
   use PureAdminIconsWeb, :live_view
 
+  import PureAdminIcons.Translations, only: [t: 1, t: 2]
+
   alias PureAdminIcons.Icons
   alias PureAdminIcons.IconSets
 
@@ -8,7 +10,7 @@ defmodule PureAdminIconsWeb.Docs.IconSetsDocsLive do
   def mount(_params, _session, socket) do
     {:ok,
      socket
-     |> assign(:page_title, "Icon Sets")
+     |> assign(:page_title, t("iconSets.headers.pageTitle"))
      |> assign(:icon_sets, Icons.list_icon_sets())}
   end
 
@@ -18,12 +20,12 @@ defmodule PureAdminIconsWeb.Docs.IconSetsDocsLive do
     <Layouts.site_nav />
     <div class="max-w-5xl mx-auto px-4 py-10">
       <div class="rounded-box bg-base-200 overflow-hidden border border-base-300 p-8 mb-6">
-        <h1 class="text-3xl font-bold mb-2">Icon Sets</h1>
+        <h1 class="text-3xl font-bold mb-2">{t("iconSets.headers.pageTitle")}</h1>
         <p class="text-base-content/60 mb-1">
-          {length(@icon_sets)} icon sets aggregated from open-source libraries.
+          {t("iconSets.messages.summary", %{count: length(@icon_sets)})}
         </p>
         <p class="text-base-content/50 text-sm">
-          Click a card's links to visit the upstream homepage or GitHub repo. "Native names" shown on style chips indicate how that style is called in the source library.
+          {t("iconSets.messages.helpText")}
         </p>
       </div>
 
@@ -34,7 +36,7 @@ defmodule PureAdminIconsWeb.Docs.IconSetsDocsLive do
       </div>
 
       <footer class="text-center text-base-content/50 text-xs py-8">
-        icons.pureadmin.io &middot; by
+        icons.pureadmin.io &middot; {t("common.labels.by")}
         <a href="https://keenmate.com" class="hover:text-primary">KeenMate</a>
       </footer>
     </div>
@@ -71,35 +73,35 @@ defmodule PureAdminIconsWeb.Docs.IconSetsDocsLive do
           </div>
           <div class="text-right shrink-0">
             <div class="text-2xl font-bold tabular-nums">{format_count(@set.icon_count)}</div>
-            <div class="text-xs text-base-content/50 uppercase tracking-wide">icons</div>
+            <div class="text-xs text-base-content/50 uppercase tracking-wide">{t("iconSets.labels.iconsSuffix")}</div>
           </div>
         </div>
 
         <dl class="grid gap-3 sm:grid-cols-2 mb-4">
-          <.info_row label="License" value={@set.license} />
-          <.info_row label="Default size" value={"#{@set.default_size} px"} />
-          <.info_row label="Sizes">
+          <.info_row label={t("iconSets.labels.license")} value={@set.license} />
+          <.info_row label={t("iconSets.labels.defaultSize")} value={"#{@set.default_size} px"} />
+          <.info_row label={t("iconSets.labels.sizes")}>
             <%= cond do %>
               <% @set.has_single_source -> %>
-                <span class="text-base-content/70">∞ Scalable</span>
+                <span class="text-base-content/70">{t("common.labels.scalable")}</span>
               <% @set.sizes && @set.sizes != [] -> %>
                 <span class="font-mono">{Enum.join(@set.sizes, ", ")} px</span>
               <% true -> %>
                 <span class="text-base-content/50">—</span>
             <% end %>
           </.info_row>
-          <.info_row label="Vector / raster">
+          <.info_row label={t("iconSets.labels.vectorRaster")}>
             <%= if @set.is_scalable do %>
-              <span class="text-success">Vector (SVG)</span>
+              <span class="text-success">{t("iconSets.messages.vector")}</span>
             <% else %>
-              <span class="text-warning">Raster</span>
+              <span class="text-warning">{t("iconSets.messages.raster")}</span>
             <% end %>
           </.info_row>
         </dl>
 
         <div class="mb-4">
           <div class="text-xs font-semibold text-base-content/60 uppercase tracking-wide mb-1.5">
-            Styles
+            {t("iconSets.headers.styles")}
           </div>
           <div class="flex flex-wrap gap-1.5">
             <%= for style <- @set.styles || [] do %>
@@ -123,7 +125,7 @@ defmodule PureAdminIconsWeb.Docs.IconSetsDocsLive do
               rel="noreferrer"
               class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-base-200 hover:bg-base-300 transition-colors"
             >
-              <.icon name="hero-globe-alt" class="size-4" /> Homepage
+              <.icon name="hero-globe-alt" class="size-4" /> {t("common.buttons.homepage")}
             </a>
           <% end %>
           <%= if @set.github_url && @set.github_url != "" do %>
@@ -133,21 +135,21 @@ defmodule PureAdminIconsWeb.Docs.IconSetsDocsLive do
               rel="noreferrer"
               class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-base-200 hover:bg-base-300 transition-colors"
             >
-              <.icon name="hero-code-bracket" class="size-4" /> GitHub
+              <.icon name="hero-code-bracket" class="size-4" /> {t("common.buttons.github")}
             </a>
           <% end %>
           <a
             href={"/?set=#{@set.code}"}
             class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
           >
-            <.icon name="hero-magnifying-glass" class="size-4" /> Browse icons
+            <.icon name="hero-magnifying-glass" class="size-4" /> {t("iconSets.buttons.browseIcons")}
           </a>
         </div>
 
         <%= if @set.notes && String.trim(@set.notes) != "" do %>
           <div class="border-l-4 border-warning/60 bg-warning/5 rounded-r-lg p-3">
             <div class="flex items-center gap-1.5 text-xs font-semibold text-warning uppercase tracking-wide mb-1.5">
-              <.icon name="hero-information-circle" class="size-4" /> Notes
+              <.icon name="hero-information-circle" class="size-4" /> {t("iconSets.headers.notes")}
             </div>
             <div class="text-sm text-base-content/80 whitespace-pre-wrap">{@set.notes}</div>
           </div>
@@ -191,8 +193,8 @@ defmodule PureAdminIconsWeb.Docs.IconSetsDocsLive do
     native = native_name(set, style)
 
     [
-      if(native, do: "Native: #{native}"),
-      if(color_method, do: "Color method: #{color_method}")
+      if(native, do: t("iconSets.tooltips.nativeName", %{native: native})),
+      if(color_method, do: t("iconSets.tooltips.colorMethod", %{method: color_method}))
     ]
     |> Enum.reject(&is_nil/1)
     |> Enum.join(" · ")

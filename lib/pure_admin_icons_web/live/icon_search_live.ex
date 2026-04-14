@@ -7,6 +7,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
   alias Phoenix.LiveView.JS
 
   import PureAdminIconsWeb.Components.PlatformIcons
+  import PureAdminIcons.Translations, only: [t: 1, t: 2]
 
   @per_page 30
 
@@ -458,9 +459,9 @@ defmodule PureAdminIconsWeb.IconSearchLive do
       <%!-- Hero with search and filters --%>
       <div class="hero-gradient py-6 px-4 border-b border-base-300">
         <div class="max-w-5xl mx-auto text-center mb-4">
-          <p class="text-base-content/70">Search <span class="font-semibold text-primary"><%= @icon_count %></span> icons from <span class="font-semibold text-primary"><%= length(@icon_sets) %></span> icon sets</p>
+          <p class="text-base-content/70">{t("iconSearch.headers.heroTitlePrefix")} <span class="font-semibold text-primary"><%= @icon_count %></span> {t("iconSearch.headers.heroTitleMiddle")} <span class="font-semibold text-primary"><%= length(@icon_sets) %></span> {t("iconSearch.headers.heroTitleSuffix")}</p>
           <p class="text-sm text-base-content/50 mt-1">
-            Using Claude? Try our <a href="https://www.npmjs.com/package/@keenmate/pure-admin-icons-mcp" target="_blank" rel="noreferrer" class="text-primary hover:underline">MCP server</a> to search icons directly from Claude Desktop or Claude Code.
+            {t("iconSearch.messages.mcpPromptPrefix")} <a href="https://www.npmjs.com/package/@keenmate/pure-admin-icons-mcp" target="_blank" rel="noreferrer" class="text-primary hover:underline">{t("iconSearch.messages.mcpPromptLink")}</a> {t("iconSearch.messages.mcpPromptSuffix")}
           </p>
         </div>
 
@@ -478,7 +479,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
                 type="text"
                 name="query"
                 value={@query}
-                placeholder="Search icons (e.g., 'pen', 'calendar', 'add')..."
+                placeholder={t("iconSearch.placeholders.search")}
                 phx-debounce="300"
                 class="w-full pl-10 pr-4 py-3 rounded-lg border border-base-content/25 bg-base-content/10 shadow-sm search-glow text-base-content text-lg"
                 autofocus
@@ -494,7 +495,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
                 </svg>
-                <span class="hidden sm:inline">Filters</span>
+                <span class="hidden sm:inline">{t("iconSearch.buttons.filters")}</span>
               </button>
             </div>
             <div class="view-toggle" id="view-mode" phx-hook="ViewMode">
@@ -506,7 +507,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                 </svg>
-                <span class="hidden sm:inline">Grid</span>
+                <span class="hidden sm:inline">{t("iconSearch.buttons.grid")}</span>
               </button>
               <button
                 phx-click="toggle_view"
@@ -516,7 +517,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
                 </svg>
-                <span class="hidden sm:inline">List</span>
+                <span class="hidden sm:inline">{t("iconSearch.buttons.list")}</span>
               </button>
             </div>
           </div>
@@ -526,7 +527,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
         <div id="filters-panel" class="mb-6 p-4 bg-base-200/50 rounded-lg border border-base-300 space-y-4" style="display: none;">
           <!-- Icon Set Filter -->
           <div>
-            <span class="text-sm font-semibold text-base-content block mb-2">Sets</span>
+            <span class="text-sm font-semibold text-base-content block mb-2">{t("iconSearch.headers.sets")}</span>
             <div class="flex flex-wrap gap-x-4 gap-y-2">
               <%= for icon_set <- @icon_sets do %>
                 <label class="inline-flex items-center cursor-pointer gap-1.5">
@@ -537,7 +538,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
                     checked={icon_set.code in @selected_icon_sets}
                     class="w-4 h-4 rounded border-base-content/25 focus:ring-primary"
                   />
-                  <span class="text-sm text-base-content/70" title={"#{icon_set.icon_count} icons"}><%= icon_set.title %></span>
+                  <span class="text-sm text-base-content/70" title={t("iconSearch.tooltips.iconSetCount", %{count: icon_set.icon_count})}><%= icon_set.title %></span>
                 </label>
               <% end %>
             </div>
@@ -545,7 +546,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
 
           <!-- Style Filter -->
           <div>
-            <span class="text-sm font-semibold text-base-content block mb-2">Styles</span>
+            <span class="text-sm font-semibold text-base-content block mb-2">{t("iconSearch.headers.styles")}</span>
             <div class="flex flex-wrap gap-x-4 gap-y-2">
               <%= for style <- @available_styles do %>
                 <label class="inline-flex items-center cursor-pointer gap-1.5">
@@ -564,7 +565,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
 
           <!-- Size Filters -->
           <div>
-            <span class="text-sm font-semibold text-base-content block mb-2">Sizes</span>
+            <span class="text-sm font-semibold text-base-content block mb-2">{t("iconSearch.headers.sizes")}</span>
             <div class="flex flex-wrap gap-x-4 gap-y-2">
               <%= if Enum.any?(@icon_sets, & &1.has_single_source) do %>
                 <label class="inline-flex items-center cursor-pointer gap-1.5">
@@ -575,7 +576,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
                     checked={0 in @selected_sizes}
                     class="w-4 h-4 rounded border-base-content/25 focus:ring-primary"
                   />
-                  <span class="text-sm text-base-content/70" title="Icons that scale to any size">∞ Scalable</span>
+                  <span class="text-sm text-base-content/70" title={t("iconSearch.tooltips.scalable")}>{t("common.labels.scalable")}</span>
                 </label>
               <% end %>
               <%= for size <- @available_sizes do %>
@@ -598,7 +599,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
         <!-- Active Filters Display -->
         <%= if @selected_styles != [] || @selected_sizes != [] || @selected_icon_sets != [] do %>
           <div class="flex flex-wrap gap-2 mb-4 items-center">
-            <span class="text-sm font-medium text-base-content/70">Active filters:</span>
+            <span class="text-sm font-medium text-base-content/70">{t("iconSearch.labels.activeFilters")}</span>
             <%= for icon_set <- Enum.sort(@selected_icon_sets) do %>
               <button
                 type="button"
@@ -629,7 +630,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
                 phx-value-size={size}
                 class="badge badge-sm badge-ghost gap-1 cursor-pointer hover:opacity-80"
               >
-                <%= if size == 0, do: "∞ Scalable", else: "#{size}px" %>
+                <%= if size == 0, do: t("common.labels.scalable"), else: "#{size}px" %>
                 <span class="text-lg leading-none">&times;</span>
               </button>
             <% end %>
@@ -637,7 +638,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
               phx-click="clear_filters"
               class="text-sm text-primary hover:text-primary/80 ml-1"
             >
-              Clear all
+              {t("iconSearch.buttons.clearAll")}
             </button>
           </div>
         <% end %>
@@ -652,7 +653,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
         <div class="flex flex-wrap justify-between items-center mb-4 gap-3">
           <div class="text-sm text-base-content/70">
             <%= if @total_count > 0 do %>
-              Showing <%= (@page - 1) * 30 + 1 %>-<%= min(@page * 30, @total_count) %> of <%= @total_count %> icons
+              {t("iconSearch.messages.resultsRange", %{from: (@page - 1) * 30 + 1, to: min(@page * 30, @total_count), total: @total_count})}
             <% end %>
           </div>
           <div class="flex items-center gap-3">
@@ -712,8 +713,8 @@ defmodule PureAdminIconsWeb.IconSearchLive do
             <svg class="h-16 w-16 text-base-content/50 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <p class="text-base-content/70">No icons found for "<%= @query %>"</p>
-            <p class="text-sm text-base-content/50 mt-1">Try a different search term or adjust your filters</p>
+            <p class="text-base-content/70">{t("iconSearch.empty.noResults", %{query: @query})}</p>
+            <p class="text-sm text-base-content/50 mt-1">{t("iconSearch.empty.noResultsHint")}</p>
           </div>
         <% end %>
 
@@ -728,27 +729,27 @@ defmodule PureAdminIconsWeb.IconSearchLive do
             <div>
               <Layouts.logo class="text-lg" />
               <p class="text-xs text-base-content/50 mt-2">
-                Search <%= @icon_count %> open-source SVG icons from <%= length(@icon_sets) %> icon sets.
+                {t("iconSearch.messages.footerTagline", %{count: @icon_count, sets: length(@icon_sets)})}
               </p>
               <p class="text-xs text-base-content/40 mt-1">
-                Made by <a href="https://keenmate.com" rel="noreferrer" referrerpolicy="origin" class="text-primary hover:underline">KeenMate</a>
+                {t("iconSearch.messages.madeByPrefix")} <a href="https://keenmate.com" rel="noreferrer" referrerpolicy="origin" class="text-primary hover:underline">KeenMate</a>
               </p>
             </div>
 
             <!-- Links -->
             <div>
-              <h4 class="text-sm font-semibold text-base-content mb-2">Resources</h4>
+              <h4 class="text-sm font-semibold text-base-content mb-2">{t("iconSearch.headers.resources")}</h4>
               <ul class="space-y-1 text-xs text-base-content/60">
-                <li><a href="/docs/api" class="hover:text-primary">API Documentation</a></li>
-                <li><a href="/docs/mcp" class="hover:text-primary">MCP Server</a></li>
-                <li><a href="/docs/llms" class="hover:text-primary">LLM Integration</a></li>
-                <li><a href="/api/health" class="hover:text-primary">Health Check</a></li>
+                <li><a href="/docs/api" class="hover:text-primary">{t("iconSearch.links.apiDocs")}</a></li>
+                <li><a href="/docs/mcp" class="hover:text-primary">{t("iconSearch.links.mcpServer")}</a></li>
+                <li><a href="/docs/llms" class="hover:text-primary">{t("iconSearch.links.llmIntegration")}</a></li>
+                <li><a href="/api/health" class="hover:text-primary">{t("iconSearch.links.healthCheck")}</a></li>
               </ul>
             </div>
 
             <!-- Icon Sets -->
             <div>
-              <h4 class="text-sm font-semibold text-base-content mb-2">Icon Sets</h4>
+              <h4 class="text-sm font-semibold text-base-content mb-2">{t("iconSearch.headers.iconSets")}</h4>
               <ul class="space-y-1 text-xs text-base-content/60">
                 <%= for icon_set <- @icon_sets do %>
                   <li>
@@ -764,13 +765,13 @@ defmodule PureAdminIconsWeb.IconSearchLive do
 
           <!-- Bottom bar -->
           <div class="mt-6 pt-4 border-t border-base-300/50 flex flex-col sm:flex-row justify-between items-center gap-2 text-xs text-base-content/40">
-            <span>Icon SVGs retain their original licenses.</span>
+            <span>{t("iconSearch.messages.licenseNotice")}</span>
             <%= if @last_sync_at do %>
               <div class="flex items-center gap-2">
-                <span>Last synced: <%= format_sync_time(@last_sync_at) %></span>
+                <span>{t("iconSearch.messages.lastSynced", %{when: format_sync_time(@last_sync_at)})}</span>
                 <%= if @discrepancy_count > 0 do %>
                   <a href="/sync/discrepancies" class="text-warning hover:opacity-80 hover:underline">
-                    (<%= @discrepancy_count %> discrepancies)
+                    {t("iconSearch.messages.discrepancies", %{count: @discrepancy_count})}
                   </a>
                 <% end %>
               </div>
@@ -806,15 +807,15 @@ defmodule PureAdminIconsWeb.IconSearchLive do
         phx-click="change_page"
         phx-value-page={@current_page - 1}
         class="btn-pager"
-      >Previous</button>
+      >{t("common.buttons.previous")}</button>
       <button
         :if={@current_page <= 1}
         disabled
         class="btn-pager-disabled"
-      >Previous</button>
+      >{t("common.buttons.previous")}</button>
 
       <span class="text-sm text-base-content/70">
-        Page <%= @current_page %> of <%= @total_pages %>
+        {t("common.pagination.pageOf", %{page: @current_page, total: @total_pages})}
       </span>
 
       <button
@@ -822,12 +823,12 @@ defmodule PureAdminIconsWeb.IconSearchLive do
         phx-click="change_page"
         phx-value-page={@current_page + 1}
         class="btn-pager"
-      >Next</button>
+      >{t("common.buttons.next")}</button>
       <button
         :if={@current_page >= @total_pages}
         disabled
         class="btn-pager-disabled"
-      >Next</button>
+      >{t("common.buttons.next")}</button>
     </div>
     """
   end
@@ -863,14 +864,14 @@ defmodule PureAdminIconsWeb.IconSearchLive do
 
             <div class="icon-card-sizes">
               <%= if Map.get(icon, :has_single_source, false) do %>
-                <div class="has-popover text-2xl leading-none font-bold" title="Scalable — renders at any size">
+                <div class="has-popover text-2xl leading-none font-bold" title={t("iconSearch.tooltips.scalableRenders")}>
                   ∞
                   <div class="floating-popover">
                     <%= for platform <- preferred_platforms_for(icon, @platform_prefs_by_set, 2) do %>
                       <button
                         type="button"
                         class={["floating-popover-btn", platform_color(platform)]}
-                        title={"Copy #{platform} identifier"}
+                        title={t("iconSearch.tooltips.copyPlatformIdentifier", %{platform: platform})}
                         phx-click={JS.dispatch("phx:copy_text", detail: copy_detail(icon, platform, 0))}
                       >
                         <.platform_icon name={to_string(platform)} class="w-5 h-5" />
@@ -879,7 +880,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
                     <button
                       type="button"
                       class="quick-designer-download floating-popover-btn text-base-content/60"
-                      title="Download PNG ZIP with designer settings"
+                      title={t("iconSearch.tooltips.downloadPngZip")}
                       data-svg-url={Icon.svg_url(icon, default_size(icon.sizes))}
                       data-name={icon.name}
                     >
@@ -896,7 +897,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
                         <button
                           type="button"
                           class={["floating-popover-btn", platform_color(platform)]}
-                          title={"Copy #{platform} identifier for size #{size}"}
+                          title={t("iconSearch.tooltips.copyPlatformIdentifierSized", %{platform: platform, size: size})}
                           phx-click={JS.dispatch("phx:copy_text", detail: copy_detail(icon, platform, size))}
                         >
                           <.platform_icon name={to_string(platform)} class="w-5 h-5" />
@@ -905,7 +906,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
                       <button
                         type="button"
                         class="quick-designer-download floating-popover-btn text-base-content/60"
-                        title="Download PNG ZIP with designer settings"
+                        title={t("iconSearch.tooltips.downloadPngZip")}
                         data-svg-url={Icon.svg_url(icon, size)}
                         data-name={icon.name}
                       >
@@ -950,7 +951,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
           </div>
           <div class="flex flex-wrap gap-1 mt-1">
             <%= if Map.get(icon, :has_single_source, false) do %>
-              <span class="badge badge-sm badge-ghost" title="Scalable — renders at any size">∞</span>
+              <span class="badge badge-sm badge-ghost" title={t("iconSearch.tooltips.scalableRenders")}>∞</span>
             <% else %>
               <%= for size <- icon.sizes do %>
                 <span class="badge badge-sm badge-ghost"><%= size %>px</span>
@@ -967,10 +968,10 @@ defmodule PureAdminIconsWeb.IconSearchLive do
         <table class="w-full text-sm">
           <thead class="bg-base-200 border-b-2 border-base-300 sticky-table-header">
             <tr>
-              <th class="w-16 px-4 py-4 text-left font-semibold text-base-content text-base sticky bg-base-200 z-20" style="top: var(--sticky-header-height, 0px)">Icon</th>
-              <th class="px-4 py-4 text-left font-semibold text-base-content text-base sticky bg-base-200 z-20" style="top: var(--sticky-header-height, 0px)">Set</th>
-              <th class="px-4 py-4 text-left font-semibold text-base-content text-base sticky bg-base-200 z-20" style="top: var(--sticky-header-height, 0px)">Name</th>
-              <th class="w-24 px-4 py-4 text-center font-semibold text-base-content text-base sticky bg-base-200 z-20" style="top: var(--sticky-header-height, 0px)">Style</th>
+              <th class="w-16 px-4 py-4 text-left font-semibold text-base-content text-base sticky bg-base-200 z-20" style="top: var(--sticky-header-height, 0px)">{t("common.tableHeaders.icon")}</th>
+              <th class="px-4 py-4 text-left font-semibold text-base-content text-base sticky bg-base-200 z-20" style="top: var(--sticky-header-height, 0px)">{t("common.tableHeaders.set")}</th>
+              <th class="px-4 py-4 text-left font-semibold text-base-content text-base sticky bg-base-200 z-20" style="top: var(--sticky-header-height, 0px)">{t("iconSearch.tableHeaders.name")}</th>
+              <th class="w-24 px-4 py-4 text-center font-semibold text-base-content text-base sticky bg-base-200 z-20" style="top: var(--sticky-header-height, 0px)">{t("common.tableHeaders.style")}</th>
               <%= for size <- @display_sizes do %>
                 <th class="w-16 px-2 py-4 text-center font-semibold text-base-content text-sm sticky bg-base-200 z-20" style="top: var(--sticky-header-height, 0px)"><%= size %></th>
               <% end %>
@@ -999,21 +1000,21 @@ defmodule PureAdminIconsWeb.IconSearchLive do
                 </td>
                 <%= if Map.get(icon, :has_single_source, false) do %>
                   <td class="px-2 py-3 text-center" colspan={length(@display_sizes)}>
-                    <div class="has-popover inline-block text-base-content/80 font-bold text-lg" title="Scalable — renders at any size">
-                      ∞ Scalable
+                    <div class="has-popover inline-block text-base-content/80 font-bold text-lg" title={t("iconSearch.tooltips.scalableRenders")}>
+                      {t("common.labels.scalable")}
                       <div class="floating-popover">
                         <%= for platform <- preferred_platforms_for(icon, @platform_prefs_by_set, 2) do %>
                           <button
                             type="button"
                             class={["floating-popover-btn", platform_color(platform)]}
-                            title={"Copy #{platform} identifier"}
+                            title={t("iconSearch.tooltips.copyPlatformIdentifier", %{platform: platform})}
                             phx-click={JS.dispatch("phx:copy_text", detail: copy_detail(icon, platform, 0))}
                             phx-value-stop-propagation="true"
                           >
                             <.platform_icon name={to_string(platform)} class="w-5 h-5" />
                           </button>
                         <% end %>
-                        <button type="button" class="quick-designer-download floating-popover-btn text-base-content/60" title="Download PNG ZIP with designer settings" data-svg-url={Icon.svg_url(icon, default_size(icon.sizes))} data-name={icon.name}>
+                        <button type="button" class="quick-designer-download floating-popover-btn text-base-content/60" title={t("iconSearch.tooltips.downloadPngZip")} data-svg-url={Icon.svg_url(icon, default_size(icon.sizes))} data-name={icon.name}>
                           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
                         </button>
                       </div>
@@ -1030,14 +1031,14 @@ defmodule PureAdminIconsWeb.IconSearchLive do
                               <button
                                 type="button"
                                 class={["floating-popover-btn", platform_color(platform)]}
-                                title={"Copy #{platform} identifier for size #{size}"}
+                                title={t("iconSearch.tooltips.copyPlatformIdentifierSized", %{platform: platform, size: size})}
                                 phx-click={JS.dispatch("phx:copy_text", detail: copy_detail(icon, platform, size))}
                                 phx-value-stop-propagation="true"
                               >
                                 <.platform_icon name={to_string(platform)} class="w-5 h-5" />
                               </button>
                             <% end %>
-                            <button type="button" class="quick-designer-download floating-popover-btn text-base-content/60" title="Download PNG ZIP with designer settings" data-svg-url={Icon.svg_url(icon, size)} data-name={icon.name}>
+                            <button type="button" class="quick-designer-download floating-popover-btn text-base-content/60" title={t("iconSearch.tooltips.downloadPngZip")} data-svg-url={Icon.svg_url(icon, size)} data-name={icon.name}>
                               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
                             </button>
                           </div>

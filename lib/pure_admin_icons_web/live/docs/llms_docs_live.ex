@@ -1,9 +1,11 @@
 defmodule PureAdminIconsWeb.Docs.LlmsDocsLive do
   use PureAdminIconsWeb, :live_view
 
+  import PureAdminIcons.Translations, only: [t: 1]
+
   @impl true
   def mount(_params, _session, socket) do
-    {:ok, assign(socket, :page_title, "LLM Integration")}
+    {:ok, assign(socket, :page_title, t("llmsDocs.headers.pageTitle"))}
   end
 
   @impl true
@@ -12,7 +14,7 @@ defmodule PureAdminIconsWeb.Docs.LlmsDocsLive do
     <Layouts.site_nav />
     <div class="max-w-4xl mx-auto px-4 py-10">
       <div class="rounded-box bg-base-200 overflow-hidden border border-base-300 p-8">
-        <h1 class="text-3xl font-bold mb-2">LLM Integration</h1>
+        <h1 class="text-3xl font-bold mb-2">{t("llmsDocs.headers.pageTitle")}</h1>
         <p class="text-base-content/60 mb-8">
           Best practices for using icons.pureadmin.io with AI assistants and large language models.
         </p>
@@ -64,7 +66,7 @@ defmodule PureAdminIconsWeb.Docs.LlmsDocsLive do
       </div>
 
       <footer class="text-center text-base-content/50 text-xs py-8">
-        icons.pureadmin.io &middot; by
+        icons.pureadmin.io &middot; {t("common.labels.by")}
         <a href="https://keenmate.com" class="hover:text-primary">KeenMate</a>
       </footer>
     </div>

@@ -1,6 +1,8 @@
 defmodule PureAdminIconsWeb.AdminStatsLive do
   use PureAdminIconsWeb, :live_view
 
+  import PureAdminIcons.Translations, only: [t: 1]
+
   alias PureAdminIcons.Icons
 
   @impl true
@@ -10,7 +12,7 @@ defmodule PureAdminIconsWeb.AdminStatsLive do
 
     socket =
       socket
-      |> assign(page_title: "Stats")
+      |> assign(page_title: t("stats.headers.pageTitle"))
       |> assign(period: "30d")
       |> assign(source: nil)
       |> load_data()
@@ -73,7 +75,7 @@ defmodule PureAdminIconsWeb.AdminStatsLive do
     ~H"""
     <Layouts.site_nav />
     <div class="max-w-6xl mx-auto px-4 py-8">
-      <h1 class="text-3xl font-bold mb-6">Stats</h1>
+      <h1 class="text-3xl font-bold mb-6">{t("stats.headers.pageTitle")}</h1>
 
       <%!-- Overview cards --%>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
@@ -84,10 +86,10 @@ defmodule PureAdminIconsWeb.AdminStatsLive do
               <table class="w-full text-sm">
                 <thead>
                   <tr class="text-base-content/60">
-                    <th class="text-left pb-2">Period</th>
-                    <th class="text-right pb-2">Copies</th>
-                    <th class="text-right pb-2">Downloads</th>
-                    <th class="text-right pb-2">Searches</th>
+                    <th class="text-left pb-2">{t("stats.tableHeaders.period")}</th>
+                    <th class="text-right pb-2">{t("stats.tableHeaders.copies")}</th>
+                    <th class="text-right pb-2">{t("stats.tableHeaders.downloads")}</th>
+                    <th class="text-right pb-2">{t("stats.tableHeaders.searches")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -110,7 +112,7 @@ defmodule PureAdminIconsWeb.AdminStatsLive do
       <%!-- Popular icons --%>
       <div class="rounded-box bg-base-200 border border-base-300 p-6">
         <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
-          <h2 class="text-lg font-bold">Popular Icons (by copies)</h2>
+          <h2 class="text-lg font-bold">{t("stats.headers.popularIcons")}</h2>
           <div class="flex items-center gap-2">
             <div class="view-toggle">
               <%= for {label, val} <- [{"1d", "1d"}, {"7d", "7d"}, {"30d", "30d"}, {"All", "all"}] do %>
@@ -122,7 +124,7 @@ defmodule PureAdminIconsWeb.AdminStatsLive do
               <% end %>
             </div>
             <div class="view-toggle">
-              <%= for {label, val} <- [{"All", ""}, {"Web", "web"}, {"API", "api"}] do %>
+              <%= for {label, val} <- [{t("stats.filters.allSources"), ""}, {t("stats.filters.web"), "web"}, {t("stats.filters.api"), "api"}] do %>
                 <button
                   phx-click="set_source"
                   phx-value-source={val}
@@ -134,17 +136,17 @@ defmodule PureAdminIconsWeb.AdminStatsLive do
         </div>
 
         <%= if @popular_icons == [] do %>
-          <p class="text-base-content/50 text-center py-8">No data yet for this period.</p>
+          <p class="text-base-content/50 text-center py-8">{t("stats.empty.noData")}</p>
         <% else %>
           <div class="overflow-x-auto">
             <table class="w-full text-sm">
               <thead>
                 <tr class="text-base-content/60">
                   <th class="text-left pb-2">#</th>
-                  <th class="text-left pb-2">Icon</th>
-                  <th class="text-left pb-2">Set</th>
-                  <th class="text-left pb-2">Style</th>
-                  <th class="text-right pb-2">Count</th>
+                  <th class="text-left pb-2">{t("common.tableHeaders.icon")}</th>
+                  <th class="text-left pb-2">{t("common.tableHeaders.set")}</th>
+                  <th class="text-left pb-2">{t("common.tableHeaders.style")}</th>
+                  <th class="text-right pb-2">{t("stats.tableHeaders.count")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -164,16 +166,16 @@ defmodule PureAdminIconsWeb.AdminStatsLive do
       </div>
 
       <footer class="text-center text-base-content/50 text-xs py-8">
-        Auto-refreshes every 30s &middot; Cube refreshes every 3 min
+        {t("stats.messages.refreshNote")}
       </footer>
     </div>
     """
   end
 
-  defp period_label("1d"), do: "Today"
-  defp period_label("7d"), do: "7 days"
-  defp period_label("30d"), do: "30 days"
-  defp period_label("all"), do: "All time"
+  defp period_label("1d"), do: t("stats.periods.today")
+  defp period_label("7d"), do: t("stats.periods.7d")
+  defp period_label("30d"), do: t("stats.periods.30d")
+  defp period_label("all"), do: t("stats.periods.allTime")
   defp period_label(p), do: p
 
   defp format_count(nil), do: "0"

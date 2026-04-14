@@ -5,6 +5,8 @@ defmodule PureAdminIconsWeb.Layouts do
   """
   use PureAdminIconsWeb, :html
 
+  import PureAdminIcons.Translations, only: [t: 1]
+
   embed_templates "layouts/*"
 
   attr :class, :string, default: "text-lg"
@@ -31,26 +33,26 @@ defmodule PureAdminIconsWeb.Layouts do
             href="/docs"
             class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-base-content/80 hover:text-primary hover:bg-base-200 transition-colors"
           >
-            <.icon name="hero-book-open" class="size-4" /> Docs
+            <.icon name="hero-book-open" class="size-4" /> {t("nav.buttons.docs")}
           </a>
           <a
             href="/docs/api"
             class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-base-content/80 hover:text-primary hover:bg-base-200 transition-colors"
           >
-            <.icon name="hero-code-bracket" class="size-4" /> API
+            <.icon name="hero-code-bracket" class="size-4" /> {t("nav.buttons.api")}
           </a>
           <a
             href="/stats"
             class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-base-content/80 hover:text-primary hover:bg-base-200 transition-colors"
           >
-            <.icon name="hero-chart-bar" class="size-4" /> Stats
+            <.icon name="hero-chart-bar" class="size-4" /> {t("nav.buttons.stats")}
           </a>
           <a
             href="https://pureadmin.io"
             target="_blank"
             class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-base-content/80 hover:text-primary hover:bg-base-200 transition-colors"
           >
-            <.icon name="hero-swatch" class="size-4" /> Themes
+            <.icon name="hero-swatch" class="size-4" /> {t("nav.buttons.themes")}
           </a>
           <a
             href="https://keenmate.com"
@@ -58,7 +60,7 @@ defmodule PureAdminIconsWeb.Layouts do
             rel="noreferrer"
             class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-base-content/80 hover:text-primary hover:bg-base-200 transition-colors"
           >
-            <.icon name="hero-building-office-2" class="size-4" /> Keenmate
+            <.icon name="hero-building-office-2" class="size-4" /> {t("nav.buttons.keenmate")}
           </a>
         </div>
       </div>
@@ -81,26 +83,26 @@ defmodule PureAdminIconsWeb.Layouts do
           href="/docs"
           class="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-base-content/80 hover:text-primary hover:bg-base-300 transition-colors"
         >
-          <.icon name="hero-book-open" class="size-4" /> Docs
+          <.icon name="hero-book-open" class="size-4" /> {t("nav.buttons.docs")}
         </a>
         <a
           href="/docs/api"
           class="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-base-content/80 hover:text-primary hover:bg-base-300 transition-colors"
         >
-          <.icon name="hero-code-bracket" class="size-4" /> API
+          <.icon name="hero-code-bracket" class="size-4" /> {t("nav.buttons.api")}
         </a>
         <a
           href="/stats"
           class="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-base-content/80 hover:text-primary hover:bg-base-300 transition-colors"
         >
-          <.icon name="hero-chart-bar" class="size-4" /> Stats
+          <.icon name="hero-chart-bar" class="size-4" /> {t("nav.buttons.stats")}
         </a>
         <a
           href="https://pureadmin.io"
           target="_blank"
           class="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-base-content/80 hover:text-primary hover:bg-base-300 transition-colors"
         >
-          <.icon name="hero-swatch" class="size-4" /> Themes
+          <.icon name="hero-swatch" class="size-4" /> {t("nav.buttons.themes")}
         </a>
         <a
           href="https://keenmate.com"
@@ -108,7 +110,7 @@ defmodule PureAdminIconsWeb.Layouts do
           rel="noreferrer"
           class="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-base-content/80 hover:text-primary hover:bg-base-300 transition-colors"
         >
-          <.icon name="hero-building-office-2" class="size-4" /> Keenmate
+          <.icon name="hero-building-office-2" class="size-4" /> {t("nav.buttons.keenmate")}
         </a>
       </div>
     </nav>

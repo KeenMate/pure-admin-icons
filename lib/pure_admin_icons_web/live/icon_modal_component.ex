@@ -13,6 +13,7 @@ defmodule PureAdminIconsWeb.IconModalComponent do
   alias PureAdminIcons.IconSets.Formatter
 
   import PureAdminIconsWeb.Components.PlatformIcons
+  import PureAdminIcons.Translations, only: [t: 1, t: 2]
 
   # Load preview presets at compile time (same as parent LiveView)
   @preview_presets :pure_admin_icons
@@ -63,15 +64,15 @@ defmodule PureAdminIconsWeb.IconModalComponent do
                 <div class="flex justify-center gap-3 mt-3">
                   <div class="px-3 py-1.5 bg-base-200 rounded-lg text-center">
                     <div class="text-lg font-semibold text-primary"><%= format_number(copies) %></div>
-                    <div class="text-xs text-primary">copies</div>
+                    <div class="text-xs text-primary">{t("iconDetail.labels.copies")}</div>
                   </div>
                   <div class="px-3 py-1.5 bg-base-200 rounded-lg text-center">
                     <div class="text-lg font-semibold text-success"><%= format_number(downloads) %></div>
-                    <div class="text-xs text-success">downloads</div>
+                    <div class="text-xs text-success">{t("iconDetail.labels.downloads")}</div>
                   </div>
                   <div class="px-3 py-1.5 bg-base-200 rounded-lg text-center">
                     <div class="text-lg font-semibold text-base-content"><%= format_number(total) %></div>
-                    <div class="text-xs text-base-content/70">total</div>
+                    <div class="text-xs text-base-content/70">{t("iconDetail.labels.total")}</div>
                   </div>
                 </div>
               <% end %>
@@ -85,12 +86,12 @@ defmodule PureAdminIconsWeb.IconModalComponent do
                  data-icon-set={@icon.icon_set_code}>
               <%= if @icon.style_color_method == "multicolor" do %>
                 <div class="flex items-center gap-3">
-                  <label class="text-sm font-medium text-base-content">Preview:</label>
-                  <span class="text-sm text-base-content/50 italic">Multicolor icon — not recolorable</span>
+                  <label class="text-sm font-medium text-base-content">{t("iconDetail.labels.preview")}</label>
+                  <span class="text-sm text-base-content/50 italic">{t("iconDetail.messages.multicolorNotRecolorable")}</span>
                 </div>
               <% else %>
                 <div class="flex flex-wrap items-center gap-2 mb-2">
-                  <label class="text-sm font-medium text-base-content">Colors:</label>
+                  <label class="text-sm font-medium text-base-content">{t("iconDetail.labels.colors")}</label>
                   <div class="relative preview-preset-combo">
                     <button type="button" class="preview-preset-trigger inline-flex items-center gap-2 px-3 py-1.5 rounded text-sm font-medium cursor-pointer border border-base-300 hover:bg-base-200">
                       <span class="preview-preset-swatch w-4 h-4 rounded-sm border border-base-content/20" style="background: linear-gradient(135deg, #ffffff 50%, #212121 50%);"></span>
@@ -110,28 +111,28 @@ defmodule PureAdminIconsWeb.IconModalComponent do
                       <div class="custom-presets-container"></div>
                     </div>
                   </div>
-                  <button type="button" class="custom-preset-new px-3 py-1.5 rounded text-sm font-medium cursor-pointer border border-base-300 hover:bg-base-200 inline-flex items-center gap-1.5" title="Create a new custom color preset">
+                  <button type="button" class="custom-preset-new px-3 py-1.5 rounded text-sm font-medium cursor-pointer border border-base-300 hover:bg-base-200 inline-flex items-center gap-1.5" title={t("iconDetail.tooltips.newPreset")}>
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
-                    New
+                    {t("iconDetail.buttons.new")}
                   </button>
-                  <button type="button" class="preview-copy-css px-3 py-1.5 rounded text-sm font-medium cursor-pointer border border-base-300 hover:bg-base-200 inline-flex items-center gap-1.5" title="Copy CSS to use these colors in your project">
+                  <button type="button" class="preview-copy-css px-3 py-1.5 rounded text-sm font-medium cursor-pointer border border-base-300 hover:bg-base-200 inline-flex items-center gap-1.5" title={t("iconDetail.tooltips.copyCss")}>
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-                    Copy CSS
+                    {t("iconDetail.buttons.copyCss")}
                   </button>
-                  <button type="button" class="preview-import-css px-3 py-1.5 rounded text-sm font-medium cursor-pointer border border-base-300 hover:bg-base-200 inline-flex items-center gap-1.5" title="Import a preset from CSS pasted from another project">
+                  <button type="button" class="preview-import-css px-3 py-1.5 rounded text-sm font-medium cursor-pointer border border-base-300 hover:bg-base-200 inline-flex items-center gap-1.5" title={t("iconDetail.tooltips.importCss")}>
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
-                    Import CSS
+                    {t("iconDetail.buttons.importCss")}
                   </button>
                 </div>
                 <div class="preview-import-area space-y-2 p-3 rounded-lg bg-base-200/50 border border-base-300 mb-2" style="display: none;">
-                  <label class="text-sm font-medium text-base-content">Paste CSS from another project:</label>
+                  <label class="text-sm font-medium text-base-content">{t("iconDetail.labels.pasteCss")}</label>
                   <textarea class="preview-import-textarea w-full h-32 px-3 py-2 text-xs font-mono border border-base-300 rounded bg-base-100 text-base-content" placeholder={"/* Preset — My Theme [color: #ffffff, background: #000000] */\n.my-class {\n  background-color: #000000;\n  color: #ffffff;\n}"}></textarea>
                   <div class="flex items-center gap-2">
                     <button type="button" class="preview-import-submit px-3 py-1 rounded text-xs font-medium cursor-pointer bg-primary text-primary-content hover:opacity-80">
-                      Import as preset
+                      {t("iconDetail.buttons.importAsPreset")}
                     </button>
                     <button type="button" class="preview-import-cancel px-3 py-1 rounded text-xs font-medium cursor-pointer border border-base-300 hover:bg-base-200">
-                      Cancel
+                      {t("common.buttons.cancel")}
                     </button>
                     <span class="preview-import-status text-xs text-base-content/60"></span>
                   </div>
@@ -139,7 +140,7 @@ defmodule PureAdminIconsWeb.IconModalComponent do
                 <div class="preview-custom-area space-y-2 p-3 rounded-lg bg-base-200/50 border border-base-300" style="display: none;">
                   <div class="flex flex-wrap items-center gap-3">
                     <div class="flex items-center gap-2">
-                      <span class="text-xs text-base-content/50">Icon</span>
+                      <span class="text-xs text-base-content/50">{t("iconDetail.labels.iconColor")}</span>
                       <input type="color" value="#212121"
                              class="color-input w-8 h-8 rounded cursor-pointer border border-base-300" />
                       <input type="text" value="#212121"
@@ -147,7 +148,7 @@ defmodule PureAdminIconsWeb.IconModalComponent do
                              maxlength="7" placeholder="#000000" />
                     </div>
                     <div class="flex items-center gap-2">
-                      <span class="text-xs text-base-content/50">Bg</span>
+                      <span class="text-xs text-base-content/50">{t("iconDetail.labels.bgColor")}</span>
                       <input type="color" value="#ffffff"
                              class="bg-color-input w-8 h-8 rounded cursor-pointer border border-base-300" />
                       <input type="text" value="#ffffff"
@@ -155,7 +156,7 @@ defmodule PureAdminIconsWeb.IconModalComponent do
                              maxlength="7" placeholder="#ffffff" />
                       <button type="button" class="bg-transparent-toggle w-8 h-8 rounded cursor-pointer border border-base-300 hover:border-primary text-xs leading-none"
                               style="background-image: repeating-conic-gradient(#d1d5db 0% 25%, #fff 0% 50%); background-size: 6px 6px;"
-                              title="Transparent (checker)"></button>
+                              title={t("iconDetail.tooltips.transparentBg")}></button>
                     </div>
                     <span class={["text-xs px-2 py-0.5 rounded", color_method_class(@icon.style_color_method)]}>
                       <%= color_method_label(@icon.style_color_method) %>
@@ -164,12 +165,12 @@ defmodule PureAdminIconsWeb.IconModalComponent do
                   <div class="flex items-center gap-2">
                     <input type="text"
                            class="custom-preset-name w-40 px-2 py-1 text-xs border border-base-300 rounded"
-                           placeholder="Name your preset..." maxlength="20" />
+                           placeholder={t("iconDetail.placeholders.presetName")} maxlength="20" />
                     <button type="button" class="custom-preset-save px-3 py-1 rounded text-xs font-medium cursor-pointer bg-primary text-primary-content hover:opacity-80">
-                      Save as preset
+                      {t("iconDetail.buttons.saveAsPreset")}
                     </button>
                     <button type="button" class="custom-preset-delete px-3 py-1 rounded text-xs font-medium cursor-pointer border border-error text-error hover:bg-error/10">
-                      Delete
+                      {t("common.buttons.delete")}
                     </button>
                   </div>
                 </div>
@@ -182,15 +183,15 @@ defmodule PureAdminIconsWeb.IconModalComponent do
               <div class="flex items-center justify-between mb-3">
                 <h3 class="text-sm font-medium text-base-content">
                   <%= if Map.get(@icon, :has_single_source, false) do %>
-                    Preview <span class="text-base-content/50">— Scalable, renders at any size</span>
+                    {t("iconDetail.headers.preview")} <span class="text-base-content/50">{t("iconDetail.messages.previewScalableSuffix")}</span>
                   <% else %>
-                    Available Sizes
+                    {t("iconDetail.headers.availableSizes")}
                   <% end %>
                 </h3>
                 <label class="flex items-center gap-2 text-xs text-base-content/70">
-                  <span>Filename:</span>
+                  <span>{t("iconDetail.labels.filename")}</span>
                   <select class="download-naming-select select select-xs select-bordered">
-                    <option value="original">Original</option>
+                    <option value="original">{t("iconDetail.labels.filenameOriginal")}</option>
                     <option value="kebab">kebab-case</option>
                     <option value="snake">snake_case</option>
                     <option value="pascal">PascalCase</option>
@@ -215,7 +216,7 @@ defmodule PureAdminIconsWeb.IconModalComponent do
                        phx-click="track_download"
                        phx-value-icon-id={@icon.icon_id}
                        phx-value-size="0"
-                       title="Download SVG"
+                       title={t("iconDetail.tooltips.downloadSvg")}
                        class="download-link mt-1 p-1.5 text-primary hover:text-primary hover:bg-base-200 rounded-md transition-colors">
                       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -243,7 +244,7 @@ defmodule PureAdminIconsWeb.IconModalComponent do
                          phx-click="track_download"
                          phx-value-icon-id={@icon.icon_id}
                          phx-value-size={size}
-                         title="Download SVG"
+                         title={t("iconDetail.tooltips.downloadSvg")}
                          class="download-link mt-1 p-1.5 text-primary hover:text-primary hover:bg-base-200 rounded-md transition-colors">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -259,7 +260,7 @@ defmodule PureAdminIconsWeb.IconModalComponent do
             <div class="mb-6" id={"download-designer-#{@icon.icon_id}"} phx-hook="DownloadDesigner"
                  data-name={@icon.name}
                  data-svg-url={if Map.get(@icon, :has_single_source, false), do: Icon.svg_url(@icon, 0), else: Icon.svg_url(@icon, List.first(@icon.sizes))}>
-              <h3 class="text-sm font-medium text-base-content mb-3">Download Designer</h3>
+              <h3 class="text-sm font-medium text-base-content mb-3">{t("iconDetail.headers.downloadDesigner")}</h3>
               <div class="bg-base-100 rounded-lg p-4 space-y-4">
                 <div class="flex gap-4">
                   <!-- Live preview -->
@@ -269,19 +270,19 @@ defmodule PureAdminIconsWeb.IconModalComponent do
                   <!-- Controls -->
                   <div class="flex-1 space-y-3 text-xs">
                     <!-- Include colors -->
-                    <label class="flex items-center gap-2 cursor-pointer text-base-content/70" title="Apply current preview colors (icon color + background)">
+                    <label class="flex items-center gap-2 cursor-pointer text-base-content/70" title={t("iconDetail.tooltips.includeColors")}>
                       <input type="checkbox" class="designer-include-colors w-3.5 h-3.5 rounded border-base-300" />
-                      <span>Include colors</span>
+                      <span>{t("iconDetail.labels.includeColors")}</span>
                     </label>
                     <!-- Padding -->
                     <div class="flex items-center gap-2">
-                      <span class="text-base-content/70 w-16">Padding</span>
+                      <span class="text-base-content/70 w-16">{t("iconDetail.labels.padding")}</span>
                       <input type="range" min="0" max="40" value="10" class="designer-padding range range-xs range-primary flex-1" />
                       <span class="designer-padding-label text-base-content/50 w-8">10%</span>
                     </div>
                     <!-- Corner radius -->
                     <div class="flex items-center gap-2">
-                      <span class="text-base-content/70 w-16">Corners</span>
+                      <span class="text-base-content/70 w-16">{t("iconDetail.labels.corners")}</span>
                       <input type="range" min="0" max="50" value="20" class="designer-radius range range-xs range-primary flex-1" />
                       <span class="designer-radius-label text-base-content/50 w-8">20%</span>
                     </div>
@@ -289,7 +290,7 @@ defmodule PureAdminIconsWeb.IconModalComponent do
                 </div>
                 <!-- Sizes -->
                 <div class="flex flex-wrap items-center gap-2">
-                  <span class="text-xs text-base-content/70">Sizes:</span>
+                  <span class="text-xs text-base-content/70">{t("iconDetail.labels.sizes")}</span>
                   <%= for size <- [32, 64, 128, 256, 512, 1024] do %>
                     <label class="inline-flex items-center gap-1 cursor-pointer text-xs">
                       <input type="checkbox" checked class="designer-size w-3.5 h-3.5 rounded border-base-300" value={size} />
@@ -297,7 +298,7 @@ defmodule PureAdminIconsWeb.IconModalComponent do
                     </label>
                   <% end %>
                   <div class="flex items-center gap-1">
-                    <input type="number" min="1" max="4096" placeholder="Custom size" class="designer-custom-size w-28 px-2 py-0.5 text-xs border border-base-300 rounded" />
+                    <input type="number" min="1" max="4096" placeholder={t("iconDetail.placeholders.customSize")} class="designer-custom-size w-28 px-2 py-0.5 text-xs border border-base-300 rounded" />
                     <span class="text-xs text-base-content/50">px</span>
                   </div>
                 </div>
@@ -305,15 +306,15 @@ defmodule PureAdminIconsWeb.IconModalComponent do
                 <div class="flex flex-wrap items-center gap-2">
                   <button type="button" class="designer-download-png px-3 py-1.5 rounded text-xs font-medium cursor-pointer bg-primary text-primary-content hover:opacity-80 inline-flex items-center gap-1.5">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                    Download PNG ZIP
+                    {t("iconDetail.buttons.downloadPngZip")}
                   </button>
                   <button type="button" class="designer-download-svg px-3 py-1.5 rounded text-xs font-medium cursor-pointer border border-base-300 hover:bg-base-200 inline-flex items-center gap-1.5">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                    Download SVG
+                    {t("iconDetail.buttons.downloadSvg")}
                   </button>
-                  <label class="px-3 py-1.5 rounded text-xs font-medium cursor-pointer border border-base-300 hover:bg-base-200 inline-flex items-center gap-1.5" title="Import settings from a manifest.json (from a previous Download Designer ZIP)">
+                  <label class="px-3 py-1.5 rounded text-xs font-medium cursor-pointer border border-base-300 hover:bg-base-200 inline-flex items-center gap-1.5" title={t("iconDetail.tooltips.importSettings")}>
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
-                    Import Settings
+                    {t("iconDetail.buttons.importSettings")}
                     <input type="file" accept=".json" class="designer-import-file hidden" />
                   </label>
                 </div>
@@ -323,7 +324,7 @@ defmodule PureAdminIconsWeb.IconModalComponent do
             <!-- Platform Identifiers -->
             <div class="space-y-4">
               <div class="flex items-center justify-between">
-                <h3 class="text-sm font-medium text-base-content">Platform Identifiers</h3>
+                <h3 class="text-sm font-medium text-base-content">{t("iconDetail.headers.platformIdentifiers")}</h3>
               </div>
 
               <!-- Platform Toggle Checkboxes -->
@@ -371,19 +372,19 @@ defmodule PureAdminIconsWeb.IconModalComponent do
                 <label class="flex items-center gap-2 cursor-pointer">
                   <input type="checkbox" checked={@platform_prefs.filename} phx-click="toggle_platform" phx-value-platform="filename" class="w-4 h-4 rounded border-base-300 focus:ring-primary" />
                   <.platform_icon name="filename" class="w-4 h-4 text-base-content/70" />
-                  <span class="text-sm text-base-content/70">Filename</span>
+                  <span class="text-sm text-base-content/70">{t("iconDetail.platforms.filename")}</span>
                 </label>
                 <% {cssclass_pkg, _} = cssclass_package(@icon) %>
                 <%= if cssclass_pkg do %>
                   <label class="flex items-center gap-2 cursor-pointer">
                     <input type="checkbox" checked={@platform_prefs.cssclass} phx-click="toggle_platform" phx-value-platform="cssclass" class="w-4 h-4 rounded border-base-300 focus:ring-primary" />
                     <.platform_icon name="cssclass" class="w-4 h-4 text-base-content/70" />
-                    <span class="text-sm text-base-content/70">CSS Class</span>
+                    <span class="text-sm text-base-content/70">{t("iconDetail.platforms.cssClass")}</span>
                   </label>
                   <label class="flex items-center gap-2 cursor-pointer">
                     <input type="checkbox" checked={@platform_prefs.htmltag} phx-click="toggle_platform" phx-value-platform="htmltag" class="w-4 h-4 rounded border-base-300 focus:ring-primary" />
                     <.platform_icon name="htmltag" class="w-4 h-4 text-base-content/70" />
-                    <span class="text-sm text-base-content/70">HTML Tag</span>
+                    <span class="text-sm text-base-content/70">{t("iconDetail.platforms.htmlTag")}</span>
                   </label>
                 <% end %>
               </div>
@@ -442,7 +443,7 @@ defmodule PureAdminIconsWeb.IconModalComponent do
                     <%= for size <- Formatter.svelte_identifier_sizes(@icon) do %>
                       <div class="flex items-center justify-between bg-base-200 rounded px-3 py-2 border border-base-300">
                         <code id={"svelte-#{@icon.icon_id}-#{size}"} class="text-sm text-orange-600 whitespace-pre-line" data-size={size}><%= Formatter.svelte_identifier(@icon, size) %></code>
-                        <button type="button" phx-click={Phoenix.LiveView.JS.dispatch("phx:copy", to: "#svelte-#{@icon.icon_id}-#{size}")} class="text-xs text-base-content/70 hover:text-base-content px-2 py-1 rounded hover:bg-base-200 cursor-pointer">Copy</button>
+                        <button type="button" phx-click={Phoenix.LiveView.JS.dispatch("phx:copy", to: "#svelte-#{@icon.icon_id}-#{size}")} class="text-xs text-base-content/70 hover:text-base-content px-2 py-1 rounded hover:bg-base-200 cursor-pointer">{t("common.buttons.copy")}</button>
                       </div>
                     <% end %>
                   </div>
@@ -474,11 +475,11 @@ defmodule PureAdminIconsWeb.IconModalComponent do
                   <div class="flex items-center justify-between mb-2">
                     <span class="text-sm font-medium text-base-content/70 flex items-center gap-1.5">
                       <.platform_icon name="filename" class="w-4 h-4" />
-                      Filename (local copy)
+                      {t("iconDetail.headers.filenameLocalCopy")}
                     </span>
                   </div>
                   <div class="mb-1 text-xs text-base-content/70">
-                    <span class="font-medium">Placeholders:</span>
+                    <span class="font-medium">{t("iconDetail.labels.placeholders")}</span>
                     <code class="bg-base-300 px-1 rounded">{"{filename}"}</code>
                     <code class="bg-base-300 px-1 rounded">{"{name}"}</code>
                     <code class="bg-base-300 px-1 rounded">{"{name_snake}"}</code>
@@ -520,7 +521,7 @@ defmodule PureAdminIconsWeb.IconModalComponent do
         <%= for {size, id} <- @identifiers do %>
           <div class="flex items-center justify-between bg-base-200 rounded px-3 py-2 border border-base-300">
             <code class={["text-sm", @color]}><%= id %></code>
-            <button type="button" phx-click={Phoenix.LiveView.JS.dispatch("phx:copy", to: "##{@platform}-#{@icon.icon_id}-#{size}")} class="text-xs text-base-content/70 hover:text-base-content px-2 py-1 rounded hover:bg-base-200 cursor-pointer">Copy</button>
+            <button type="button" phx-click={Phoenix.LiveView.JS.dispatch("phx:copy", to: "##{@platform}-#{@icon.icon_id}-#{size}")} class="text-xs text-base-content/70 hover:text-base-content px-2 py-1 rounded hover:bg-base-200 cursor-pointer">{t("common.buttons.copy")}</button>
             <span id={"#{@platform}-#{@icon.icon_id}-#{size}"} class="hidden"><%= id %></span>
           </div>
         <% end %>
@@ -542,7 +543,7 @@ defmodule PureAdminIconsWeb.IconModalComponent do
         <%= for size <- @sizes do %>
           <div class="flex items-center justify-between bg-base-200 rounded px-3 py-2 border border-base-300">
             <code id={"#{@platform}-#{@icon.icon_id}-#{size}"} class={["text-sm whitespace-pre-line", @color]}><%= @identifier_fn.(size) %></code>
-            <button type="button" phx-click={Phoenix.LiveView.JS.dispatch("phx:copy", to: "##{@platform}-#{@icon.icon_id}-#{size}")} class="text-xs text-base-content/70 hover:text-base-content px-2 py-1 rounded hover:bg-base-200 cursor-pointer">Copy</button>
+            <button type="button" phx-click={Phoenix.LiveView.JS.dispatch("phx:copy", to: "##{@platform}-#{@icon.icon_id}-#{size}")} class="text-xs text-base-content/70 hover:text-base-content px-2 py-1 rounded hover:bg-base-200 cursor-pointer">{t("common.buttons.copy")}</button>
           </div>
         <% end %>
       </div>
