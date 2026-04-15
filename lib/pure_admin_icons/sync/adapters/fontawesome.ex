@@ -131,11 +131,14 @@ defmodule PureAdminIcons.Sync.Adapters.Fontawesome do
   @impl true
   def parse(extracted_path) do
     svgs_dir = Path.join([extracted_path, "package", "svgs"])
+    tags_by_name = fetch_fontawesome_tags()
 
     if File.dir?(svgs_dir) do
-      Logger.info("[FontAwesome] Parsing icons from #{svgs_dir}...")
+      Logger.info(
+        "[FontAwesome] Parsing icons from #{svgs_dir} (#{map_size(tags_by_name)} with tags)..."
+      )
 
-      icons =
+      {icons, synonyms} =
         @style_dirs
         |> Enum.flat_map(fn {style, native_dir} ->
           style_dir = Path.join(svgs_dir, native_dir)
@@ -148,7 +151,7 @@ defmodule PureAdminIcons.Sync.Adapters.Fontawesome do
               name = String.replace_suffix(filename, ".svg", "")
               display_name = Naming.title_case(name)
 
-              %{
+              icon = %{
                 icon_set: icon_set_id(),
                 name: display_name,
                 name_lower: name,
@@ -159,24 +162,77 @@ defmodule PureAdminIcons.Sync.Adapters.Fontawesome do
                 android_identifiers: %{"24" => "ic_fa_#{String.replace(name, "-", "_")}_#{native_dir}"},
                 svg_hash: hash_file(Path.join(style_dir, filename))
               }
+
+              {icon, {display_name, Map.get(tags_by_name, name, [])}}
             end)
             # Deduplicate aliases: FA has e.g. "thumbtack" and "thumb-tack" which
             # normalize to the same name in the DB. Keep the shorter (canonical) name.
-            |> Enum.sort_by(fn icon -> String.length(icon.name_lower) end)
-            |> Enum.uniq_by(fn icon -> String.replace(icon.name_lower, "-", "") end)
+            |> Enum.sort_by(fn {icon, _} -> String.length(icon.name_lower) end)
+            |> Enum.uniq_by(fn {icon, _} -> String.replace(icon.name_lower, "-", "") end)
           else
             Logger.warning("[FontAwesome] Style directory not found: #{style_dir}")
             []
           end
         end)
+        |> Enum.reduce({[], %{}}, fn {icon, {display_name, tags}}, {ia, sa} ->
+          sa = if tags != [], do: Map.put(sa, display_name, tags), else: sa
+          {[icon | ia], sa}
+        end)
 
-      Logger.info("[FontAwesome] Parsed #{length(icons)} icon variants")
-      {:ok, %{icons: icons, synonyms: %{}, discrepancies: []}}
+      icons = Enum.reverse(icons)
+
+      Logger.info(
+        "[FontAwesome] Parsed #{length(icons)} icon variants, #{map_size(synonyms)} with synonyms"
+      )
+
+      {:ok, %{icons: icons, synonyms: synonyms, discrepancies: []}}
     else
       Logger.warning("[FontAwesome] SVGs directory not found: #{svgs_dir}")
       {:error, "SVGs directory not found"}
     end
   end
+
+  # FA Free ships SVGs in the npm package but not the metadata. Fetch
+  # `metadata/icons.json` from the main repo — one flat object keyed by
+  # icon name, with `search.terms[]` and `aliases.names[]` as synonym sources.
+  defp fetch_fontawesome_tags do
+    url = "https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.x/metadata/icons.json"
+    Logger.info("[FontAwesome] Fetching icon tags from the main repo metadata...")
+
+    with {:ok, %{status: 200, body: body}} <- Req.get(url, receive_timeout: 60_000),
+         {:ok, %{} = decoded} <- decode_json(body) do
+      by_name =
+        Enum.reduce(decoded, %{}, fn
+          {name, entry}, acc when is_binary(name) and is_map(entry) ->
+            terms = get_in(entry, ["search", "terms"]) || []
+            aliases = get_in(entry, ["aliases", "names"]) || []
+
+            combined =
+              (terms ++ aliases)
+              |> Enum.map(&to_string/1)
+              |> Enum.reject(&(&1 == ""))
+              |> Enum.uniq()
+
+            if combined == [], do: acc, else: Map.put(acc, name, combined)
+
+          _, acc ->
+            acc
+        end)
+
+      Logger.info("[FontAwesome] Got tags for #{map_size(by_name)} icons")
+      by_name
+    else
+      other ->
+        Logger.warning("[FontAwesome] Failed to fetch tag metadata: #{inspect(other)}")
+        %{}
+    end
+  end
+
+  # Req returns raw string for text/plain, pre-decoded map for application/json.
+  # GitHub serves raw.githubusercontent.com as text/plain, so we decode here.
+  defp decode_json(body) when is_binary(body), do: Jason.decode(body)
+  defp decode_json(%{} = body), do: {:ok, body}
+  defp decode_json(_), do: :error
 
   @impl true
   def move_svgs(extracted_path, output_dir) do

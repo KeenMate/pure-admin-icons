@@ -206,7 +206,7 @@ defmodule PureAdminIcons.Sync.Worker do
     sql = """
     COPY stage.icon(#{Enum.join(columns, ", ")})
     FROM STDIN
-    WITH (FORMAT text, NULL 'null', DELIMITER '#{@copy_delimiter}')
+    WITH (FORMAT text, DELIMITER '#{@copy_delimiter}')
     """
 
     Repo.transaction(fn ->
@@ -283,6 +283,12 @@ defmodule PureAdminIcons.Sync.Worker do
               icon_original_name: icon_name,
               icon_style_code: style,
               phrase: synonym,
+              # Tag-style synonyms from upstream metadata — not the icon's
+              # own name. Without these explicit values, the DB columns
+              # defaulted to relation_type='name', is_primary=false, which
+              # mislabels tags as the official icon name.
+              relation_type: "synonym",
+              is_primary: false,
               source_code: "metadata"
             }
           end)
@@ -300,12 +306,12 @@ defmodule PureAdminIcons.Sync.Worker do
 
   defp copy_phrases_to_stage(phrases, icon_set) do
     # Column names match stage.icon_phrase schema
-    columns = ~w(job_run_id icon_set_code icon_original_name icon_style_code phrase source_code)
+    columns = ~w(job_run_id icon_set_code icon_original_name icon_style_code phrase relation_type is_primary source_code)
 
     sql = """
     COPY stage.icon_phrase(#{Enum.join(columns, ", ")})
     FROM STDIN
-    WITH (FORMAT text, NULL 'null', DELIMITER '#{@copy_delimiter}')
+    WITH (FORMAT text, DELIMITER '#{@copy_delimiter}')
     """
 
     Repo.transaction(fn ->
@@ -326,6 +332,8 @@ defmodule PureAdminIcons.Sync.Worker do
       escape_copy_field(phrase.icon_original_name),
       escape_copy_field(phrase.icon_style_code),
       escape_copy_field(phrase.phrase),
+      escape_copy_field(phrase.relation_type),
+      if(phrase.is_primary, do: "t", else: "f"),
       escape_copy_field(phrase.source_code)
     ]
     |> Enum.join(@copy_delimiter)

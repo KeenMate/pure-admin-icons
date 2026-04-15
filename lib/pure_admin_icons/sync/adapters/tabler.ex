@@ -104,11 +104,14 @@ defmodule PureAdminIcons.Sync.Adapters.Tabler do
   @impl true
   def parse(extracted_path) do
     icons_base = Path.join([extracted_path, "tabler-icons-main", "icons"])
+    tags_by_name = read_tabler_tags(extracted_path)
 
     if File.dir?(icons_base) do
-      Logger.info("[Tabler] Parsing icons from #{icons_base}...")
+      Logger.info(
+        "[Tabler] Parsing icons from #{icons_base} (#{map_size(tags_by_name)} with tags)..."
+      )
 
-      icons =
+      {icons, synonyms} =
         @valid_styles
         |> Enum.flat_map(fn style ->
           style_dir = Path.join(icons_base, style)
@@ -121,7 +124,7 @@ defmodule PureAdminIcons.Sync.Adapters.Tabler do
               name = String.replace_suffix(filename, ".svg", "")
               display_name = Naming.title_case(name)
 
-              %{
+              icon = %{
                 icon_set: icon_set_id(),
                 name: display_name,
                 name_lower: name,
@@ -132,17 +135,52 @@ defmodule PureAdminIcons.Sync.Adapters.Tabler do
                 android_identifiers: %{"24" => "ic_tabler_#{String.replace(name, "-", "_")}"},
                 svg_hash: hash_file(Path.join(style_dir, filename))
               }
+
+              {icon, {display_name, Map.get(tags_by_name, name, [])}}
             end)
           else
             []
           end
         end)
+        |> Enum.reduce({[], %{}}, fn {icon, {display_name, tags}}, {ia, sa} ->
+          sa = if tags != [], do: Map.put(sa, display_name, tags), else: sa
+          {[icon | ia], sa}
+        end)
 
-      Logger.info("[Tabler] Parsed #{length(icons)} icons")
-      {:ok, %{icons: icons, synonyms: %{}, discrepancies: []}}
+      icons = Enum.reverse(icons)
+
+      Logger.info(
+        "[Tabler] Parsed #{length(icons)} icons, #{map_size(synonyms)} display names with synonyms"
+      )
+
+      {:ok, %{icons: icons, synonyms: synonyms, discrepancies: []}}
     else
       Logger.warning("[Tabler] Icons directory not found: #{icons_base}")
       {:error, "Icons directory not found"}
+    end
+  end
+
+  # tags.json at the repo root is a flat map: %{"icon-name" => ["tag1", "tag2"]}.
+  defp read_tabler_tags(extracted_path) do
+    path = Path.join([extracted_path, "tabler-icons-main", "tags.json"])
+
+    with {:ok, body} <- File.read(path),
+         {:ok, %{} = map} <- Jason.decode(body) do
+      map
+      |> Enum.reduce(%{}, fn {name, entry}, acc ->
+        tags = cond do
+          is_list(entry) -> entry
+          is_map(entry) -> entry["tags"] || []
+          true -> []
+        end
+
+        tags = tags |> Enum.map(&to_string/1) |> Enum.reject(&(&1 == ""))
+        if tags == [], do: acc, else: Map.put(acc, name, tags)
+      end)
+    else
+      _ ->
+        Logger.info("[Tabler] tags.json not present — skipping synonym extraction")
+        %{}
     end
   end
 
@@ -225,9 +263,11 @@ defmodule PureAdminIcons.Sync.Adapters.Tabler do
     end
   end
 
+  # Also pull `tags.json` at the repo root for synonym extraction.
   defp extract_with_7zip(exe, zip_path, temp_dir) do
     {output, exit_code} = System.cmd(exe, [
-      "x", zip_path, "-o#{temp_dir}", "tabler-icons-main/icons/*", "-y"
+      "x", zip_path, "-o#{temp_dir}",
+      "tabler-icons-main/icons/*", "tabler-icons-main/tags.json", "-y"
     ], stderr_to_stdout: true)
 
     if exit_code == 0, do: :ok, else: {:error, "7zip failed: #{output}"}
@@ -235,7 +275,9 @@ defmodule PureAdminIcons.Sync.Adapters.Tabler do
 
   defp extract_with_unzip(zip_path, temp_dir) do
     {output, exit_code} = System.cmd("unzip", [
-      "-q", "-o", zip_path, "tabler-icons-main/icons/*", "-d", temp_dir
+      "-q", "-o", zip_path,
+      "tabler-icons-main/icons/*", "tabler-icons-main/tags.json",
+      "-d", temp_dir
     ], stderr_to_stdout: true)
 
     if exit_code == 0, do: :ok, else: {:error, "unzip failed: #{output}"}

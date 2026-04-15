@@ -1,5 +1,37 @@
 # Changelog
 
+## 2026-04-15 — Upstream synonym extraction, stage.icon_phrase semantics
+
+### Synonyms / tags pulled from upstream metadata
+Six of the eight adapters now harvest the upstream keyword/tag lists and feed them to `stage.icon_phrase` as `relation_type='synonym'` rows. FluentUI was already doing this; Heroicons has no meaningful upstream source. Per set:
+
+- **Lucide** — reads `icons/<name>.json` (tags + categories). Files were already extracted by the current 7zip filter; just parsed.
+- **Phosphor** — widened the 7zip extract to include `core-main/src/icons/*.ts`, then regex-parses the `tags: [...]` array from each TS module.
+- **Material** — fetches `https://fonts.google.com/metadata/icons` at parse time. Strips the `)]}'` XSSI prefix, decodes JSON, uses `tags` + `categories`. Req delivers this as a text/plain string, so decoding is explicit.
+- **Tabler** — widened the 7zip extract to include `tabler-icons-main/tags.json`; handles both flat (`name → [tags]`) and nested (`name → {tags: […]}`) shapes.
+- **FontAwesome** — fetches `metadata/icons.json` from the main FA repo (the npm free package ships SVGs but not metadata). Combines `search.terms` + `aliases.names`. Delivered as text/plain, decoded explicitly.
+- **Remix** — defensive read of `tags.json` anywhere under the extracted root; graceful if missing.
+
+All adapters now return `synonyms: %{display_name => [terms]}` from `parse/1`. Graceful degradation on HTTP failures / missing files — log a warning, continue sync, skip synonym insert.
+
+### Correct `relation_type` / `is_primary` on stage rows
+`Sync.Worker.copy_phrases_to_stage/2` previously omitted `relation_type` and `is_primary` from the COPY column list, so the DB defaults kicked in (`relation_type='name'`, `is_primary=false`). That mislabeled upstream tags as the icon's official name. Fixed by adding both columns explicitly and emitting `relation_type='synonym'`, `is_primary=false` for every metadata-sourced row.
+
+One-shot backfill for existing data:
+```sql
+UPDATE public.icon_phrase
+SET relation_type = 'synonym'
+WHERE source_code = 'metadata' AND relation_type = 'name' AND is_primary = false;
+```
+Or just re-sync each set — `stage._process_icon_phrases` deletes stale non-primary metadata-source links before re-inserting.
+
+### COPY null-marker fix
+Both `stage.icon` and `stage.icon_phrase` COPY statements specified `NULL 'null'` as the null marker, meaning any icon name / synonym that was literally the four-character string `"null"` got interpreted as SQL NULL by Postgres — which violated NOT NULL constraints on `phrase`. Caught in prod when Lucide's sync crashed importing a tag spelled `"null"`. Switched to PostgreSQL's default null marker (`\N`). `escape_copy_field(nil)` already emitted the correct sequence; no other changes needed.
+
+### Makefile cache-management targets
+- `make clear-cache` — nukes `.cache/icons/*` so the next sync re-downloads + re-extracts with current filters
+- `make sync-fresh` — one-shot: clear + full sync. Use after any change to an adapter's extract filter (e.g. today's Phosphor `.ts` and Tabler `tags.json` additions)
+
 ## 2026-04-15 — Cache-bust asset URLs, wire up `get_stats_overview`
 
 ### Fingerprinted static asset URLs

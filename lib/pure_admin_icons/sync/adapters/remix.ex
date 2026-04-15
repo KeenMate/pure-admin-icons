@@ -102,21 +102,24 @@ defmodule PureAdminIcons.Sync.Adapters.Remix do
   @impl true
   def parse(extracted_path) do
     icons_base = find_icons_root(extracted_path)
+    tags_by_name = read_remix_tags(extracted_path)
 
     if icons_base && File.dir?(icons_base) do
-      Logger.info("[Remix] Parsing icons from #{icons_base}...")
+      Logger.info(
+        "[Remix] Parsing icons from #{icons_base} (#{map_size(tags_by_name)} with tags)..."
+      )
 
-      icons =
+      {icons, synonyms} =
         icons_base
         |> all_svgs()
         # Dedupe on the DB's normalized identity (lowercased, separators stripped).
         |> Enum.uniq_by(fn {style, _cat, filename, _path} -> {normalize_filename(filename, style), style} end)
-        |> Enum.flat_map(fn {style, category, filename, full_path} ->
+        |> Enum.map(fn {style, category, filename, full_path} ->
           base = String.replace_suffix(filename, ".svg", "")
           name = String.replace_suffix(base, "-#{@native_suffix[style]}", "")
           display_name = Naming.title_case(name)
 
-          [%{
+          icon = %{
             icon_set: icon_set_id(),
             name: display_name,
             name_lower: name,
@@ -128,14 +131,59 @@ defmodule PureAdminIcons.Sync.Adapters.Remix do
             android_identifiers: %{"0" => "ic_remix_#{String.replace(name, "-", "_")}"},
             categories: [category],
             svg_hash: hash_file(full_path)
-          }]
+          }
+
+          {icon, {display_name, Map.get(tags_by_name, name, [])}}
+        end)
+        |> Enum.reduce({[], %{}}, fn {icon, {display_name, tags}}, {ia, sa} ->
+          sa = if tags != [], do: Map.put(sa, display_name, tags), else: sa
+          {[icon | ia], sa}
         end)
 
-      Logger.info("[Remix] Parsed #{length(icons)} icons")
-      {:ok, %{icons: icons, synonyms: %{}, discrepancies: []}}
+      icons = Enum.reverse(icons)
+
+      Logger.info(
+        "[Remix] Parsed #{length(icons)} icons, #{map_size(synonyms)} with synonyms"
+      )
+
+      {:ok, %{icons: icons, synonyms: synonyms, discrepancies: []}}
     else
       Logger.warning("[Remix] Icons directory not found under #{extracted_path}")
       {:error, "Icons directory not found"}
+    end
+  end
+
+  # Remix-Design/RemixIcon repo root has tags.json — flat map of
+  # {"name" => ["tag1", "tag2", ...]}. Graceful if file doesn't exist.
+  defp read_remix_tags(extracted_path) do
+    candidates =
+      extracted_path
+      |> File.ls!()
+      |> Enum.map(&Path.join([extracted_path, &1, "tags.json"]))
+      |> Enum.filter(&File.regular?/1)
+
+    case candidates do
+      [path | _] ->
+        with {:ok, body} <- File.read(path),
+             {:ok, %{} = map} <- Jason.decode(body) do
+          Enum.reduce(map, %{}, fn {name, entry}, acc ->
+            tags =
+              cond do
+                is_list(entry) -> entry
+                is_map(entry) -> entry["tags"] || []
+                true -> []
+              end
+
+            tags = tags |> Enum.map(&to_string/1) |> Enum.reject(&(&1 == ""))
+            if tags == [], do: acc, else: Map.put(acc, name, tags)
+          end)
+        else
+          _ -> %{}
+        end
+
+      [] ->
+        Logger.info("[Remix] tags.json not present — skipping synonym extraction")
+        %{}
     end
   end
 

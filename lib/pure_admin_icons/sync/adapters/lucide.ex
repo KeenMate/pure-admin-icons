@@ -105,15 +105,15 @@ defmodule PureAdminIcons.Sync.Adapters.Lucide do
     if File.dir?(icons_dir) do
       Logger.info("[Lucide] Parsing icons from #{icons_dir}...")
 
-      icons =
+      {icons, synonyms} =
         icons_dir
         |> File.ls!()
         |> Enum.filter(&String.ends_with?(&1, ".svg"))
-        |> Enum.map(fn filename ->
+        |> Enum.map_reduce(%{}, fn filename, syn_acc ->
           name = String.replace_suffix(filename, ".svg", "")
           display_name = Naming.title_case(name)
 
-          %{
+          icon = %{
             icon_set: icon_set_id(),
             name: display_name,
             name_lower: name,
@@ -124,13 +124,40 @@ defmodule PureAdminIcons.Sync.Adapters.Lucide do
             android_identifiers: %{"24" => "ic_lucide_#{String.replace(name, "-", "_")}"},
             svg_hash: hash_file(Path.join(icons_dir, filename))
           }
+
+          # Lucide ships a <name>.json sibling file next to every SVG with
+          # `tags[]` + `categories[]` (see icon.schema.json). Merge both into
+          # the synonym list so search finds icons by theme as well as name.
+          terms = read_lucide_tags(icons_dir, name)
+          syn_acc = if terms != [], do: Map.put(syn_acc, display_name, terms), else: syn_acc
+
+          {icon, syn_acc}
         end)
 
-      Logger.info("[Lucide] Parsed #{length(icons)} icons")
-      {:ok, %{icons: icons, synonyms: %{}, discrepancies: []}}
+      Logger.info("[Lucide] Parsed #{length(icons)} icons, #{map_size(synonyms)} with synonyms")
+      {:ok, %{icons: icons, synonyms: synonyms, discrepancies: []}}
     else
       Logger.warning("[Lucide] Icons directory not found: #{icons_dir}")
       {:error, "Icons directory not found"}
+    end
+  end
+
+  # Reads icons/<name>.json; returns deduped, non-empty `tags ++ categories`.
+  defp read_lucide_tags(icons_dir, name) do
+    path = Path.join(icons_dir, "#{name}.json")
+
+    with {:ok, body} <- File.read(path),
+         {:ok, %{} = meta} <- Jason.decode(body) do
+      tags = meta["tags"] || []
+      cats = meta["categories"] || []
+
+      (tags ++ cats)
+      |> Enum.map(&to_string/1)
+      |> Enum.map(&String.trim/1)
+      |> Enum.reject(&(&1 == ""))
+      |> Enum.uniq()
+    else
+      _ -> []
     end
   end
 

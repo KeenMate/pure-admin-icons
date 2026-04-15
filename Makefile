@@ -11,7 +11,7 @@ else
 	endif
 endif
 
-.PHONY: help setup deps compile build server clean test format lint release docker-build docker-run docker-stop sync db-gen
+.PHONY: help setup deps compile build server clean clear-cache test format lint release docker-build docker-run docker-stop sync sync-fresh db-gen
 
 help: ## Show this help message
 	@echo "Available targets:"
@@ -66,8 +66,15 @@ db-gen: ## Regenerate database context from DB schema
 	fi
 	@echo "Code generation completed."
 
-sync: ## Download and sync all icon sets
+clear-cache: ## Wipe the icon extraction cache (.cache/icons/*) so the next sync re-downloads
+	@echo "Clearing icon extraction cache (.cache/icons/)..."
+	@rm -rf .cache/icons
+	@echo "Done. Next sync will re-download and re-extract all icon sets."
+
+sync: ## Download and sync all icon sets (uses cache if :use_icon_cache is enabled)
 	mix icons.download
+
+sync-fresh: clear-cache sync ## Clear the cache then sync all icon sets from scratch
 
 docker-build: ## Build Docker image
 	docker build -t pure-admin-icons:latest .

@@ -119,16 +119,18 @@ defmodule PureAdminIcons.Sync.Adapters.Material do
     if src_base && File.dir?(src_base) do
       Logger.info("[Material] Parsing icons from #{src_base}...")
 
-      icons =
+      tags_by_name = fetch_material_tags()
+
+      {icons, synonyms} =
         src_base
         |> all_icon_variants()
         # Dedupe on the DB's normalized identity (lowercased, separators stripped),
         # since variants like `add_chart` and `addchart` collide on `nrm_original_name`.
         |> Enum.uniq_by(fn {name, style, _cat, _path} -> {normalize_name(name), style} end)
-        |> Enum.map(fn {name, style, category, source_path} ->
+        |> Enum.map_reduce(%{}, fn {name, style, category, source_path}, syn_acc ->
           display_name = Naming.title_case(name)
 
-          %{
+          icon = %{
             icon_set: icon_set_id(),
             name: display_name,
             name_lower: String.replace(name, "_", "-"),
@@ -143,10 +145,24 @@ defmodule PureAdminIcons.Sync.Adapters.Material do
             categories: [category],
             svg_hash: hash_file(source_path)
           }
+
+          # One tag lookup covers all 5 style variants of this icon —
+          # synonyms live on `display_name` which is style-independent.
+          syn_acc =
+            case Map.get(tags_by_name, name) do
+              nil -> syn_acc
+              [] -> syn_acc
+              tags -> Map.put(syn_acc, display_name, tags)
+            end
+
+          {icon, syn_acc}
         end)
 
-      Logger.info("[Material] Parsed #{length(icons)} icons")
-      {:ok, %{icons: icons, synonyms: %{}, discrepancies: []}}
+      Logger.info(
+        "[Material] Parsed #{length(icons)} icons, #{map_size(synonyms)} display names with synonyms"
+      )
+
+      {:ok, %{icons: icons, synonyms: synonyms, discrepancies: []}}
     else
       Logger.warning("[Material] src directory not found under #{extracted_path}")
       {:error, "src directory not found"}
@@ -197,6 +213,49 @@ defmodule PureAdminIcons.Sync.Adapters.Material do
   defp normalize_name(name) do
     name |> String.downcase() |> String.replace(~r/[_\-\s]/, "")
   end
+
+  # Google Fonts Icons metadata service carries per-icon `tags` and
+  # `categories` fields. The response is prefixed with `)]}'` (XSSI
+  # protection) which we strip before JSON decode.
+  # Returns %{"home" => ["house","estate",...], ...}. Empty map on error.
+  defp fetch_material_tags do
+    url = "https://fonts.google.com/metadata/icons?incomplete=true&key=material_symbols"
+    Logger.info("[Material] Fetching icon tags from Google Fonts metadata...")
+
+    with {:ok, %{status: 200, body: body}} <- Req.get(url, receive_timeout: 30_000),
+         {:ok, %{"icons" => icons}} when is_list(icons) <- decode_material_json(body) do
+      by_name =
+        Enum.reduce(icons, %{}, fn
+          %{"name" => name} = entry, acc ->
+            tags = entry["tags"] || []
+            cats = entry["categories"] || []
+            terms = (tags ++ cats) |> Enum.reject(&(&1 in [nil, ""])) |> Enum.uniq()
+            if terms == [], do: acc, else: Map.put(acc, name, terms)
+
+          _, acc ->
+            acc
+        end)
+
+      Logger.info("[Material] Got tags for #{map_size(by_name)} icons")
+      by_name
+    else
+      other ->
+        Logger.warning("[Material] Failed to fetch tag metadata: #{inspect(other)}")
+        %{}
+    end
+  end
+
+  # Google's endpoint prefixes the JSON body with `)]}'` (XSSI protection).
+  # Req delivers it as a string (text/plain content-type). Strip + decode.
+  defp decode_material_json(body) when is_binary(body) do
+    body
+    |> String.replace_prefix(")]}'", "")
+    |> String.trim()
+    |> Jason.decode()
+  end
+
+  defp decode_material_json(%{} = body), do: {:ok, body}
+  defp decode_material_json(_), do: :error
 
   # Material SVGs ship without a fill on their root <svg>, so paths fall back
   # to the SVG default (black) and don't respond to CSS color theming.

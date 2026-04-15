@@ -113,11 +113,14 @@ defmodule PureAdminIcons.Sync.Adapters.Phosphor do
   @impl true
   def parse(extracted_path) do
     assets_base = Path.join([extracted_path, "core-main", "assets"])
+    tags_by_name = read_phosphor_tags(extracted_path)
 
     if File.dir?(assets_base) do
-      Logger.info("[Phosphor] Parsing icons from #{assets_base}...")
+      Logger.info(
+        "[Phosphor] Parsing icons from #{assets_base} (#{map_size(tags_by_name)} icons with tags)..."
+      )
 
-      icons =
+      {icons, synonyms} =
         @style_dirs
         |> Enum.flat_map(fn {style, native_dir} ->
           style_dir = Path.join(assets_base, native_dir)
@@ -131,7 +134,7 @@ defmodule PureAdminIcons.Sync.Adapters.Phosphor do
               name = strip_native_suffix(base, native_dir)
               display_name = Naming.title_case(name)
 
-              %{
+              icon = %{
                 icon_set: icon_set_id(),
                 name: display_name,
                 name_lower: name,
@@ -143,14 +146,25 @@ defmodule PureAdminIcons.Sync.Adapters.Phosphor do
                 android_identifiers: %{"0" => "ic_phosphor_#{String.replace(name, "-", "_")}"},
                 svg_hash: hash_file(Path.join(style_dir, filename))
               }
+
+              {icon, {display_name, Map.get(tags_by_name, name, [])}}
             end)
           else
             []
           end
         end)
+        |> Enum.reduce({[], %{}}, fn {icon, {display_name, tags}}, {ia, sa} ->
+          sa = if tags != [], do: Map.put(sa, display_name, tags), else: sa
+          {[icon | ia], sa}
+        end)
 
-      Logger.info("[Phosphor] Parsed #{length(icons)} icons")
-      {:ok, %{icons: icons, synonyms: %{}, discrepancies: []}}
+      icons = Enum.reverse(icons)
+
+      Logger.info(
+        "[Phosphor] Parsed #{length(icons)} icons, #{map_size(synonyms)} display names with synonyms"
+      )
+
+      {:ok, %{icons: icons, synonyms: synonyms, discrepancies: []}}
     else
       Logger.warning("[Phosphor] Assets directory not found: #{assets_base}")
       {:error, "Assets directory not found"}
@@ -216,6 +230,69 @@ defmodule PureAdminIcons.Sync.Adapters.Phosphor do
   defp strip_native_suffix(base, "regular"), do: base
   defp strip_native_suffix(base, native_dir), do: String.replace_suffix(base, "-#{native_dir}", "")
 
+  # Parse every src/icons/*.ts file and extract its `tags: [...]` array.
+  # Phosphor's icon modules look like:
+  #   import { IconEntry } from "../lib";
+  #   export default {
+  #     name: "airplane",
+  #     pascal_name: "Airplane",
+  #     tags: ["plane", "flight", "travel"],
+  #     categories: ["..."],
+  #     ...
+  #   } as IconEntry;
+  # Regex-scoped to the tags array — simpler than evaluating TypeScript.
+  # Returns %{"airplane" => ["plane","flight","travel"], ...}
+  defp read_phosphor_tags(extracted_path) do
+    ts_dir = Path.join([extracted_path, "core-main", "src", "icons"])
+
+    if File.dir?(ts_dir) do
+      ts_dir
+      |> File.ls!()
+      |> Enum.filter(&String.ends_with?(&1, ".ts"))
+      |> Enum.reduce(%{}, fn file, acc ->
+        case File.read(Path.join(ts_dir, file)) do
+          {:ok, body} ->
+            name = String.replace_suffix(file, ".ts", "")
+
+            case extract_ts_string_array(body, "tags") do
+              [] -> acc
+              tags -> Map.put(acc, name, tags)
+            end
+
+          _ ->
+            acc
+        end
+      end)
+    else
+      Logger.info("[Phosphor] No src/icons/*.ts tree found — skipping synonym extraction")
+      %{}
+    end
+  end
+
+  # Grab a JS/TS-ish string array assigned to `<key>:`.  Handles
+  # `tags: ["a", "b", "c"]` including multi-line with leading/trailing
+  # whitespace and trailing commas.  Ignores non-string elements.
+  defp extract_ts_string_array(source, key) do
+    # Match `<key> : [ <body> ]` non-greedily across lines
+    regex = ~r/\b#{key}\s*:\s*\[(?<body>[^\]]*)\]/s
+
+    case Regex.named_captures(regex, source) do
+      %{"body" => body} ->
+        ~r/"([^"]*)"|'([^']*)'/
+        |> Regex.scan(body)
+        |> Enum.map(fn
+          [_, s, ""] -> s
+          [_, "", s] -> s
+          [_, s] -> s
+        end)
+        |> Enum.map(&String.trim/1)
+        |> Enum.reject(&(&1 == ""))
+
+      _ ->
+        []
+    end
+  end
+
   defp extract_zip(zip_path, temp_dir) do
     case find_7zip() do
       {:ok, exe} ->
@@ -238,9 +315,13 @@ defmodule PureAdminIcons.Sync.Adapters.Phosphor do
     end
   end
 
+  # We pull both:
+  #   - assets/<weight>/*.svg      — the icon files (move_svgs / parse)
+  #   - src/icons/*.ts             — TS modules with per-icon `tags: [...]`
   defp extract_with_7zip(exe, zip_path, temp_dir) do
     {output, exit_code} = System.cmd(exe, [
-      "x", zip_path, "-o#{temp_dir}", "core-main/assets/*", "-y"
+      "x", zip_path, "-o#{temp_dir}",
+      "core-main/assets/*", "core-main/src/icons/*.ts", "-y"
     ], stderr_to_stdout: true)
 
     if exit_code == 0, do: :ok, else: {:error, "7zip failed: #{output}"}
@@ -248,7 +329,9 @@ defmodule PureAdminIcons.Sync.Adapters.Phosphor do
 
   defp extract_with_unzip(zip_path, temp_dir) do
     {output, exit_code} = System.cmd("unzip", [
-      "-q", "-o", zip_path, "core-main/assets/*", "-d", temp_dir
+      "-q", "-o", zip_path,
+      "core-main/assets/*", "core-main/src/icons/*.ts",
+      "-d", temp_dir
     ], stderr_to_stdout: true)
 
     if exit_code == 0, do: :ok, else: {:error, "unzip failed: #{output}"}
