@@ -115,8 +115,11 @@ defmodule PureAdminIcons.Icons do
   end
 
   def track_action(icon_id, action, source, opts \\ []) do
-    size = opts[:size] || :eg_value_not_provided
-    platform = opts[:platform] || :eg_value_not_provided
+    # Pass nil (not :eg_value_not_provided) so positional params stay aligned —
+    # the DB SP treats NULL as "no value" and the sentinel would get filtered
+    # out, shifting `platform` into the size slot.
+    size = opts[:size]
+    platform = opts[:platform]
     case DbContext.track_icon_action(icon_id, action, source, size, platform) do
       {:ok, _} -> :ok
       {:error, _} = error -> error

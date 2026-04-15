@@ -12,6 +12,9 @@
 ### `track_copy` crash on scalable icons
 - `IconSearchLive.handle_event("track_copy", …)` guarded `params["size"]` with `if size, do: ...` — truthy for empty string, so `String.to_integer("")` raised `ArgumentError` whenever a copy action came from a scalable icon (iOS / Material where `size` is empty). Guard tightened to require a non-empty binary before parsing.
 
+### `track_action` positional-arg misalignment
+- `Icons.track_action/4` defaulted omitted `size` / `platform` to `:eg_value_not_provided`, which the generated `DbContext.track_icon_action/5` filters out and packs remaining args positionally. When `size` was omitted but `platform` was supplied (scalable-icon copy path), the platform string landed in the size slot, causing Postgrex to reject `"ios"` as a non-integer. Switched to `nil` for missing middle args so positions stay aligned and the SP sees a NULL for size.
+
 ## 2026-04-15 — Colorization fixes for Material, unified live-SVG helper
 
 ### Material preset colorization works across the modal
