@@ -155,6 +155,7 @@ defmodule PureAdminIcons.Translations do
     "iconSearch.tooltips.copyPlatformIdentifierSized" =>
       "Copy %{platform} identifier for size %{size}",
     "iconSearch.tooltips.exactMatch" => "Exact name match",
+    "iconSearch.tooltips.exactMatchSynonym" => "Exact match via synonym",
 
     # ─────────────────────────── Icon detail modal ────────────────
     "iconDetail.headers.preview" => "Preview",

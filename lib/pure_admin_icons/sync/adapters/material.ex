@@ -245,12 +245,12 @@ defmodule PureAdminIcons.Sync.Adapters.Material do
     end
   end
 
-  # Google's endpoint prefixes the JSON body with `)]}'` (XSSI protection).
-  # Req delivers it as a string (text/plain content-type). Strip + decode.
+  # Google's endpoint prefixes the JSON body with `)]}'` (XSSI protection)
+  # followed by a newline. Strip anything non-JSON up to the first `{` or `[`
+  # so we don't get tripped up by whitespace / BOM / variant prefixes.
   defp decode_material_json(body) when is_binary(body) do
     body
-    |> String.replace_prefix(")]}'", "")
-    |> String.trim()
+    |> String.replace(~r/\A[^\{\[]+/, "")
     |> Jason.decode()
   end
 

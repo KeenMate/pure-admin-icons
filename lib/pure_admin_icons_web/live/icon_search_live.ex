@@ -887,13 +887,16 @@ defmodule PureAdminIconsWeb.IconSearchLive do
 
           <div class="icon-card-body">
             <div class="icon-card-name flex items-center justify-center gap-1" title={icon.name}>
-              <%= if Map.get(icon, :exact_match, 0) == 1 do %>
-                <span
-                  class="inline-flex items-center text-primary"
-                  title={t("iconSearch.tooltips.exactMatch")}
-                >
-                  <.icon name="hero-check-badge" class="size-3.5" />
-                </span>
+              <%= cond do %>
+                <% Map.get(icon, :exact_match, 0) == 1 -> %>
+                  <span class="inline-flex items-center text-primary" title={t("iconSearch.tooltips.exactMatch")}>
+                    <.icon name="hero-check-badge" class="size-3.5" />
+                  </span>
+                <% Map.get(icon, :synonym_exact_match, 0) == 1 -> %>
+                  <span class="inline-flex items-center text-primary/70" title={t("iconSearch.tooltips.exactMatchSynonym")}>
+                    <.icon name="hero-tag" class="size-3.5" />
+                  </span>
+                <% true -> %>
               <% end %>
               {icon.name}
             </div>
