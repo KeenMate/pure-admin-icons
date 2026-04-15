@@ -360,18 +360,15 @@ Hooks.IconColorFilter = {
     })
   },
   updated() {
-    // SVG containers use phx-update="ignore" so morphdom won't wipe them.
-    // Only re-process if the icon list actually changed (new search/page).
-    const icons = this.el.querySelectorAll('.inline-svg-icon')
-    const iconCount = icons.length
-    const firstUrl = icons[0]?.dataset?.svgUrl || ''
-    const sig = `${iconCount}:${firstUrl}`
-    if (sig !== this._lastSig) {
-      this._lastSig = sig
-      this.loadAllSvgs()
-      this.updateAllColors()
-      this.applyPreviewBg()
-    }
+    // Every LiveView update: eagerly load any icon container that's in
+    // the DOM but missing its <svg>. We used to rely on the intersection
+    // observer alone + a signature guard, but morphdom can replace icon
+    // containers across filter toggles and the new empty spans never got
+    // observed. Eager loading is cheap (30 icons per page, browser-cached
+    // SVGs), robust, and always leaves every visible icon coloured.
+    this.loadAllSvgs()
+    this.updateAllColors()
+    this.applyPreviewBg()
   },
   applyPreviewBg() {
     let bg = '#ffffff'
@@ -389,21 +386,13 @@ Hooks.IconColorFilter = {
     })
   },
   async loadAllSvgs() {
-    const icons = this.el.querySelectorAll('.inline-svg-icon')
-    if (!this.observer) {
-      this.observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            this.loadSvg(entry.target)
-            this.observer.unobserve(entry.target)
-          }
-        })
-      }, { rootMargin: '100px' })
-    }
-    icons.forEach(icon => {
+    // Eagerly load every empty container. Pages cap at 30 icons, SVGs are
+    // browser-cached with ETags (served from /icons/*), and the fetch is
+    // cheap compared to guarding with IntersectionObserver which turned
+    // out to miss spans that morphdom created across filter toggles.
+    this.el.querySelectorAll('.inline-svg-icon').forEach(icon => {
       if (!icon.querySelector('svg')) {
-        delete icon.dataset.loaded
-        this.observer.observe(icon)
+        this.loadSvg(icon)
       }
     })
   },
