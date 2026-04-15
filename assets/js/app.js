@@ -115,6 +115,35 @@ const PresetManager = {
 }
 
 // ══════════════════════════════════════════════════════════
+// Debug helper — pulls every fill=".." and stroke=".." from an SVG string
+// so we can see what colors the SVG actually carries before/after colorize.
+function extractFillStroke(svgText) {
+  const fills = [...svgText.matchAll(/fill="([^"]*)"/g)].map(m => m[1])
+  const strokes = [...svgText.matchAll(/stroke="([^"]*)"/g)].map(m => m[1])
+  return { fills, strokes }
+}
+
+// Recolours a LIVE DOM SVG element. Updates any `fill`/`stroke` on the
+// root + every child shape element, unless the attribute is `none` (kept
+// transparent) or absent (paths without fill rely on SVG inheritance from
+// the root, which works in DOM rendering).
+//
+// This is the single source of truth for the grid (IconColorFilter), the
+// modal preview's first load (InlineSvg), and preset changes
+// (ColorPicker.updateSvgColors). The designer canvas uses a different
+// function because it has to serialize + rasterize via `<img src=blob>`,
+// where DOM-level inheritance isn't honored.
+function colorizeLiveSvg(svg, color) {
+  const update = (el) => {
+    const fill = el.getAttribute('fill')
+    if (fill && fill !== 'none') el.setAttribute('fill', color)
+    const stroke = el.getAttribute('stroke')
+    if (stroke && stroke !== 'none') el.setAttribute('stroke', color)
+  }
+  update(svg)
+  svg.querySelectorAll('path, circle, rect, line, polyline, polygon, ellipse, g').forEach(update)
+}
+
 // DesignerExport — shared export logic for Download Designer.
 // Used by DownloadDesigner hook (modal) and FloatingPopover
 // (quick download button in grid/list).
@@ -151,19 +180,57 @@ const DesignerExport = {
     return localStorage.getItem('designer_padding') !== null
   },
 
-  // Keep in lockstep with InlineSvg's colorization so the live DOM preview
-  // and the canvas-rendered designer preview render identically. DOM-based
-  // colorize + serialize had subtle inheritance issues for SVGs where only
-  // the root carried `fill="currentColor"` (Material) — rasterizing the
-  // serialized output via `<img src=blob>` didn't always propagate the
-  // root fill to child paths. Regex replace preserves structure exactly.
+  // Rewrites every fill/stroke reference in an SVG to `color`, AND also
+  // stamps `fill="${color}"` onto child paths that have no explicit fill,
+  // but only when the root's fill is being colored (i.e. a fill-based icon
+  // set, not a stroke-only set like Lucide).
+  //
+  // Why the extra stamping: the live DOM preview uses inline SVG + CSS,
+  // where SVG fill inheritance from the root works transparently. The
+  // canvas designer rasterizes the SVG via `<img src=blob>`, and in that
+  // context root-to-path fill inheritance is unreliable — Material icons
+  // specifically leave paths without any fill attribute, so the canvas
+  // painted nothing (or default black) for those paths. Setting fill
+  // explicitly on each path avoids the inheritance path entirely.
   colorizeSvg(svgText, color) {
     if (!color) return svgText
-    return svgText
-      .replace(/fill="#[0-9A-Fa-f]{3,6}"/g, `fill="${color}"`)
-      .replace(/fill="currentColor"/g, `fill="${color}"`)
-      .replace(/stroke="#[0-9A-Fa-f]{3,6}"/g, `stroke="${color}"`)
-      .replace(/stroke="currentColor"/g, `stroke="${color}"`)
+    const parser = new DOMParser()
+    const doc = parser.parseFromString(svgText, 'image/svg+xml')
+    const svg = doc.querySelector('svg')
+    if (!svg) return svgText
+
+    // Replace any existing coloured fill/stroke on the root or any child.
+    const setIfColored = (el, attr) => {
+      const v = el.getAttribute(attr)
+      if (v && v !== 'none') el.setAttribute(attr, color)
+    }
+    setIfColored(svg, 'fill')
+    setIfColored(svg, 'stroke')
+    svg.querySelectorAll('path, circle, rect, line, polyline, polygon, ellipse, g')
+      .forEach((el) => {
+        setIfColored(el, 'fill')
+        setIfColored(el, 'stroke')
+      })
+
+    // Stamp fill on paths that would otherwise rely on root inheritance.
+    // Only when the root actively uses fill — skip stroke-only sets like
+    // Lucide where root fill="none" and the icon lives on strokes.
+    const rootFill = svg.getAttribute('fill')
+    const fillActive = rootFill && rootFill !== 'none'
+    if (fillActive) {
+      svg.querySelectorAll('path, circle, rect, polygon, ellipse').forEach((el) => {
+        if (!el.hasAttribute('fill') && !el.hasAttribute('stroke')) {
+          el.setAttribute('fill', color)
+        }
+      })
+    }
+
+    const out = new XMLSerializer().serializeToString(doc)
+    console.group(`[DesignerExport.colorizeSvg] color=${color}`)
+    console.log('before fill/stroke attrs:', extractFillStroke(svgText))
+    console.log('after  fill/stroke attrs:', extractFillStroke(out))
+    console.groupEnd()
+    return out
   },
 
   renderToCanvas(svgText, size, settings) {
@@ -365,30 +432,16 @@ Hooks.IconColorFilter = {
       console.error('[IconColorFilter] Failed to load SVG:', url, err)
     }
   },
-  // DOM-mutates an SVG to apply the user's color.
-  // Updates fill/stroke on the <svg> element AND all child shape elements.
-  // This handles icons that put currentColor on the svg parent (Lucide, Heroicons outline)
-  // AND icons that put colors directly on paths (FluentUI, Heroicons solid, FA).
+  // Thin wrapper — the logic lives in the shared colorizeLiveSvg helper so
+  // the grid, modal preview, and preset-change updater all use the same
+  // rules. `debugUrl` preserved for the log that flagged icons with no
+  // fill/stroke attrs.
   colorizeSvg(svg, color, debugUrl) {
-    let touched = 0
-    const updateEl = (el) => {
-      const currentFill = el.getAttribute('fill')
-      if (currentFill && currentFill !== 'none') {
-        el.setAttribute('fill', color)
-        touched++
-      }
-      const currentStroke = el.getAttribute('stroke')
-      if (currentStroke && currentStroke !== 'none') {
-        el.setAttribute('stroke', color)
-        touched++
-      }
-    }
-    // Update the <svg> root first (covers icons with fill/stroke on the svg element)
-    updateEl(svg)
-    // Then walk all child shape elements
-    svg.querySelectorAll('path, circle, rect, line, polyline, polygon, ellipse, g').forEach(updateEl)
-
-    if (touched === 0) {
+    const hasAny =
+      svg.getAttribute('fill') || svg.getAttribute('stroke') ||
+      svg.querySelector('[fill], [stroke]')
+    colorizeLiveSvg(svg, color)
+    if (!hasAny) {
       console.warn('[IconColorFilter] No fill/stroke attributes found in SVG, icon may render with default color:', debugUrl)
     }
   },
@@ -713,6 +766,10 @@ Hooks.ColorPicker = {
       btn.addEventListener('click', () => {
         const preset = PresetManager.getAll()[btn.dataset.preset]
         if (!preset) return
+        console.group(`[ColorPicker] preset clicked: ${btn.dataset.preset}`)
+        console.log('preset:', preset)
+        console.log('  color →', preset.color, '  bg →', preset.bg)
+        console.groupEnd()
         localStorage.setItem('icon_preview_color', preset.color)
         localStorage.setItem('icon_preview_bg', JSON.stringify(preset.bg))
         localStorage.setItem('icon_preview_preset', btn.dataset.preset)
@@ -959,12 +1016,11 @@ Hooks.ColorPicker = {
     const svgContainer = document.querySelector('[phx-hook="InlineSvg"]')
     if (svgContainer) {
       svgContainer.dataset.color = color
-      svgContainer.querySelectorAll('svg path, svg circle, svg rect, svg line, svg polyline, svg polygon').forEach(el => {
-        const currentFill = el.getAttribute('fill')
-        if (currentFill && currentFill !== 'none') el.setAttribute('fill', color)
-        const currentStroke = el.getAttribute('stroke')
-        if (currentStroke && currentStroke !== 'none') el.setAttribute('stroke', color)
-      })
+      // Only the preview <svg>s live inside `.svg-container` — don't sweep
+      // the download-arrow <svg> that sits inside each `<a class="download-link">`.
+      svgContainer
+        .querySelectorAll('.svg-container > svg')
+        .forEach(svg => colorizeLiveSvg(svg, color))
     }
     // NOTE: callers are responsible for dispatching iconColorChanged when they
     // intend to notify the grid/other hooks. This function only updates the
@@ -984,14 +1040,13 @@ Hooks.InlineSvg = {
       try {
         const response = await fetch(urls[i])
         const svgText = await response.text()
-        const coloredSvg = svgText
-          .replace(/fill="#[0-9A-Fa-f]{3,6}"/g, `fill="${color}"`)
-          .replace(/fill="currentColor"/g, `fill="${color}"`)
-          .replace(/stroke="#[0-9A-Fa-f]{3,6}"/g, `stroke="${color}"`)
-          .replace(/stroke="currentColor"/g, `stroke="${color}"`)
-        containers[i].innerHTML = coloredSvg
+        containers[i].innerHTML = svgText
         const svg = containers[i].querySelector('svg')
-        if (svg) { svg.style.width = `${containers[i].dataset.size}px`; svg.style.height = `${containers[i].dataset.size}px` }
+        if (svg) {
+          svg.style.width = `${containers[i].dataset.size}px`
+          svg.style.height = `${containers[i].dataset.size}px`
+          colorizeLiveSvg(svg, color)
+        }
       } catch (err) { console.error('Failed to load SVG:', err) }
     }
   }
@@ -1323,6 +1378,10 @@ Hooks.DownloadDesigner = {
     try {
       const resp = await fetch(this.svgUrl)
       this.rawSvg = await resp.text()
+      console.group(`[DownloadDesigner.loadSvg] ${this.svgUrl}`)
+      console.log('attrs:', extractFillStroke(this.rawSvg))
+      console.log('full rawSvg:', this.rawSvg)
+      console.groupEnd()
     } catch (err) {
       console.error('[DownloadDesigner] Failed to load SVG:', err)
     }
@@ -1332,8 +1391,19 @@ Hooks.DownloadDesigner = {
   },
   renderPreview() {
     if (!this.ctx || !this.rawSvg) return
+    // Bump a generation counter so any in-flight img.onload from a previous
+    // call sees it's stale and bails. Prevents races where rapid preset
+    // clicks interleave async SVG loads and the older render paints on
+    // top of the newer one.
+    this._renderGen = (this._renderGen || 0) + 1
+    const gen = this._renderGen
+
     const size = 128
     const { color, bg, padding, radius } = this.getSettings()
+    console.group(`[DownloadDesigner.renderPreview] gen=${gen}`)
+    console.log('settings:', { color, bg, padding, radius })
+    console.log('rawSvg fill/stroke attrs:', extractFillStroke(this.rawSvg))
+    console.groupEnd()
     const canvas = this.canvas
     canvas.width = size * 2 // 2x for retina
     canvas.height = size * 2
@@ -1368,9 +1438,26 @@ Hooks.DownloadDesigner = {
     const url = URL.createObjectURL(blob)
     const img = new Image()
     img.onload = () => {
+      URL.revokeObjectURL(url)
+      if (gen !== this._renderGen) {
+        console.log(`[renderPreview gen=${gen}] stale — bailed (current=${this._renderGen})`)
+        return
+      }
       const pad = padding * s
       ctx.drawImage(img, pad, pad, s - pad * 2, s - pad * 2)
-      URL.revokeObjectURL(url)
+
+      // Sample pixels so we can see what actually landed on the canvas.
+      try {
+        const center = ctx.getImageData(s / 2, s / 2, 1, 1).data
+        const corner = ctx.getImageData(5, 5, 1, 1).data
+        const mid = ctx.getImageData(s / 4, s / 4, 1, 1).data
+        const px = (p) => `rgba(${p[0]},${p[1]},${p[2]},${(p[3] / 255).toFixed(2)})`
+        console.log(
+          `[renderPreview gen=${gen}] pixels after draw — corner(5,5)=${px(corner)}  mid(${s / 4},${s / 4})=${px(mid)}  center(${s / 2},${s / 2})=${px(center)}`
+        )
+      } catch (e) {
+        console.warn('[renderPreview] getImageData failed:', e.message)
+      }
     }
     img.src = url
   },

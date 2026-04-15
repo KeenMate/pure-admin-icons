@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-04-15 — Colorization fixes for Material, unified live-SVG helper
+
+### Material preset colorization works across the modal
+Material's SVGs ship with `fill="currentColor"` on the root and NO fill attribute on child paths — they rely on SVG inheritance. That pattern hit four separate rendering paths in the app, each with a different bug:
+
+- **`ColorPicker.updateSvgColors`** (preset change → modal preview) was walking `svg path, svg circle, …` but never the `<svg>` root, and skipping any element without an existing fill/stroke. Material's root kept whatever colour was applied on first load, paths never got updated. Now touches the root too.
+- **`DesignerExport.colorizeSvg`** (designer canvas) colorized via regex then rasterized through `<img src=blob>` — but `<img>`-rasterized SVG doesn't reliably honor root-fill inheritance to child paths. Rewrote to DOM-parse, update root + existing fill/stroke, then explicitly stamp `fill="${color}"` on paths that have neither a fill nor a stroke attribute (only when the root actively uses fill, so Lucide-style stroke-only sets are untouched).
+- **`DownloadDesigner.renderPreview`** had a race where rapid preset clicks interleaved async SVG loads and the older render painted on top of the newer one. Added a generation counter — stale `img.onload` callbacks now bail before `drawImage`.
+- Download-arrow `<svg>` (inside the preview section's `<a class="download-link">`) was getting recoloured along with the preview icon because `updateSvgColors` was too broad. Narrowed to `.svg-container > svg`.
+
+### Shared `colorizeLiveSvg` helper
+Extracted the live-DOM colorization logic as a single top-level function used by three of the four paths:
+
+- Grid/list (`IconColorFilter.colorizeSvg`)
+- Modal preview first load (`InlineSvg.loadSvgs` — no longer does regex replacement before `innerHTML`)
+- Modal preset change (`ColorPicker.updateSvgColors`)
+
+The designer canvas keeps its own function because it additionally needs the naked-path fill stamp for the `<img>` rasterizer.
+
+### Debug logging in the designer pipeline
+Added `console.group` output for preset clicks, `renderPreview` settings, `colorizeSvg` before/after attrs, and post-draw pixel samples from the canvas. Useful for tracing colour-propagation bugs; low volume so left in place.
+
 ## 2026-04-14 — Material platform identifiers, Naming helper, modal gating fix
 
 ### Material platform identifiers
