@@ -36,6 +36,7 @@
         "refresh_icon_metrics_cube": true,
         "get_icon_metrics": true,
         "get_popular_icons": true,
+        "get_stats_overview": true,
         "create_job_run": true,
         "update_job_run": true,
         "get_icon_count": true,
