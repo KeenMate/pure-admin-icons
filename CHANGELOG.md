@@ -9,6 +9,9 @@
 ### `get_stats_overview` wrapper
 - Added `get_stats_overview` to `db-gen.json` under the `public` schema. The SP existed on the DB since v1.7 but wasn't registered for generation, so `DbContext.get_stats_overview/0` was undefined and the `/stats` overview cards (web/api × period matrix) crashed at runtime.
 
+### `track_copy` crash on scalable icons
+- `IconSearchLive.handle_event("track_copy", …)` guarded `params["size"]` with `if size, do: ...` — truthy for empty string, so `String.to_integer("")` raised `ArgumentError` whenever a copy action came from a scalable icon (iOS / Material where `size` is empty). Guard tightened to require a non-empty binary before parsing.
+
 ## 2026-04-15 — Colorization fixes for Material, unified live-SVG helper
 
 ### Material preset colorization works across the modal

@@ -307,7 +307,11 @@ defmodule PureAdminIconsWeb.IconSearchLive do
     size = params["size"]
     Task.start(fn ->
       opts = [platform: platform]
-      opts = if size, do: [{:size, String.to_integer(size)} | opts], else: opts
+      opts =
+        case size do
+          s when is_binary(s) and s != "" -> [{:size, String.to_integer(s)} | opts]
+          _ -> opts
+        end
       case Icons.track_action(String.to_integer(icon_id), "copy", "web", opts) do
         :ok -> Logger.info("[metrics] track_copy OK icon_id=#{icon_id} platform=#{platform}")
         {:error, reason} -> Logger.error("[metrics] track_copy FAILED icon_id=#{icon_id}: #{inspect(reason)}")
