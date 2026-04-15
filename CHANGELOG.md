@@ -15,6 +15,16 @@
 ### `track_action` positional-arg misalignment
 - `Icons.track_action/4` defaulted omitted `size` / `platform` to `:eg_value_not_provided`, which the generated `DbContext.track_icon_action/5` filters out and packs remaining args positionally. When `size` was omitted but `platform` was supplied (scalable-icon copy path), the platform string landed in the size slot, causing Postgrex to reject `"ios"` as a non-integer. Switched to `nil` for missing middle args so positions stay aligned and the SP sees a NULL for size.
 
+### Metrics coverage for all download paths
+- **Quick PNG-ZIP download** (hover popover on grid/list) now fires `track_download` with `surface: "popover"`, `format: "png-zip"`. Previously it downloaded silently without hitting metrics. Added `data-icon-id` to the `.quick-designer-download` button template so the JS handler knows what icon to track.
+- **Filename copy** (per-size Copy button in the "Filename (local copy)" section of the icon-detail modal) now fires `track_copy` with `format: "filename"` and the row's size. Previously the clipboard write succeeded but no metric event was emitted.
+- **`track_download` handler** parses `size` defensively — accepts single-pixel ("24"), "0" (scalable), "" (no size), rejects comma-joined lists silently (PNG-ZIP batches). The old `String.to_integer/1` would have crashed for any of these.
+
+### v1.11 schema integration
+- `get_stats_overview` return shape changed from 5-column wide form (source/period + copies/downloads/searches) to 6-column long form (source/period/action/surface/format/count). `Icons.stats_overview/0` pivots the long form to the wide-legacy shape internally so `AdminStatsLive` keeps rendering without changes. Per-surface/format drill-down in the UI is a future enhancement.
+- `track_icon_action` gained a 6th positional `_format_code` arg; the 5th arg was renamed `_platform_code` → `_surface_code`. `Icons.track_action/4` now takes `:surface`/`:format` opts (legacy `:platform` opt still accepted and auto-split on `:`). LiveView `track_download` handler splits the `naming` field (`"designer:png-zip"` / `"popover:png-zip"` → surface + format; bare `"pascal"`/`"kebab"`/… → `surface: "inline"`, `format: "svg-<naming>"`).
+- `search_icons` added `__exact_match` smallint as position 2 — the generated model picked it up automatically, no consumer changes needed (additive).
+
 ## 2026-04-15 — Colorization fixes for Material, unified live-SVG helper
 
 ### Material preset colorization works across the modal

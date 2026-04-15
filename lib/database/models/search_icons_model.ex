@@ -9,6 +9,7 @@ defmodule Database.Models.SearchIconsModel do
   @fields [
     :rank,
     :similarity,
+    :exact_match,
     :icon_id,
     :icon_set_code,
     :icon_set_title,
@@ -32,6 +33,7 @@ defmodule Database.Models.SearchIconsModel do
   @type t() :: %__MODULE__{
     rank: float(),
     similarity: float(),
+    exact_match: integer(),
     icon_id: integer(),
     icon_set_code: String.t(),
     icon_set_title: String.t(),

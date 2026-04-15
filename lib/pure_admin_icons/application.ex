@@ -46,6 +46,13 @@ defmodule PureAdminIcons.Application do
 
       true ->
         Logger.info("DB and files present, skipping initial sync")
+        # v1.11 introduced mv_icon / mv_icon_phrase. If we skipped the sync
+        # but those MVs are empty (e.g. fresh migration), search returns
+        # nothing. Cheap to call — concurrent refresh, no-op when current.
+        case PureAdminIcons.Repo.query("SELECT internal.refresh_icon_caches()", []) do
+          {:ok, _} -> Logger.info("Refreshed mv_icon / mv_icon_phrase at startup")
+          {:error, reason} -> Logger.warning("startup refresh_icon_caches failed: #{inspect(reason)}")
+        end
     end
 
     :ok

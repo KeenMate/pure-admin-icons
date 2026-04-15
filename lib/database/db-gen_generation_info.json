@@ -1,6 +1,6 @@
 {
   "version": "LOCAL",
-  "time": "2026-04-15T11:59:42.4787293+02:00",
+  "time": "2026-04-15T19:44:58.8141036+02:00",
   "routines": [
     {
       "RowNumber": 1,
@@ -2706,7 +2706,7 @@
       "DataType": "record",
       "UdtTypeScheme": "pg_catalog",
       "UdtTypeName": "record",
-      "ParamCount": 5,
+      "ParamCount": 6,
       "FuncType": "function",
       "InParameters": null,
       "OutParameters": [
@@ -2728,23 +2728,31 @@
         },
         {
           "OrdinalPosition": 3,
-          "Name": "__copies",
+          "Name": "__action_code",
           "Mode": "OUT",
-          "UDTName": "int8",
+          "UDTName": "text",
           "IsNullable": false,
           "IsOptional": false
         },
         {
           "OrdinalPosition": 4,
-          "Name": "__downloads",
+          "Name": "__surface_code",
           "Mode": "OUT",
-          "UDTName": "int8",
+          "UDTName": "text",
           "IsNullable": false,
           "IsOptional": false
         },
         {
           "OrdinalPosition": 5,
-          "Name": "__searches",
+          "Name": "__format_code",
+          "Mode": "OUT",
+          "UDTName": "text",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 6,
+          "Name": "__count",
           "Mode": "OUT",
           "UDTName": "int8",
           "IsNullable": false,
@@ -2850,7 +2858,7 @@
       "DataType": "record",
       "UdtTypeScheme": "pg_catalog",
       "UdtTypeName": "record",
-      "ParamCount": 18,
+      "ParamCount": 19,
       "FuncType": "function",
       "InParameters": [
         {
@@ -2897,6 +2905,14 @@
         },
         {
           "OrdinalPosition": 6,
+          "Name": "__exact_match",
+          "Mode": "OUT",
+          "UDTName": "int2",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 7,
           "Name": "__icon_id",
           "Mode": "OUT",
           "UDTName": "int8",
@@ -2904,7 +2920,7 @@
           "IsOptional": false
         },
         {
-          "OrdinalPosition": 7,
+          "OrdinalPosition": 8,
           "Name": "__icon_set_code",
           "Mode": "OUT",
           "UDTName": "text",
@@ -2912,7 +2928,7 @@
           "IsOptional": false
         },
         {
-          "OrdinalPosition": 8,
+          "OrdinalPosition": 9,
           "Name": "__icon_set_title",
           "Mode": "OUT",
           "UDTName": "text",
@@ -2920,7 +2936,7 @@
           "IsOptional": false
         },
         {
-          "OrdinalPosition": 9,
+          "OrdinalPosition": 10,
           "Name": "__name",
           "Mode": "OUT",
           "UDTName": "text",
@@ -2928,7 +2944,7 @@
           "IsOptional": false
         },
         {
-          "OrdinalPosition": 10,
+          "OrdinalPosition": 11,
           "Name": "__style_code",
           "Mode": "OUT",
           "UDTName": "text",
@@ -2936,7 +2952,7 @@
           "IsOptional": false
         },
         {
-          "OrdinalPosition": 11,
+          "OrdinalPosition": 12,
           "Name": "__style_color_method",
           "Mode": "OUT",
           "UDTName": "text",
@@ -2944,7 +2960,7 @@
           "IsOptional": false
         },
         {
-          "OrdinalPosition": 12,
+          "OrdinalPosition": 13,
           "Name": "__sizes",
           "Mode": "OUT",
           "UDTName": "_int4",
@@ -2952,7 +2968,7 @@
           "IsOptional": false
         },
         {
-          "OrdinalPosition": 13,
+          "OrdinalPosition": 14,
           "Name": "__has_single_source",
           "Mode": "OUT",
           "UDTName": "bool",
@@ -2960,7 +2976,7 @@
           "IsOptional": false
         },
         {
-          "OrdinalPosition": 14,
+          "OrdinalPosition": 15,
           "Name": "__is_scalable",
           "Mode": "OUT",
           "UDTName": "bool",
@@ -2968,7 +2984,7 @@
           "IsOptional": false
         },
         {
-          "OrdinalPosition": 15,
+          "OrdinalPosition": 16,
           "Name": "__filenames",
           "Mode": "OUT",
           "UDTName": "jsonb",
@@ -2976,7 +2992,7 @@
           "IsOptional": false
         },
         {
-          "OrdinalPosition": 16,
+          "OrdinalPosition": 17,
           "Name": "__platform_identifiers",
           "Mode": "OUT",
           "UDTName": "jsonb",
@@ -2984,7 +3000,7 @@
           "IsOptional": false
         },
         {
-          "OrdinalPosition": 17,
+          "OrdinalPosition": 18,
           "Name": "__categories",
           "Mode": "OUT",
           "UDTName": "jsonb",
@@ -2992,7 +3008,7 @@
           "IsOptional": false
         },
         {
-          "OrdinalPosition": 18,
+          "OrdinalPosition": 19,
           "Name": "__total_items",
           "Mode": "OUT",
           "UDTName": "int8",
@@ -3680,14 +3696,14 @@
     {
       "RowNumber": 1,
       "RoutineSchema": "public",
-      "RoutineNameWithParams": "track_icon_action(int8,text,text,int4,text)",
+      "RoutineNameWithParams": "track_icon_action(int8,text,text,int4,text,text)",
       "HasOverload": false,
       "RoutineName": "track_icon_action",
       "SpecificName": "",
       "DataType": "",
       "UdtTypeScheme": "",
       "UdtTypeName": "",
-      "ParamCount": 5,
+      "ParamCount": 6,
       "FuncType": "procedure",
       "InParameters": [
         {
@@ -3724,7 +3740,15 @@
         },
         {
           "OrdinalPosition": 5,
-          "Name": "_platform_code",
+          "Name": "_surface_code",
+          "Mode": "IN",
+          "UDTName": "text",
+          "IsNullable": false,
+          "IsOptional": true
+        },
+        {
+          "OrdinalPosition": 6,
+          "Name": "_format_code",
           "Mode": "IN",
           "UDTName": "text",
           "IsNullable": false,

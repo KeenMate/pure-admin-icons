@@ -31,13 +31,14 @@ defmodule Database.Processors.GetStatsOverviewProcessor do
   Parse a single result row into a GetStatsOverviewModel struct
   """
   @spec parse_result_row(list()) :: {:ok, %GetStatsOverviewModel{}} | {:error, any()}
-  def parse_result_row([source_code, period_code, copies, downloads, searches]) do
+  def parse_result_row([source_code, period_code, action_code, surface_code, format_code, count]) do
     {:ok, %GetStatsOverviewModel{
       source_code: source_code,
       period_code: period_code,
-      copies: copies,
-      downloads: downloads,
-      searches: searches
+      action_code: action_code,
+      surface_code: surface_code,
+      format_code: format_code,
+      count: count
     }}
   end
 

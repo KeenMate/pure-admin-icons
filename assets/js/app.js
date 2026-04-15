@@ -1096,9 +1096,19 @@ Hooks.FloatingPopover = {
       e.preventDefault()
       const svgUrl = btn.dataset.svgUrl
       const name = (btn.dataset.name || 'icon').toLowerCase().replace(/\s+/g, '-')
+      const iconId = btn.dataset.iconId
       btn.style.opacity = '0.4'
       try {
-        await DesignerExport.downloadPngZip(svgUrl, name)
+        const sizes = await DesignerExport.downloadPngZip(svgUrl, name)
+        // Track in metrics — mirrors DownloadDesigner's own PNG-ZIP button.
+        const metricsEl = document.getElementById('metrics-tracker')
+        if (metricsEl?._pushEvent && iconId) {
+          metricsEl._pushEvent('track_download', {
+            'icon-id': iconId,
+            size: (sizes || []).join(','),
+            naming: 'popover:png-zip'
+          })
+        }
       } catch (err) {
         console.error('[FloatingPopover] Quick download failed:', err)
       }
@@ -1790,6 +1800,8 @@ Hooks.FilenameTemplate = {
     const toSnake = s => s.toLowerCase().replace(/\s+/g, '_')
     const toPascal = s => s.split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join('')
     const toKebab = s => s.toLowerCase().replace(/\s+/g, '-')
+    // Icon id lives in the hook element's id (e.g. "filename-section-123")
+    const iconId = (this.el.id.match(/(\d+)$/) || [])[1]
     resultsContainer.innerHTML = sizes.map(size => {
       // Look up the real filename from the server-provided map (handles all icon sets correctly)
       // Falls back to the first available filename for scalable icons
@@ -1809,12 +1821,21 @@ Hooks.FilenameTemplate = {
       const escaped = filename.replace(/"/g, '&quot;')
       return `<div class="flex items-center justify-between bg-base-200 rounded px-3 py-2 border border-base-300">
         <code class="text-sm text-base-content">${filename}</code>
-        <button type="button" class="copy-filename text-xs text-base-content/60 hover:text-base-content px-2 py-1 rounded hover:bg-base-300" data-text="${escaped}">Copy</button>
+        <button type="button" class="copy-filename text-xs text-base-content/60 hover:text-base-content px-2 py-1 rounded hover:bg-base-300" data-text="${escaped}" data-size="${size}">Copy</button>
       </div>`
     }).join("")
     this.el.querySelectorAll(".copy-filename").forEach(btn => {
       btn.onclick = () => navigator.clipboard.writeText(btn.dataset.text).then(() => {
         const orig = btn.textContent; btn.textContent = "Copied!"; setTimeout(() => btn.textContent = orig, 1500)
+        // Track in metrics — filename platform, per-size.
+        const metricsEl = document.getElementById('metrics-tracker')
+        if (metricsEl?._pushEvent && iconId) {
+          metricsEl._pushEvent('track_copy', {
+            'icon-id': iconId,
+            platform: 'filename',
+            size: btn.dataset.size || ''
+          })
+        }
       })
     })
   }

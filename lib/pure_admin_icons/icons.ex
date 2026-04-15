@@ -114,15 +114,47 @@ defmodule PureAdminIcons.Icons do
     end
   end
 
+  @doc """
+  Tracks an icon action in metrics.
+
+  Accepts these opts:
+
+  - `:size` — integer, pixel size (nil for scalable or unknown)
+  - `:surface` — where in the UI the action originated
+    (`"inline"`, `"popover"`, `"designer"`, …)
+  - `:format` — what was produced
+    (`"cssclass"`, `"htmltag"`, `"filename"`, `"png-zip"`,
+    `"svg-kebab"`/`"svg-snake"`/`"svg-pascal"`/`"svg-original"`,
+    identifier codes like `"ios"`/`"android"`, …)
+
+  Legacy `:platform` opt supported during transition — if it contains `:`
+  it's split into surface/format, otherwise it's treated as the format and
+  surface defaults to `"inline"`. Explicit `:surface`/`:format` win.
+  """
   def track_action(icon_id, action, source, opts \\ []) do
-    # Pass nil (not :eg_value_not_provided) so positional params stay aligned —
-    # the DB SP treats NULL as "no value" and the sentinel would get filtered
-    # out, shifting `platform` into the size slot.
     size = opts[:size]
-    platform = opts[:platform]
-    case DbContext.track_icon_action(icon_id, action, source, size, platform) do
+    {surface, format} = split_platform(opts)
+
+    # Pass nil (not :eg_value_not_provided) so positional params stay aligned.
+    case DbContext.track_icon_action(icon_id, action, source, size, surface, format) do
       {:ok, _} -> :ok
       {:error, _} = error -> error
+    end
+  end
+
+  defp split_platform(opts) do
+    case {opts[:surface], opts[:format], opts[:platform]} do
+      {s, f, _} when is_binary(s) or is_binary(f) ->
+        {s, f}
+
+      {nil, nil, p} when is_binary(p) ->
+        case String.split(p, ":", parts: 2) do
+          [s, f] -> {s, f}
+          [f] -> {"inline", f}
+        end
+
+      _ ->
+        {nil, nil}
     end
   end
 
@@ -143,10 +175,48 @@ defmodule PureAdminIcons.Icons do
     end
   end
 
+  # Raw long-form rows straight from public.get_stats_overview (v1.11+).
+  # Each row: %{source_code, period_code, action_code, surface_code,
+  # format_code, count}. Callers pivot as needed.
+  def stats_overview_raw do
+    case DbContext.get_stats_overview() do
+      {:ok, rows} -> {:ok, rows}
+      {:error, _} = error -> error
+    end
+  end
+
+  # v1.11+ `get_stats_overview` returns a long-form row per
+  # (source, period, action, surface, format). Pivot to the wide shape the
+  # LiveView expects: one row per (source, period) with copies/downloads/
+  # searches summed across all surfaces and formats.
   def stats_overview do
     case DbContext.get_stats_overview() do
-      {:ok, results} -> {:ok, results}
-      {:error, _} = error -> error
+      {:ok, rows} ->
+        pivoted =
+          rows
+          |> Enum.group_by(
+            fn r -> {r.source_code, r.period_code} end,
+            fn r -> {r.action_code, r.count || 0} end
+          )
+          |> Enum.map(fn {{source, period}, action_counts} ->
+            by_action =
+              action_counts
+              |> Enum.group_by(fn {a, _} -> a end, fn {_, c} -> c end)
+              |> Map.new(fn {a, cs} -> {a, Enum.sum(cs)} end)
+
+            %{
+              source_code: source,
+              period_code: period,
+              copies: Map.get(by_action, "copy", 0),
+              downloads: Map.get(by_action, "download", 0),
+              searches: Map.get(by_action, "search", 0)
+            }
+          end)
+
+        {:ok, pivoted}
+
+      {:error, _} = error ->
+        error
     end
   end
 

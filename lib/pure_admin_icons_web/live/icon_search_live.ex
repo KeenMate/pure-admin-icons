@@ -292,9 +292,41 @@ defmodule PureAdminIconsWeb.IconSearchLive do
     require Logger
     naming = params["naming"] || "original"
     Logger.info("[metrics] track_download icon_id=#{icon_id} size=#{size} naming=#{naming}")
+    # `size` may be a single pixel value ("24"), a comma-joined list
+    # ("32,64,128") for PNG-ZIP batches, "0" for scalable single-SVG downloads,
+    # or "" for scalable icons with no size grid. Parse defensively.
+    size_opt =
+      case size do
+        s when is_binary(s) and s != "" ->
+          case Integer.parse(s) do
+            {n, ""} -> n
+            _ -> nil
+          end
+
+        _ ->
+          nil
+      end
+
+    # `naming` can be:
+    #   - "designer:png-zip" / "popover:png-zip"  (surface:format, ready to split)
+    #   - "original"/"pascal"/"kebab"/"snake"     (SVG filename-naming from the inline download link)
+    # For the bare forms, surface is "inline" and format is "svg-<naming>".
+    {surface, format} =
+      case String.split(naming, ":", parts: 2) do
+        [s, f] -> {s, f}
+        [n] -> {"inline", "svg-#{n}"}
+      end
+
     Task.start(fn ->
-      case Icons.track_action(String.to_integer(icon_id), "download", "web", size: String.to_integer(size), platform: "download:#{naming}") do
-        :ok -> Logger.info("[metrics] track_download OK icon_id=#{icon_id}")
+      case Icons.track_action(
+             String.to_integer(icon_id),
+             "download",
+             "web",
+             size: size_opt,
+             surface: surface,
+             format: format
+           ) do
+        :ok -> Logger.info("[metrics] track_download OK icon_id=#{icon_id} #{surface}/#{format}")
         {:error, reason} -> Logger.error("[metrics] track_download FAILED icon_id=#{icon_id}: #{inspect(reason)}")
       end
     end)
@@ -854,7 +886,17 @@ defmodule PureAdminIconsWeb.IconSearchLive do
           <div class="h-1.5 w-full rounded-t-lg" style={IconSets.Color.bar_style(icon.icon_set_code)}></div>
 
           <div class="icon-card-body">
-            <div class="icon-card-name" title={icon.name}><%= icon.name %></div>
+            <div class="icon-card-name flex items-center justify-center gap-1" title={icon.name}>
+              <%= if Map.get(icon, :exact_match, 0) == 1 do %>
+                <span
+                  class="inline-flex items-center text-primary"
+                  title={t("iconSearch.tooltips.exactMatch")}
+                >
+                  <.icon name="hero-check-badge" class="size-3.5" />
+                </span>
+              <% end %>
+              {icon.name}
+            </div>
 
             <%= if @show_style_badge do %>
               <div class="flex justify-center mt-1.5">
@@ -885,6 +927,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
                       type="button"
                       class="quick-designer-download floating-popover-btn text-base-content/60"
                       title={t("iconSearch.tooltips.downloadPngZip")}
+                      data-icon-id={icon.icon_id}
                       data-svg-url={Icon.svg_url(icon, default_size(icon.sizes))}
                       data-name={icon.name}
                     >
@@ -911,6 +954,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
                         type="button"
                         class="quick-designer-download floating-popover-btn text-base-content/60"
                         title={t("iconSearch.tooltips.downloadPngZip")}
+                        data-icon-id={icon.icon_id}
                         data-svg-url={Icon.svg_url(icon, size)}
                         data-name={icon.name}
                       >
@@ -1018,7 +1062,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
                             <.platform_icon name={to_string(platform)} class="w-5 h-5" />
                           </button>
                         <% end %>
-                        <button type="button" class="quick-designer-download floating-popover-btn text-base-content/60" title={t("iconSearch.tooltips.downloadPngZip")} data-svg-url={Icon.svg_url(icon, default_size(icon.sizes))} data-name={icon.name}>
+                        <button type="button" class="quick-designer-download floating-popover-btn text-base-content/60" title={t("iconSearch.tooltips.downloadPngZip")} data-icon-id={icon.icon_id} data-svg-url={Icon.svg_url(icon, default_size(icon.sizes))} data-name={icon.name}>
                           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
                         </button>
                       </div>
@@ -1042,7 +1086,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
                                 <.platform_icon name={to_string(platform)} class="w-5 h-5" />
                               </button>
                             <% end %>
-                            <button type="button" class="quick-designer-download floating-popover-btn text-base-content/60" title={t("iconSearch.tooltips.downloadPngZip")} data-svg-url={Icon.svg_url(icon, size)} data-name={icon.name}>
+                            <button type="button" class="quick-designer-download floating-popover-btn text-base-content/60" title={t("iconSearch.tooltips.downloadPngZip")} data-icon-id={icon.icon_id} data-svg-url={Icon.svg_url(icon, size)} data-name={icon.name}>
                               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
                             </button>
                           </div>

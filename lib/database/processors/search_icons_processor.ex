@@ -31,10 +31,11 @@ defmodule Database.Processors.SearchIconsProcessor do
   Parse a single result row into a SearchIconsModel struct
   """
   @spec parse_result_row(list()) :: {:ok, %SearchIconsModel{}} | {:error, any()}
-  def parse_result_row([rank, similarity, icon_id, icon_set_code, icon_set_title, name, style_code, style_color_method, sizes, has_single_source, is_scalable, filenames, platform_identifiers, categories, total_items]) do
+  def parse_result_row([rank, similarity, exact_match, icon_id, icon_set_code, icon_set_title, name, style_code, style_color_method, sizes, has_single_source, is_scalable, filenames, platform_identifiers, categories, total_items]) do
     {:ok, %SearchIconsModel{
       rank: rank,
       similarity: similarity,
+      exact_match: exact_match,
       icon_id: icon_id,
       icon_set_code: icon_set_code,
       icon_set_title: icon_set_title,

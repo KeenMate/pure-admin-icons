@@ -9,9 +9,10 @@ defmodule Database.Models.GetStatsOverviewModel do
   @fields [
     :source_code,
     :period_code,
-    :copies,
-    :downloads,
-    :searches
+    :action_code,
+    :surface_code,
+    :format_code,
+    :count
   ]
 
   @enforce_keys @fields
@@ -22,9 +23,10 @@ defmodule Database.Models.GetStatsOverviewModel do
   @type t() :: %__MODULE__{
     source_code: String.t(),
     period_code: String.t(),
-    copies: integer(),
-    downloads: integer(),
-    searches: integer()
+    action_code: String.t(),
+    surface_code: String.t(),
+    format_code: String.t(),
+    count: integer()
   }
 
   use Accessible

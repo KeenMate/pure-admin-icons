@@ -32,7 +32,9 @@ defmodule PureAdminIcons.Sync.Worker do
 
     results =
       Enum.map(icon_sets, fn icon_set ->
-        case sync_icon_set(icon_set) do
+        # Skip the per-set MV refresh inside the batch — we refresh once at
+        # the end of this function for all sets together (N+1 vs 1 call).
+        case sync_icon_set(icon_set, refresh_caches: false) do
           {:ok, stats} -> {icon_set, :ok, stats}
           {:error, reason} -> {icon_set, :error, reason}
         end
@@ -42,6 +44,11 @@ defmodule PureAdminIcons.Sync.Worker do
     failures = Enum.filter(results, fn {_, status, _} -> status == :error end)
 
     Logger.info("Sync complete: #{length(successes)} succeeded, #{length(failures)} failed")
+
+    # Refresh the v1.11 materialized views (mv_icon, mv_icon_phrase) that
+    # public.search_icons and public.get_icon_detail read from. Without this
+    # call, new icons won't appear in search and deleted ones linger.
+    refresh_icon_caches!()
 
     # Brand colors / icon-set metadata may have changed; refresh the cache.
     PureAdminIcons.IconSets.Color.refresh()
@@ -55,15 +62,29 @@ defmodule PureAdminIcons.Sync.Worker do
 
   @doc """
   Sync a specific icon set using its adapter.
+
+  Options:
+
+  - `:refresh_caches` (default `true`) — whether to call
+    `internal.refresh_icon_caches()` on success. `sync_all/1` passes
+    `false` here and runs one refresh for the whole batch instead.
   """
-  def sync_icon_set(icon_set) when is_binary(icon_set) do
+  def sync_icon_set(icon_set, opts \\ [])
+
+  def sync_icon_set(icon_set, opts) when is_binary(icon_set) do
     case Adapter.get_adapter(icon_set) do
       nil ->
         Logger.error("Unknown icon set: #{icon_set}")
         {:error, "Unknown icon set: #{icon_set}"}
 
       adapter ->
-        do_sync_icon_set(adapter)
+        result = do_sync_icon_set(adapter)
+
+        if Keyword.get(opts, :refresh_caches, true) and match?({:ok, _}, result) do
+          refresh_icon_caches!()
+        end
+
+        result
     end
   end
 
@@ -145,6 +166,16 @@ defmodule PureAdminIcons.Sync.Worker do
       {:error, reason} ->
         Logger.error("[#{icon_set}] Download failed: #{inspect(reason)}")
         {:error, reason}
+    end
+  end
+
+  # Refresh public.mv_icon / public.mv_icon_phrase concurrently
+  # (with blocking fallback handled inside the SP). Logged but not fatal —
+  # a stale MV is better than a failed sync.
+  defp refresh_icon_caches! do
+    case Repo.query("SELECT internal.refresh_icon_caches()", []) do
+      {:ok, _} -> Logger.info("Refreshed mv_icon / mv_icon_phrase")
+      {:error, reason} -> Logger.warning("refresh_icon_caches failed: #{inspect(reason)}")
     end
   end
 

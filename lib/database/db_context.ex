@@ -555,8 +555,8 @@ defmodule Database.DbContext do
   Returns: {:ok, any()} | {:error, any()}
   
   """
-  @spec track_icon_action(integer(), String.t(), String.t(), integer() | :eg_value_not_provided, String.t() | :eg_value_not_provided, keyword()) :: {:ok, any()} | {:error, any()}
-  def track_icon_action(icon_id, action_code, source_code, size \\ :eg_value_not_provided, platform_code \\ :eg_value_not_provided, query_opts \\ []) do
+  @spec track_icon_action(integer(), String.t(), String.t(), integer() | :eg_value_not_provided, String.t() | :eg_value_not_provided, String.t() | :eg_value_not_provided, keyword()) :: {:ok, any()} | {:error, any()}
+  def track_icon_action(icon_id, action_code, source_code, size \\ :eg_value_not_provided, surface_code \\ :eg_value_not_provided, format_code \\ :eg_value_not_provided, query_opts \\ []) do
     Logger.debug("Calling database routine", routine_name: "track_icon_action")
 
     sql_params_str =
@@ -565,7 +565,8 @@ defmodule Database.DbContext do
         {"_action_code", action_code},
         {"_source_code", source_code},
         {"_size", size},
-        {"_platform_code", platform_code}
+        {"_surface_code", surface_code},
+        {"_format_code", format_code}
       ]
       |> Enum.filter(fn {_name, value} -> value != :eg_value_not_provided end)
       |> Enum.with_index(1)
@@ -578,7 +579,8 @@ defmodule Database.DbContext do
         action_code,
         source_code,
         size,
-        platform_code
+        surface_code,
+        format_code
       ]
       |> Enum.filter(fn value -> value != :eg_value_not_provided end)
 

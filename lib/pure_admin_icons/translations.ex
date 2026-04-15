@@ -154,6 +154,7 @@ defmodule PureAdminIcons.Translations do
     "iconSearch.tooltips.copyPlatformIdentifier" => "Copy %{platform} identifier",
     "iconSearch.tooltips.copyPlatformIdentifierSized" =>
       "Copy %{platform} identifier for size %{size}",
+    "iconSearch.tooltips.exactMatch" => "Exact name match",
 
     # ─────────────────────────── Icon detail modal ────────────────
     "iconDetail.headers.preview" => "Preview",
@@ -212,6 +213,8 @@ defmodule PureAdminIcons.Translations do
     # ─────────────────────────── Stats — /stats ───────────────────
     "stats.headers.pageTitle" => "Stats",
     "stats.headers.popularIcons" => "Popular Icons (by copies)",
+    "stats.headers.bySurface" => "By Surface",
+    "stats.headers.byFormat" => "By Format",
     "stats.tableHeaders.period" => "Period",
     "stats.tableHeaders.copies" => "Copies",
     "stats.tableHeaders.downloads" => "Downloads",

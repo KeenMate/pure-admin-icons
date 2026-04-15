@@ -27,18 +27,19 @@ defmodule PureAdminIconsWeb.AdminStatsLive do
 
   @impl true
   def handle_event("set_period", %{"period" => period}, socket) do
-    {:noreply, socket |> assign(period: period) |> load_popular()}
+    {:noreply, socket |> assign(period: period) |> load_breakdowns() |> load_popular()}
   end
 
   @impl true
   def handle_event("set_source", %{"source" => source}, socket) do
     source = if source == "", do: nil, else: source
-    {:noreply, socket |> assign(source: source) |> load_popular()}
+    {:noreply, socket |> assign(source: source) |> load_breakdowns() |> load_popular()}
   end
 
   defp load_data(socket) do
     socket
     |> load_overview()
+    |> load_breakdowns()
     |> load_popular()
   end
 
@@ -58,6 +59,40 @@ defmodule PureAdminIconsWeb.AdminStatsLive do
       {:error, _} ->
         assign(socket, overview: %{})
     end
+  end
+
+  # Per-surface / per-format breakdowns for the currently-selected period.
+  # Filtered to copy + download actions (search has no surface/format).
+  defp load_breakdowns(socket) do
+    period = socket.assigns.period
+    source = socket.assigns.source
+
+    case Icons.stats_overview_raw() do
+      {:ok, rows} ->
+        filtered =
+          rows
+          |> Enum.filter(fn r ->
+            r.period_code == period and r.action_code in ~w(copy download) and
+              (is_nil(source) or r.source_code == source)
+          end)
+
+        by_surface = sum_by(filtered, & &1.surface_code)
+        by_format = sum_by(filtered, & &1.format_code)
+
+        assign(socket, by_surface: by_surface, by_format: by_format)
+
+      {:error, _} ->
+        assign(socket, by_surface: [], by_format: [])
+    end
+  end
+
+  # Group rows by `key_fn`, sum `count`, drop empty keys, sort desc.
+  defp sum_by(rows, key_fn) do
+    rows
+    |> Enum.group_by(key_fn)
+    |> Enum.map(fn {k, rs} -> {k, rs |> Enum.map(&(&1.count || 0)) |> Enum.sum()} end)
+    |> Enum.reject(fn {k, _} -> is_nil(k) or k == "" end)
+    |> Enum.sort_by(fn {_, c} -> -c end)
   end
 
   defp load_popular(socket) do
@@ -107,6 +142,22 @@ defmodule PureAdminIconsWeb.AdminStatsLive do
             </div>
           </div>
         <% end %>
+      </div>
+
+      <%!-- Breakdowns: surface + format for the selected period --%>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <.breakdown_card
+          title={t("stats.headers.bySurface")}
+          empty_label={t("stats.empty.noData")}
+          rows={@by_surface}
+          subtitle={breakdown_subtitle(@period, @source, t("stats.filters.allSources"))}
+        />
+        <.breakdown_card
+          title={t("stats.headers.byFormat")}
+          empty_label={t("stats.empty.noData")}
+          rows={@by_format}
+          subtitle={breakdown_subtitle(@period, @source, t("stats.filters.allSources"))}
+        />
       </div>
 
       <%!-- Popular icons --%>
@@ -177,6 +228,57 @@ defmodule PureAdminIconsWeb.AdminStatsLive do
   defp period_label("30d"), do: t("stats.periods.30d")
   defp period_label("all"), do: t("stats.periods.allTime")
   defp period_label(p), do: p
+
+  # --- Breakdown card ---------------------------------------------------
+
+  attr :title, :string, required: true
+  attr :subtitle, :string, default: nil
+  attr :empty_label, :string, required: true
+  attr :rows, :list, required: true, doc: "list of {key, count}"
+
+  defp breakdown_card(assigns) do
+    total = assigns.rows |> Enum.map(fn {_, c} -> c end) |> Enum.sum()
+    assigns = assign(assigns, :total, total)
+
+    ~H"""
+    <div class="rounded-box bg-base-200 border border-base-300 p-6">
+      <div class="flex items-baseline justify-between mb-4">
+        <h2 class="text-lg font-bold">{@title}</h2>
+        <%= if @subtitle do %>
+          <span class="text-xs text-base-content/50">{@subtitle}</span>
+        <% end %>
+      </div>
+
+      <%= if @rows == [] do %>
+        <p class="text-base-content/50 text-center py-4">{@empty_label}</p>
+      <% else %>
+        <div class="space-y-2">
+          <%= for {key, count} <- @rows do %>
+            <% pct = if @total > 0, do: round(count * 100 / @total), else: 0 %>
+            <div>
+              <div class="flex items-baseline justify-between text-sm">
+                <code class="text-base-content/80">{key}</code>
+                <span class="tabular-nums text-base-content/60">
+                  {format_count(count)}
+                  <span class="text-base-content/40">({pct}%)</span>
+                </span>
+              </div>
+              <div class="h-1.5 bg-base-300 rounded overflow-hidden mt-1">
+                <div class="h-full bg-primary" style={"width: #{pct}%;"}></div>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+    """
+  end
+
+  # e.g. "30 days · web" or "7 days · all sources"
+  defp breakdown_subtitle(period, source, all_label) do
+    source_part = source || all_label
+    "#{period_label(period)} · #{source_part}"
+  end
 
   defp format_count(nil), do: "0"
   defp format_count(0), do: "0"
