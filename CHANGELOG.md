@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-04-15 — Cache-bust asset URLs, wire up `get_stats_overview`
+
+### Fingerprinted static asset URLs
+- Added `cache_static_manifest: "priv/static/cache_manifest.json"` to the prod endpoint config. `mix phx.digest` was already running during `assets.deploy`, producing `cache_manifest.json` and `app-<hash>.css/.js` copies — but the endpoint had no reference to the manifest, so `~p"/assets/…"` resolved to logical URLs (e.g. `/assets/js/app.js`) with no content hash. Combined with `Plug.Static`'s `cache-control: public, max-age=31536000, immutable`, deployed JS/CSS changes wouldn't reach browsers for up to a year without a hand-refresh.
+- With the manifest wired up, every build produces new hashed URLs → browsers automatically fetch the new bundle on next page load. No more "please hard-refresh" emails after a deploy.
+
+### `get_stats_overview` wrapper
+- Added `get_stats_overview` to `db-gen.json` under the `public` schema. The SP existed on the DB since v1.7 but wasn't registered for generation, so `DbContext.get_stats_overview/0` was undefined and the `/stats` overview cards (web/api × period matrix) crashed at runtime.
+
 ## 2026-04-15 — Colorization fixes for Material, unified live-SVG helper
 
 ### Material preset colorization works across the modal

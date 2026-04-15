@@ -4,6 +4,10 @@ import Config
 # known as HSTS. If you have a health check endpoint, you may want to exclude it below.
 # Note `:force_ssl` is required to be set at compile-time.
 config :pure_admin_icons, PureAdminIconsWeb.Endpoint,
+  # Fingerprint static asset URLs via the digest manifest so deploys bust
+  # browser caches automatically (each bundle gets a content-hashed URL,
+  # so a rebuild = new URL = fresh fetch).
+  cache_static_manifest: "priv/static/cache_manifest.json",
   force_ssl: [
     rewrite_on: [:x_forwarded_proto],
     exclude: [
