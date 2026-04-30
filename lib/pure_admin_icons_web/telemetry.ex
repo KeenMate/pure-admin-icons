@@ -52,6 +52,23 @@ defmodule PureAdminIconsWeb.Telemetry do
         unit: {:native, :millisecond}
       ),
 
+      # IconSearchLive timing
+      summary("pure_admin_icons.icon_search.mount.duration_ms",
+        tags: [:connected],
+        unit: :millisecond
+      ),
+      summary("pure_admin_icons.icon_search.mount.get_last_sync_ms", unit: :millisecond),
+      summary("pure_admin_icons.icon_search.mount.list_icon_sets_ms", unit: :millisecond),
+      summary("pure_admin_icons.icon_search.mount.icon_count_ms", unit: :millisecond),
+      summary("pure_admin_icons.icon_search.handle_params.duration_ms",
+        tags: [:connected, :filtered],
+        unit: :millisecond
+      ),
+      summary("pure_admin_icons.icon_search.handle_params.search_ms",
+        tags: [:filtered],
+        unit: :millisecond
+      ),
+
       # VM Metrics
       summary("vm.memory.total", unit: {:byte, :kilobyte}),
       summary("vm.total_run_queue_lengths.total"),
