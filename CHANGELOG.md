@@ -1,5 +1,29 @@
 # Changelog
 
+## 2026-04-30 — LiveView WebSocket transport restored, infra docs
+
+### Symptom
+Back-navigation to `/` was taking 2.5–30 s with occasional full-page reloads. Server logs showed every LV connection landing as `Transport: :longpoll` instead of `:websocket`. The browser was attempting WS, failing silently, and falling back to long-polling after `longPollFallbackMs: 2500`.
+
+### Three layered causes, fixed together
+
+**Phoenix `force_ssl` 301-looping the WS Upgrade handshake.** Traefik (in this stack) does not forward `X-Forwarded-Proto: https` for Upgrade-style requests. Phoenix's `Plug.SSL` therefore saw `scheme=:http`, redirected to `https://…/live/websocket`, the browser re-issued, looped. The icons router only listens on Traefik's `websecure` entrypoint anyway, so HTTPS is already enforced at the edge — `force_ssl` was redundant and breaking. Replaced with `Plug.RewriteOn [:x_forwarded_host, :x_forwarded_port, :x_forwarded_proto]` in `endpoint.ex` so Phoenix still trusts proxy headers for URL generation but doesn't redirect.
+
+**Traefik `encodedCharacters` rejecting LV's WS connect URL.** Traefik 3.6.4+ refuses URLs containing `%2F`, `%5C`, `%23`, `%3F`, `%3B`, `%00` by default. LiveView's WS connect URL embeds asset URLs in the `_track_static` query parameter (`_track_static[0]=https%3A%2F%2F…`), which contains `%2F`. Traefik silently 400'd these; browser fell back to long-poll. Fixed in the Traefik static config (`traefik.yml`) by allowing all six encoded characters on the `websecure` entrypoint. Both the required Traefik settings and the rationale for not running `force_ssl` are documented in the README's new "Reverse proxy (Traefik) requirements" section.
+
+**Bumped Traefik 3.6.13 → 3.6.15** as a precaution while diagnosing; not the silver bullet but worth being on latest patch.
+
+### Diagnostic scaffolding (added during, partially removed)
+
+- Added per-step timing telemetry for `IconSearchLive` mount and `handle_params` (DB calls individually timed). Logs as `[icon_search.mount] connected=true total=…ms (get_last_sync=…ms list_icon_sets=…ms count=…ms)` and emits `:telemetry` events registered in `PureAdminIconsWeb.Telemetry` for future Grafana wiring. Confirmed server-side mount is fast (~30 ms) — ruled out DB as the back-nav slowness, pointing at transport.
+- Temporarily added a `/api/debug/headers` endpoint that dumps `conn` info + raw request headers as text. Used to verify Traefik was forwarding `X-Forwarded-Proto: https` on normal requests but not on Upgrade requests. Removed once the diagnosis was nailed; kept the timing telemetry.
+
+### Tuning
+- `longPollFallbackMs: 2500 → 1500` in `assets/js/app.js`. WS now connects reliably so the LP safety-net can fire faster on the rare networks where WS is genuinely blocked. Not removed entirely — keeps things working on restrictive corporate networks.
+
+### Stop tracking built JS/CSS in git
+Added `priv/static/assets/{js,css}/app.{js,css}{,.map}` to `.gitignore` and `git rm --cached`'d the existing tracked copies. The Dockerfile already runs `mix assets.deploy` to regenerate them, so they don't need to live in git. Vendor files in `priv/static/assets/vendor/` (floating-ui, jszip) and `default.css` stay tracked. README's new "Assets" subsection explains the dev-bundle size breakdown (the bundle is ~1.3 MB in dev mostly because of the inline source map; prod is ~110 KB minified, ~35 KB gzipped).
+
 ## 2026-04-15 — Upstream synonym extraction, stage.icon_phrase semantics
 
 ### Synonyms / tags pulled from upstream metadata
