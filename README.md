@@ -169,6 +169,21 @@ mix format             # Format code
 make db-gen            # Regenerate DB context from stored procedures
 ```
 
+### Assets
+
+Sources live in `assets/js/` (entry: `assets/js/app.js`) and `assets/css/app.css`. esbuild bundles JS into `priv/static/assets/js/app.js`; Tailwind compiles CSS into `priv/static/assets/css/app.css`. Both build outputs are **gitignored** — the Dockerfile regenerates them via `mix assets.deploy`. Vendor files under `priv/static/assets/vendor/` (floating-ui, jszip) and `priv/static/assets/default.css` are checked in.
+
+The dev bundle is large (~1.3MB for `app.js`) because esbuild emits an inline base64 source map (~939KB, ~71% of the file) and ships Phoenix + LiveView unminified (~382KB):
+
+| Component | Approx. size (dev, unminified) |
+|-----------|-------------------------------|
+| Inline source map (base64) | ~939KB |
+| `phoenix_live_view`        | ~225KB |
+| `phoenix`                  | ~52KB  |
+| App + theme + lang switcher + topbar + esbuild shim | ~105KB |
+
+Production (`mix assets.deploy`) minifies, writes the source map to a separate `.js.map` file, and `mix phx.digest` gzips — end users download roughly 110KB minified, ~35KB gzipped.
+
 ## Deployment
 
 ```bash
