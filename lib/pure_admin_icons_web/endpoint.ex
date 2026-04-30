@@ -11,6 +11,11 @@ defmodule PureAdminIconsWeb.Endpoint do
     same_site: "Lax"
   ]
 
+  # We're always behind Traefik in prod, which terminates TLS and forwards
+  # over HTTP. Trust its X-Forwarded-* headers so Phoenix sees the right
+  # scheme/host/port for URL generation without redirecting.
+  plug Plug.RewriteOn, [:x_forwarded_host, :x_forwarded_port, :x_forwarded_proto]
+
   socket "/live", Phoenix.LiveView.Socket,
     websocket: [connect_info: [session: @session_options]],
     longpoll: [connect_info: [session: @session_options]]
