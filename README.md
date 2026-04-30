@@ -196,6 +196,47 @@ docker run -p 8888:8888 \
   pure-admin-icons:latest
 ```
 
+### Reverse proxy (Traefik) requirements
+
+This app sits behind Traefik in production. Two non-obvious requirements — without these, LiveView falls back to long-polling (slow back-nav, occasional page reloads):
+
+**1. The websecure entrypoint must allow encoded characters in the request URL.**
+
+Phoenix LiveView's WebSocket connect URL embeds asset URLs in the `_track_static` query parameter (e.g. `_track_static[0]=https%3A%2F%2F...`), which contains `%2F`. Traefik 3.6.4+ rejects requests with `%2F`, `%5C`, `%23`, `%3F`, `%3B`, `%00` in the URL by default (see [Traefik docs](https://doc.traefik.io/traefik/reference/install-configuration/entrypoints/#opt-http-encodedCharacters)). The WS handshake silently 400s → browser falls back to long-poll.
+
+In `traefik.yml`:
+
+```yaml
+entryPoints:
+  websecure:
+    address: ":443"
+    http:
+      encodedCharacters:
+        allowEncodedBackSlash: true
+        allowEncodedNullCharacter: true
+        allowEncodedQuestionMark: true
+        allowEncodedSemicolon: true
+        allowEncodedSlash: true
+        allowEncodedHash: true
+```
+
+**2. The icons router only listens on the `websecure` entrypoint** (HTTPS-only at the proxy layer). Because of this, Phoenix `force_ssl` is intentionally **not** configured — Traefik already enforces HTTPS, and `force_ssl` would 301-loop WebSocket Upgrade requests when Traefik doesn't forward `X-Forwarded-Proto` for them. Phoenix uses `Plug.RewriteOn` instead (in `lib/pure_admin_icons_web/endpoint.ex`) to trust the proxy headers for URL generation without redirecting.
+
+Minimal Traefik labels for the icons service:
+
+```yaml
+labels:
+  - traefik.enable=true
+  - traefik.http.routers.pureadmin-io-icons.rule=Host(`icons.pureadmin.io`)
+  - traefik.http.routers.pureadmin-io-icons.entrypoints=websecure
+  - traefik.http.routers.pureadmin-io-icons.tls=true
+  - traefik.http.routers.pureadmin-io-icons.tls.certresolver=letsencrypt
+  - traefik.http.routers.pureadmin-io-icons.service=pureadmin-io-icons
+  - traefik.http.services.pureadmin-io-icons.loadbalancer.server.port=4000
+```
+
+(`PORT=4000` env var on the container makes Phoenix listen on `:4000` to match the loadbalancer port.)
+
 ## License
 
 Application code: MIT. Icon SVGs retain their original licenses (see icon set table above).

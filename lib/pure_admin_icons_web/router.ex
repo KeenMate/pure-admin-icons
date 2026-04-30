@@ -45,7 +45,6 @@ defmodule PureAdminIconsWeb.Router do
     get "/icons/:id", IconController, :show
     get "/icon-sets", IconController, :icon_sets
     get "/health", HealthController, :index
-    get "/debug/headers", DebugController, :headers
     post "/maintenance/:task", MaintenanceController, :run
     post "/maintenance/:task/:icon_set", MaintenanceController, :run
   end
