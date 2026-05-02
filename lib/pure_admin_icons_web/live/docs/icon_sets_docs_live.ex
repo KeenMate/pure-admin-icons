@@ -21,7 +21,7 @@ defmodule PureAdminIconsWeb.Docs.IconSetsDocsLive do
     <div class="max-w-5xl mx-auto px-4 py-10">
       <div class="rounded-box bg-base-200 overflow-hidden border border-base-300 p-8 mb-6">
         <h1 class="text-3xl font-bold mb-2">{t("iconSets.headers.pageTitle")}</h1>
-        <p class="text-base-content/60 mb-1">
+        <p class="text-base-content/80 mb-1">
           {t("iconSets.messages.summary", %{count: length(@icon_sets)})}
         </p>
         <p class="text-base-content/50 text-sm">
@@ -68,7 +68,7 @@ defmodule PureAdminIconsWeb.Docs.IconSetsDocsLive do
               </span>
             </div>
             <%= if @set.description && @set.description != "" do %>
-              <p class="text-sm text-base-content/70">{@set.description}</p>
+              <p class="text-sm text-base-content/85">{@set.description}</p>
             <% end %>
           </div>
           <div class="text-right shrink-0">
@@ -83,7 +83,7 @@ defmodule PureAdminIconsWeb.Docs.IconSetsDocsLive do
           <.info_row label={t("iconSets.labels.sizes")}>
             <%= cond do %>
               <% @set.has_single_source -> %>
-                <span class="text-base-content/70">{t("common.labels.scalable")}</span>
+                <span class="text-base-content/85">{t("common.labels.scalable")}</span>
               <% @set.sizes && @set.sizes != [] -> %>
                 <span class="font-mono">{Enum.join(@set.sizes, ", ")} px</span>
               <% true -> %>
@@ -100,7 +100,7 @@ defmodule PureAdminIconsWeb.Docs.IconSetsDocsLive do
         </dl>
 
         <div class="mb-4">
-          <div class="text-xs font-semibold text-base-content/60 uppercase tracking-wide mb-1.5">
+          <div class="text-xs font-semibold text-base-content/80 uppercase tracking-wide mb-1.5">
             {t("iconSets.headers.styles")}
           </div>
           <div class="flex flex-wrap gap-1.5">
@@ -166,7 +166,7 @@ defmodule PureAdminIconsWeb.Docs.IconSetsDocsLive do
   defp info_row(assigns) do
     ~H"""
     <div>
-      <dt class="text-xs font-semibold text-base-content/60 uppercase tracking-wide">{@label}</dt>
+      <dt class="text-xs font-semibold text-base-content/80 uppercase tracking-wide">{@label}</dt>
       <dd class="text-sm mt-0.5">
         <%= if @inner_block != [] do %>
           {render_slot(@inner_block)}

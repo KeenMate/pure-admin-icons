@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-05-02 — Theme & docs styling sync with pureadmin.io
+
+Brought the icons site visually in line with pureadmin.io (which had its day-theme palette and docs chrome reworked the same day). The two share the same `park-morning/day/evening/night` daisyUI themes, so any palette or panel-chrome change has to land on both or they drift.
+
+**Day theme brightness restored.** `--color-base-100/200/300` lifted from `97/93/85% → 99/96/88%` in `assets/css/app.css`. The April readability commit had darkened them for `/70` text contrast, but at near-zero chroma + cool hue 260 the panels read as flat cool-gray rather than the intended "clean cool white." Morning/evening/night untouched.
+
+**Code panel chrome rebuilt.** The `<.code_block>` defp in `api_docs_live.ex` and the inline `<pre>` blocks in `mcp_docs_live.ex` (×2) and `llms_docs_live.ex` (×1) all switched from `!bg-transparent border-base-300/30` to `bg-base-300/70 border-base-300 shadow-sm`. Inline `<code>` tags in the mcp/llms docs got a `class="hljs"` marker so the new CSS selector picks them up. On light themes a `pre:has(> code.hljs)` rule paints the panel pure white. The icons site doesn't currently load highlight.js CDN, but the `.hljs` background/padding reset is added anyway to keep parity with pureadmin.io and pre-empt future divergence if hljs is added.
+
+**Docs cards visible.** The `/docs` index card in `docs_index_live.ex` moved from `bg-base-100/50 border-base-300/50` to solid `bg-base-100 border-base-300 shadow-sm` with `hover:-translate-y-0.5 hover:shadow-md`. With the lifted day palette the half-opaque cards were vanishing into the `bg-base-200` panel.
+
+**Docs text contrast bumped.** Across `api_docs_live.ex`, `llms_docs_live.ex`, `mcp_docs_live.ex`, `icon_sets_docs_live.ex`, and `docs_index_live.ex`: `text-primary/80` → `text-primary` (label-style code refs at full color), `text-base-content/70` → `/85` (descriptions and prose), `text-base-content/60` → `/80` (section labels and page subtitles). Main UI files (`icon_search_live.ex`, `home_live.ex`, `admin_stats_live.ex`, modal/sync screens) intentionally left alone — they have their own design tuned against the live grid.
+
+---
+
 ## 2026-04-30 — LiveView WebSocket transport restored, infra docs
 
 ### Symptom

@@ -15,7 +15,7 @@ defmodule PureAdminIconsWeb.Docs.DocsIndexLive do
     <div class="max-w-4xl mx-auto px-4 py-10">
       <div class="rounded-box bg-base-200 overflow-hidden border border-base-300 p-8">
         <h1 class="text-3xl font-bold mb-2">{t("docsIndex.headers.pageTitle")}</h1>
-        <p class="text-base-content/60 mb-8">
+        <p class="text-base-content/80 mb-8">
           {t("docsIndex.messages.intro")}
         </p>
 
@@ -67,14 +67,14 @@ defmodule PureAdminIconsWeb.Docs.DocsIndexLive do
     ~H"""
     <a
       href={@href}
-      class="group block rounded-xl border border-base-300/50 bg-base-100/50 p-6 hover:border-primary/30 hover:bg-base-100 transition-all"
+      class="group block rounded-xl border border-base-300 bg-base-100 p-6 shadow-sm hover:border-primary/40 hover:shadow-md hover:-translate-y-0.5 transition-all"
     >
       <div class="flex items-center gap-3 mb-2">
         <span class={"#{@icon} size-5 text-primary/70 group-hover:text-primary transition-colors"}>
         </span>
         <h2 class="text-lg font-semibold group-hover:text-primary transition-colors">{@title}</h2>
       </div>
-      <p class="text-sm text-base-content/60">{@description}</p>
+      <p class="text-sm text-base-content/80">{@description}</p>
     </a>
     """
   end

@@ -87,9 +87,9 @@
 @plugin "../vendor/daisyui-theme" {
   name: "park-day";
   color-scheme: "light";
-  --color-base-100: oklch(97% 0.005 260);
-  --color-base-200: oklch(93% 0.008 260);
-  --color-base-300: oklch(85% 0.012 260);
+  --color-base-100: oklch(99% 0.003 260);
+  --color-base-200: oklch(96% 0.005 260);
+  --color-base-300: oklch(88% 0.01 260);
   --color-base-content: oklch(12% 0.015 260);
   --color-primary: oklch(58% 0.18 60);
   --color-primary-content: oklch(98% 0.005 60);
@@ -149,6 +149,17 @@
   --border: 1px;
   --depth: 1;
   --noise: 0;
+}
+
+/* ── highlight.js: let our <pre> own the chrome (no-op until hljs CSS is loaded, but keeps parity with pureadmin.io) ── */
+.hljs {
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+/* Light themes: clean white code panel instead of base-300 tint */
+:is([data-theme="park-morning"], [data-theme="park-day"]) pre:has(> code.hljs) {
+  background: white;
 }
 
 /* LiveView variants */

@@ -15,7 +15,7 @@ defmodule PureAdminIconsWeb.Docs.ApiDocsLive do
     <div class="max-w-4xl mx-auto px-4 py-10">
       <div class="rounded-box bg-base-200 overflow-hidden border border-base-300 p-8">
         <h1 class="text-3xl font-bold mb-2">{t("apiDocs.headers.pageTitle")}</h1>
-        <p class="text-base-content/60 mb-8">
+        <p class="text-base-content/80 mb-8">
           Search icons programmatically. All endpoints return JSON. No authentication required.
         </p>
 
@@ -64,23 +64,23 @@ defmodule PureAdminIconsWeb.Docs.ApiDocsLive do
         <div class="space-y-8 mt-10">
           <h2 class="text-xl font-bold border-b border-base-300/50 pb-2">Response Formats</h2>
 
-          <p class="text-sm text-base-content/60 mb-4">
-            The <code class="text-xs font-mono text-primary/80">format</code> parameter on <code class="text-xs font-mono text-primary/80">/api/icons/search</code> controls the response shape:
+          <p class="text-sm text-base-content/80 mb-4">
+            The <code class="text-xs font-mono text-primary">format</code> parameter on <code class="text-xs font-mono text-primary">/api/icons/search</code> controls the response shape:
           </p>
 
-          <div class="space-y-4 text-sm text-base-content/70">
+          <div class="space-y-4 text-sm text-base-content/85">
             <div class="flex gap-2">
-              <code class="text-primary/80 font-mono">json</code>
+              <code class="text-primary font-mono">json</code>
               <span class="text-base-content/50">&mdash;</span>
               <span>Full response: id, icon_set, name, style, style_color_method, sizes, ios/android identifiers, svg_url</span>
             </div>
             <div class="flex gap-2">
-              <code class="text-primary/80 font-mono">compact</code>
+              <code class="text-primary font-mono">compact</code>
               <span class="text-base-content/50">&mdash;</span>
               <span>Minimal JSON: icon_set, name, style, url</span>
             </div>
             <div class="flex gap-2">
-              <code class="text-primary/80 font-mono">text</code>
+              <code class="text-primary font-mono">text</code>
               <span class="text-base-content/50">&mdash;</span>
               <span>Plain text, one icon per line (most token-efficient for AI/LLMs)</span>
             </div>
@@ -92,25 +92,25 @@ defmodule PureAdminIconsWeb.Docs.ApiDocsLive do
           <h2 class="text-xl font-bold border-b border-base-300/50 pb-2">Response Fields</h2>
 
           <div class="space-y-4 text-sm">
-            <p class="text-base-content/60">Key fields in the JSON response:</p>
-            <div class="space-y-2 text-base-content/70">
+            <p class="text-base-content/80">Key fields in the JSON response:</p>
+            <div class="space-y-2 text-base-content/85">
               <div class="flex gap-2">
-                <code class="text-primary/80 font-mono min-w-40">style_color_method</code>
+                <code class="text-primary font-mono min-w-40">style_color_method</code>
                 <span class="text-base-content/50">&mdash;</span>
                 <span>How to set icon color via CSS: <code class="text-xs font-mono">"fill"</code>, <code class="text-xs font-mono">"stroke"</code>, or <code class="text-xs font-mono">"multicolor"</code> (not recolorable)</span>
               </div>
               <div class="flex gap-2">
-                <code class="text-primary/80 font-mono min-w-40">svg_url</code>
+                <code class="text-primary font-mono min-w-40">svg_url</code>
                 <span class="text-base-content/50">&mdash;</span>
                 <span>Relative URL to the SVG file (e.g., <code class="text-xs font-mono">/icons/fluentui/regular/ic_fluent_calendar_24_regular.svg</code>)</span>
               </div>
               <div class="flex gap-2">
-                <code class="text-primary/80 font-mono min-w-40">ios</code>
+                <code class="text-primary font-mono min-w-40">ios</code>
                 <span class="text-base-content/50">&mdash;</span>
                 <span>iOS/Swift identifier per size (e.g., <code class="text-xs font-mono" phx-no-curly-interpolation>{"24": "calendar24Solid"}</code>)</span>
               </div>
               <div class="flex gap-2">
-                <code class="text-primary/80 font-mono min-w-40">android</code>
+                <code class="text-primary font-mono min-w-40">android</code>
                 <span class="text-base-content/50">&mdash;</span>
                 <span>Android/Kotlin identifier per size (e.g., <code class="text-xs font-mono" phx-no-curly-interpolation>{"24": "ic_heroicons_calendar_24_solid"}</code>)</span>
               </div>
@@ -155,31 +155,31 @@ defmodule PureAdminIconsWeb.Docs.ApiDocsLive do
         <div class="border-t border-base-300/50 mt-10 pt-8">
           <h2 class="text-xl font-bold mb-4">AI / LLM Integration</h2>
 
-          <p class="text-base-content/70 text-sm mb-4">
-            For AI assistants and LLMs, use the <code class="text-xs font-mono text-primary/80">text</code> format for maximum token efficiency.
+          <p class="text-base-content/85 text-sm mb-4">
+            For AI assistants and LLMs, use the <code class="text-xs font-mono text-primary">text</code> format for maximum token efficiency.
             We also provide an MCP server for direct integration with Claude Desktop and Claude Code.
           </p>
 
           <div class="space-y-6">
             <div>
-              <h3 class="text-sm font-semibold uppercase tracking-wider text-base-content/60 mb-2">
+              <h3 class="text-sm font-semibold uppercase tracking-wider text-base-content/80 mb-2">
                 MCP Server (Claude Desktop / Claude Code)
               </h3>
               <.code_block code={~s|{\n  "mcpServers": {\n    "pure-admin-icons": {\n      "command": "npx",\n      "args": ["-y", "-p", "@keenmate/pure-admin-icons-mcp", "pure-admin-icons-mcp"]\n    }\n  }\n}|} lang="json" />
             </div>
 
             <div>
-              <h3 class="text-sm font-semibold uppercase tracking-wider text-base-content/60 mb-2">
+              <h3 class="text-sm font-semibold uppercase tracking-wider text-base-content/80 mb-2">
                 LLM-friendly endpoint
               </h3>
               <.code_block code="curl 'https://icons.pureadmin.io/api/icons/search?q=calendar&format=text'" />
             </div>
 
             <div>
-              <h3 class="text-sm font-semibold uppercase tracking-wider text-base-content/60 mb-2">
+              <h3 class="text-sm font-semibold uppercase tracking-wider text-base-content/80 mb-2">
                 Machine-readable docs
               </h3>
-              <p class="text-base-content/70 text-sm">
+              <p class="text-base-content/85 text-sm">
                 <a href="/llms.txt" class="text-primary hover:underline">/llms.txt</a> &middot;
                 <a href="/.well-known/ai-plugin.json" class="text-primary hover:underline">/.well-known/ai-plugin.json</a>
               </p>
@@ -193,42 +193,42 @@ defmodule PureAdminIconsWeb.Docs.ApiDocsLive do
 
           <div class="space-y-6">
             <div>
-              <h3 class="text-sm font-semibold uppercase tracking-wider text-base-content/60 mb-2">
+              <h3 class="text-sm font-semibold uppercase tracking-wider text-base-content/80 mb-2">
                 Search icons
               </h3>
               <.code_block code="curl 'https://icons.pureadmin.io/api/icons/search?q=pen&size=24&limit=5'" />
             </div>
 
             <div>
-              <h3 class="text-sm font-semibold uppercase tracking-wider text-base-content/60 mb-2">
+              <h3 class="text-sm font-semibold uppercase tracking-wider text-base-content/80 mb-2">
                 Filter by multiple icon sets
               </h3>
               <.code_block code="curl 'https://icons.pureadmin.io/api/icons/search?q=arrow&set=heroicons&set=lucide&set=fontawesome'" />
             </div>
 
             <div>
-              <h3 class="text-sm font-semibold uppercase tracking-wider text-base-content/60 mb-2">
+              <h3 class="text-sm font-semibold uppercase tracking-wider text-base-content/80 mb-2">
                 Get icon detail
               </h3>
               <.code_block code="curl 'https://icons.pureadmin.io/api/icons/5403'" />
             </div>
 
             <div>
-              <h3 class="text-sm font-semibold uppercase tracking-wider text-base-content/60 mb-2">
+              <h3 class="text-sm font-semibold uppercase tracking-wider text-base-content/80 mb-2">
                 List icon sets
               </h3>
               <.code_block code="curl 'https://icons.pureadmin.io/api/icon-sets'" />
             </div>
 
             <div>
-              <h3 class="text-sm font-semibold uppercase tracking-wider text-base-content/60 mb-2">
+              <h3 class="text-sm font-semibold uppercase tracking-wider text-base-content/80 mb-2">
                 JavaScript
               </h3>
               <.code_block code={~s|const res = await fetch('https://icons.pureadmin.io/api/icons/search?q=calendar&format=compact');\nconst { results } = await res.json();\nconsole.log(results.map(i => `${i.icon_set}/${i.name}`));|} lang="javascript" />
             </div>
 
             <div>
-              <h3 class="text-sm font-semibold uppercase tracking-wider text-base-content/60 mb-2">
+              <h3 class="text-sm font-semibold uppercase tracking-wider text-base-content/80 mb-2">
                 Trigger sync (authenticated)
               </h3>
               <.code_block code={~s|curl -X POST -H "X-API-Key: your-key" 'https://icons.pureadmin.io/api/maintenance/sync/fontawesome'|} />
@@ -262,7 +262,7 @@ defmodule PureAdminIconsWeb.Docs.ApiDocsLive do
         </span>
         <code class="text-sm font-mono text-primary">{@path}</code>
       </div>
-      <p class="text-base-content/70 text-sm mb-3">{@description}</p>
+      <p class="text-base-content/85 text-sm mb-3">{@description}</p>
 
       <%= if @note do %>
         <p class="text-xs text-base-content/50 mb-3">{@note}</p>
@@ -276,9 +276,9 @@ defmodule PureAdminIconsWeb.Docs.ApiDocsLive do
           <div class="mt-1 space-y-1">
             <%= for {name, desc} <- @params do %>
               <div class="flex gap-2 text-sm">
-                <code class="text-primary/80 font-mono">{name}</code>
+                <code class="text-primary font-mono">{name}</code>
                 <span class="text-base-content/50">&mdash;</span>
-                <span class="text-base-content/60">{desc}</span>
+                <span class="text-base-content/80">{desc}</span>
               </div>
             <% end %>
           </div>
@@ -310,7 +310,7 @@ defmodule PureAdminIconsWeb.Docs.ApiDocsLive do
 
   defp code_block(assigns) do
     ~H"""
-    <pre class="rounded-lg px-4 py-3 text-sm overflow-x-auto !bg-transparent border border-base-300/30"><code class={"language-#{@lang} hljs"}><%= @code %></code></pre>
+    <pre class="rounded-lg px-4 py-3 text-sm overflow-x-auto bg-base-300/70 border border-base-300 shadow-sm"><code class={"language-#{@lang} hljs"}><%= @code %></code></pre>
     """
   end
 end
