@@ -55,7 +55,7 @@ defmodule PureAdminIconsWeb.API.DownloadController do
   # jsonb_each_text and match on value so the size comes back too.
   defp resolve_icon(icon_set, style, filename) do
     sql = """
-    SELECT i.id, k.key::int AS size
+    SELECT i.icon_id, k.key::int AS size
     FROM public.icon i
     JOIN LATERAL jsonb_each_text(i.filenames) k(key, value) ON k.value = $3
     WHERE i.icon_set_code = $1
