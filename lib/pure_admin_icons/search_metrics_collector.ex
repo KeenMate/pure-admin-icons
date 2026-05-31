@@ -82,13 +82,20 @@ defmodule PureAdminIcons.SearchMetricsCollector do
     {ok_count, errors} =
       Enum.reduce(buffer, {0, []}, fn entry, {ok, errs} ->
         try do
+          # Pass nils (not :eg_value_not_provided) — the generated DbContext
+          # filters out :eg_value_not_provided and builds positional $N
+          # placeholders, which collapses positions when intermediate args are
+          # absent but later ones are present (e.g. size=nil but
+          # icon_set_code="fontawesome" lands "fontawesome" in _size int).
+          # nil is kept by the filter and arrives as SQL NULL, letting the SP
+          # apply its `default null` while preserving argument order.
           case DbContext.track_search(
                  entry.query,
                  entry.result_count,
                  entry.source_code,
-                 entry.size || :eg_value_not_provided,
-                 entry.style || :eg_value_not_provided,
-                 entry.icon_set_code || :eg_value_not_provided
+                 entry.size,
+                 entry.style,
+                 entry.icon_set_code
                ) do
             {:ok, _} -> {ok + 1, errs}
             {:error, reason} -> {ok, [{entry, reason} | errs]}

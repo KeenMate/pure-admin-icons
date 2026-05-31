@@ -1,10 +1,12 @@
 # Changelog
 
-## 2026-05-31 — Web search metrics + visible flush errors
+## 2026-05-31 — Web search metrics + visible flush errors + positional-arg fix
 
 **Web searches now recorded.** `IconSearchLive.handle_params/3` was running `Icons.search/2` but never calling `SearchMetricsCollector.record/6`, so the "Hledání" column for `source=web` on `/stats` was permanently 0 even though `source=api` searches were flowing in fine. Added a `SearchMetricsCollector.record(query, size, style, count, "web", icon_set)` call right after the search runs, guarded by `connected?` so dead renders don't double-count. Filter changes and pagination each produce one record — same granularity as API requests.
 
 **Silent flush failures surfaced.** `SearchMetricsCollector.flush/1` previously called `DbContext.track_search` inside a bare `Enum.each` with no return-value check and no rescue. If the SP signature drifted or the connection blipped, every entry in the 30s batch was dropped silently and the only visible symptom was "stats not updating." Rewrote as `Enum.reduce` that traps both `{:error, reason}` returns and exceptions per-entry, then emits a `Logger.warning` with the dropped count, the offending entry, and the reason if anything failed (plus a `Logger.info` confirming how many succeeded). One bad row no longer poisons the whole batch.
+
+**Root cause: `:eg_value_not_provided` collapses positional args.** With visible warnings on, the first flush showed `DBConnection.EncodeError: expected integer, got "fontawesome"` — the collector was passing `entry.icon_set_code` into `_size int`. The generated `DbContext.track_search` (and `track_icon_action`) build the SP call using *positional* `$N` placeholders and filter out `:eg_value_not_provided` values, which only works when omitted args are trailing. The collector's `entry.size || :eg_value_not_provided` pattern dropped `_size` from the placeholder list while keeping `_icon_set_code`, shifting `"fontawesome"` into position 4. Fixed by passing raw `nil`s through — `nil` survives the filter, arrives as SQL NULL, and the SP's `default null` clause kicks in while positions stay aligned. (The same bug exists in `track_icon_action` but is currently latent because `Icons.track_action/4` always passes `nil`, never `:eg_value_not_provided`.)
 
 ---
 
