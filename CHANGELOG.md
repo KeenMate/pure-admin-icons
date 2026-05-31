@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-05-31 — Tracked download endpoint for API consumers
+
+Added `GET /api/download/:icon_set/:style/:filename` — an explicit, tracked alternative to the passive `/icons/:icon_set/:style/:filename` file serve. The existing `/icons/...` route stays untracked because browsers fetch it just to render `<img>` tags and a passive image render isn't a download. Hitting `/api/download/...` is treated as an intentional retrieval (the MCP server, scripts, anyone wanting their fetch counted) and records an `icon_metric` row with `action=download`, `source=api`, `surface=direct`, `format=svg`.
+
+The controller resolves `(set, style, filename) → icon_id` + size via a raw SQL query against `public.icon` (unnesting the `filenames` jsonb with `jsonb_each_text`), calls `Icons.track_action/4`, then delegates the actual SVG response to `IconFileController.show/2` so ETag/GitHub-fallback/404 logic stays in one place. If resolution or tracking fails, the user still gets their SVG — the failure is logged but never blocks the download.
+
+MCP server change (in `../pure-admin-icons-mcp`) is the follow-up: swap the `get_icon_svg` fetch URL from `/icons/...` to `/api/download/...`. Search results still surface `/icons/...` URLs — only the explicit-download path moves.
+
+---
+
 ## 2026-05-31 — Web search metrics + visible flush errors + positional-arg fix
 
 **Web searches now recorded.** `IconSearchLive.handle_params/3` was running `Icons.search/2` but never calling `SearchMetricsCollector.record/6`, so the "Hledání" column for `source=web` on `/stats` was permanently 0 even though `source=api` searches were flowing in fine. Added a `SearchMetricsCollector.record(query, size, style, count, "web", icon_set)` call right after the search runs, guarded by `connected?` so dead renders don't double-count. Filter changes and pagination each produce one record — same granularity as API requests.
