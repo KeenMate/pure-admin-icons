@@ -194,7 +194,8 @@ defmodule PureAdminIcons.Translations do
     "iconDetail.tooltips.copyCss" => "Copy CSS to use these colors in your project",
     "iconDetail.tooltips.importCss" => "Import a preset from CSS pasted from another project",
     "iconDetail.tooltips.transparentBg" => "Transparent (checker)",
-    "iconDetail.tooltips.includeColors" => "Apply current preview colors (icon color + background)",
+    "iconDetail.tooltips.includeColors" =>
+      "Apply current preview colors (icon color + background)",
     "iconDetail.tooltips.downloadSvg" => "Download SVG",
     "iconDetail.tooltips.importSettings" =>
       "Import settings from a manifest.json (from a previous Download Designer ZIP)",
@@ -213,7 +214,7 @@ defmodule PureAdminIcons.Translations do
 
     # ─────────────────────────── Stats — /stats ───────────────────
     "stats.headers.pageTitle" => "Stats",
-    "stats.headers.popularIcons" => "Popular Icons (by copies)",
+    "stats.headers.popularIcons" => "Popular Icons",
     "stats.headers.bySurface" => "By Surface",
     "stats.headers.byFormat" => "By Format",
     "stats.tableHeaders.period" => "Period",
@@ -224,6 +225,8 @@ defmodule PureAdminIcons.Translations do
     "stats.filters.allSources" => "All",
     "stats.filters.web" => "Web",
     "stats.filters.api" => "API",
+    "stats.filters.byCopy" => "By copies",
+    "stats.filters.byDownload" => "By downloads",
     "stats.periods.today" => "Today",
     "stats.periods.7d" => "7 days",
     "stats.periods.30d" => "30 days",

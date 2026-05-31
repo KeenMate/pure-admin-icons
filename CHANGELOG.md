@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-05-31 — Stats page: drop API Copies column, add popular-icons action toggle
+
+Two cleanups on `/stats` now that the API surface is settled:
+
+**API table loses the Kopírování/Copies column.** Copy events only originate from explicit button clicks in the LiveView modal — there's no API endpoint to record a copy. So that column was structurally always 0 for API consumers, just adding visual noise. The Web table keeps it. The overview-cards loop in `AdminStatsLive.render/1` now reads `source == "web"` per iteration and conditionally renders the column header + body cell.
+
+**Popular icons section gets a copy/download toggle, defaulting to download.** Previously `load_popular/1` hardcoded `action: "copy"`, which meant the section was effectively blind to download activity once the new `/api/download` endpoint started generating data. Added a `:action` assign (default `"download"`), a third `view-toggle` row next to the existing period + source toggles, and a `set_action` event handler with `~w(copy download)` guard. Section header now reads just "Oblíbené ikony" / "Popular Icons" — the "(by copies)" suffix is gone from `stats.headers.popularIcons` in all 5 locales (EN + cs/de/es/fr), replaced by the new `stats.filters.byCopy` / `stats.filters.byDownload` toggle labels.
+
+---
+
 ## 2026-05-31 — Tracked download endpoint for API consumers
 
 Added `GET /api/download/:icon_set/:style/:filename` — an explicit, tracked alternative to the passive `/icons/:icon_set/:style/:filename` file serve. The existing `/icons/...` route stays untracked because browsers fetch it just to render `<img>` tags and a passive image render isn't a download. Hitting `/api/download/...` is treated as an intentional retrieval (the MCP server, scripts, anyone wanting their fetch counted) and records an `icon_metric` row with `action=download`, `source=api`, `surface=direct`, `format=svg`.

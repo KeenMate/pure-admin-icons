@@ -133,7 +133,7 @@
   "llmsDocs.headers.pageTitle": "LLM-Integration",
 
   "stats.headers.pageTitle": "Statistik",
-  "stats.headers.popularIcons": "Beliebte Symbole (nach Kopien)",
+  "stats.headers.popularIcons": "Beliebte Symbole",
   "stats.tableHeaders.period": "Zeitraum",
   "stats.tableHeaders.copies": "Kopien",
   "stats.tableHeaders.downloads": "Downloads",
@@ -142,6 +142,8 @@
   "stats.filters.allSources": "Alle",
   "stats.filters.web": "Web",
   "stats.filters.api": "API",
+  "stats.filters.byCopy": "Nach Kopien",
+  "stats.filters.byDownload": "Nach Downloads",
   "stats.periods.today": "Heute",
   "stats.periods.7d": "7 Tage",
   "stats.periods.30d": "30 Tage",

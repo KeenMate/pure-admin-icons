@@ -15,6 +15,7 @@ defmodule PureAdminIconsWeb.AdminStatsLive do
       |> assign(page_title: t("stats.headers.pageTitle"))
       |> assign(period: "30d")
       |> assign(source: nil)
+      |> assign(action: "download")
       |> load_data()
 
     {:ok, socket}
@@ -34,6 +35,12 @@ defmodule PureAdminIconsWeb.AdminStatsLive do
   def handle_event("set_source", %{"source" => source}, socket) do
     source = if source == "", do: nil, else: source
     {:noreply, socket |> assign(source: source) |> load_breakdowns() |> load_popular()}
+  end
+
+  @impl true
+  def handle_event("set_action", %{"action" => action}, socket)
+      when action in ~w(copy download) do
+    {:noreply, socket |> assign(action: action) |> load_popular()}
   end
 
   defp load_data(socket) do
@@ -96,7 +103,7 @@ defmodule PureAdminIconsWeb.AdminStatsLive do
   end
 
   defp load_popular(socket) do
-    opts = [period: socket.assigns.period, action: "copy", limit: 20]
+    opts = [period: socket.assigns.period, action: socket.assigns.action, limit: 20]
     opts = if socket.assigns.source, do: [{:source, socket.assigns.source} | opts], else: opts
 
     case Icons.popular_icons_from_cube(opts) do
@@ -112,17 +119,21 @@ defmodule PureAdminIconsWeb.AdminStatsLive do
     <div class="max-w-6xl mx-auto px-4 py-8">
       <h1 class="text-3xl font-bold mb-6">{t("stats.headers.pageTitle")}</h1>
 
-      <%!-- Overview cards --%>
+      <%!-- Overview cards. API consumers can't generate copy events, so the
+           Copies column is rendered for Web only. --%>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         <%= for source <- ["web", "api"] do %>
+          <% show_copies = source == "web" %>
           <div class="rounded-box bg-base-200 border border-base-300 p-6">
-            <h2 class="text-lg font-bold mb-4 capitalize"><%= source %></h2>
+            <h2 class="text-lg font-bold mb-4 capitalize">{source}</h2>
             <div class="overflow-x-auto">
               <table class="w-full text-sm">
                 <thead>
                   <tr class="text-base-content/60">
                     <th class="text-left pb-2">{t("stats.tableHeaders.period")}</th>
-                    <th class="text-right pb-2">{t("stats.tableHeaders.copies")}</th>
+                    <%= if show_copies do %>
+                      <th class="text-right pb-2">{t("stats.tableHeaders.copies")}</th>
+                    <% end %>
                     <th class="text-right pb-2">{t("stats.tableHeaders.downloads")}</th>
                     <th class="text-right pb-2">{t("stats.tableHeaders.searches")}</th>
                   </tr>
@@ -131,10 +142,18 @@ defmodule PureAdminIconsWeb.AdminStatsLive do
                   <%= for period <- ["1d", "7d", "30d", "all"] do %>
                     <% row = get_in(@overview, [source, period]) %>
                     <tr class="border-t border-base-300">
-                      <td class="py-2 font-medium"><%= period_label(period) %></td>
-                      <td class="py-2 text-right tabular-nums"><%= format_count(row && row.copies) %></td>
-                      <td class="py-2 text-right tabular-nums"><%= format_count(row && row.downloads) %></td>
-                      <td class="py-2 text-right tabular-nums"><%= format_count(row && row.searches) %></td>
+                      <td class="py-2 font-medium">{period_label(period)}</td>
+                      <%= if show_copies do %>
+                        <td class="py-2 text-right tabular-nums">
+                          {format_count(row && row.copies)}
+                        </td>
+                      <% end %>
+                      <td class="py-2 text-right tabular-nums">
+                        {format_count(row && row.downloads)}
+                      </td>
+                      <td class="py-2 text-right tabular-nums">
+                        {format_count(row && row.searches)}
+                      </td>
                     </tr>
                   <% end %>
                 </tbody>
@@ -170,8 +189,16 @@ defmodule PureAdminIconsWeb.AdminStatsLive do
                 <button
                   phx-click="set_period"
                   phx-value-period={val}
-                  class={["btn-action", if(@period == val, do: "bg-primary text-primary-content", else: "text-base-content/70 hover:text-base-content")]}
-                ><%= label %></button>
+                  class={[
+                    "btn-action",
+                    if(@period == val,
+                      do: "bg-primary text-primary-content",
+                      else: "text-base-content/70 hover:text-base-content"
+                    )
+                  ]}
+                >
+                  {label}
+                </button>
               <% end %>
             </div>
             <div class="view-toggle">
@@ -179,8 +206,33 @@ defmodule PureAdminIconsWeb.AdminStatsLive do
                 <button
                   phx-click="set_source"
                   phx-value-source={val}
-                  class={["btn-action", if((@source || "") == val, do: "bg-primary text-primary-content", else: "text-base-content/70 hover:text-base-content")]}
-                ><%= label %></button>
+                  class={[
+                    "btn-action",
+                    if((@source || "") == val,
+                      do: "bg-primary text-primary-content",
+                      else: "text-base-content/70 hover:text-base-content"
+                    )
+                  ]}
+                >
+                  {label}
+                </button>
+              <% end %>
+            </div>
+            <div class="view-toggle">
+              <%= for {label, val} <- [{t("stats.filters.byDownload"), "download"}, {t("stats.filters.byCopy"), "copy"}] do %>
+                <button
+                  phx-click="set_action"
+                  phx-value-action={val}
+                  class={[
+                    "btn-action",
+                    if(@action == val,
+                      do: "bg-primary text-primary-content",
+                      else: "text-base-content/70 hover:text-base-content"
+                    )
+                  ]}
+                >
+                  {label}
+                </button>
               <% end %>
             </div>
           </div>
@@ -203,11 +255,20 @@ defmodule PureAdminIconsWeb.AdminStatsLive do
               <tbody>
                 <%= for {icon, idx} <- Enum.with_index(@popular_icons, 1) do %>
                   <tr class="border-t border-base-300">
-                    <td class="py-2 text-base-content/50"><%= idx %></td>
-                    <td class="py-2 font-medium"><%= icon.name %></td>
-                    <td class="py-2"><span class="badge badge-sm" style={PureAdminIcons.IconSets.Color.badge_style(icon.icon_set_code)}><%= icon.icon_set_code %></span></td>
-                    <td class="py-2 capitalize text-base-content/70"><%= icon.style_code %></td>
-                    <td class="py-2 text-right tabular-nums font-semibold"><%= format_count(icon.count) %></td>
+                    <td class="py-2 text-base-content/50">{idx}</td>
+                    <td class="py-2 font-medium">{icon.name}</td>
+                    <td class="py-2">
+                      <span
+                        class="badge badge-sm"
+                        style={PureAdminIcons.IconSets.Color.badge_style(icon.icon_set_code)}
+                      >
+                        {icon.icon_set_code}
+                      </span>
+                    </td>
+                    <td class="py-2 capitalize text-base-content/70">{icon.style_code}</td>
+                    <td class="py-2 text-right tabular-nums font-semibold">
+                      {format_count(icon.count)}
+                    </td>
                   </tr>
                 <% end %>
               </tbody>
@@ -282,6 +343,7 @@ defmodule PureAdminIconsWeb.AdminStatsLive do
 
   defp format_count(nil), do: "0"
   defp format_count(0), do: "0"
+
   defp format_count(n) when is_integer(n) do
     n
     |> Integer.to_string()
@@ -291,6 +353,6 @@ defmodule PureAdminIconsWeb.AdminStatsLive do
     |> Enum.join(",")
     |> String.reverse()
   end
-  defp format_count(n), do: to_string(n)
 
+  defp format_count(n), do: to_string(n)
 end

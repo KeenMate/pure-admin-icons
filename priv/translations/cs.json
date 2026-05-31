@@ -133,7 +133,7 @@
   "llmsDocs.headers.pageTitle": "Integrace s LLM",
 
   "stats.headers.pageTitle": "Statistiky",
-  "stats.headers.popularIcons": "Oblíbené ikony (podle kopírování)",
+  "stats.headers.popularIcons": "Oblíbené ikony",
   "stats.tableHeaders.period": "Období",
   "stats.tableHeaders.copies": "Kopírování",
   "stats.tableHeaders.downloads": "Stažení",
@@ -142,6 +142,8 @@
   "stats.filters.allSources": "Vše",
   "stats.filters.web": "Web",
   "stats.filters.api": "API",
+  "stats.filters.byCopy": "Podle kopírování",
+  "stats.filters.byDownload": "Podle stažení",
   "stats.periods.today": "Dnes",
   "stats.periods.7d": "7 dní",
   "stats.periods.30d": "30 dní",

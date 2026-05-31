@@ -133,7 +133,7 @@
   "llmsDocs.headers.pageTitle": "Intégration LLM",
 
   "stats.headers.pageTitle": "Statistiques",
-  "stats.headers.popularIcons": "Icônes populaires (par copies)",
+  "stats.headers.popularIcons": "Icônes populaires",
   "stats.tableHeaders.period": "Période",
   "stats.tableHeaders.copies": "Copies",
   "stats.tableHeaders.downloads": "Téléchargements",
@@ -142,6 +142,8 @@
   "stats.filters.allSources": "Toutes",
   "stats.filters.web": "Web",
   "stats.filters.api": "API",
+  "stats.filters.byCopy": "Par copies",
+  "stats.filters.byDownload": "Par téléchargements",
   "stats.periods.today": "Aujourd'hui",
   "stats.periods.7d": "7 jours",
   "stats.periods.30d": "30 jours",
