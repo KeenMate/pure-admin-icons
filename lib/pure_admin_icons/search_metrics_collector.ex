@@ -7,6 +7,8 @@ defmodule PureAdminIcons.SearchMetricsCollector do
   """
   use GenServer
 
+  require Logger
+
   alias Database.DbContext
 
   @flush_interval :timer.seconds(30)
@@ -77,16 +79,36 @@ defmodule PureAdminIcons.SearchMetricsCollector do
   defp flush([]), do: :ok
 
   defp flush(buffer) do
-    # Call track_search for each entry
-    Enum.each(buffer, fn entry ->
-      DbContext.track_search(
-        entry.query,
-        entry.result_count,
-        entry.source_code,
-        entry.size || :eg_value_not_provided,
-        entry.style || :eg_value_not_provided,
-        entry.icon_set_code || :eg_value_not_provided
-      )
-    end)
+    {ok_count, errors} =
+      Enum.reduce(buffer, {0, []}, fn entry, {ok, errs} ->
+        try do
+          case DbContext.track_search(
+                 entry.query,
+                 entry.result_count,
+                 entry.source_code,
+                 entry.size || :eg_value_not_provided,
+                 entry.style || :eg_value_not_provided,
+                 entry.icon_set_code || :eg_value_not_provided
+               ) do
+            {:ok, _} -> {ok + 1, errs}
+            {:error, reason} -> {ok, [{entry, reason} | errs]}
+          end
+        rescue
+          e -> {ok, [{entry, e} | errs]}
+        end
+      end)
+
+    case errors do
+      [] ->
+        :ok
+
+      _ ->
+        Logger.warning(
+          "[SearchMetricsCollector] flush dropped #{length(errors)}/#{length(buffer)} entries; " <>
+            "first failure: entry=#{inspect(elem(hd(errors), 0))} reason=#{inspect(elem(hd(errors), 1))}"
+        )
+
+        Logger.info("[SearchMetricsCollector] flushed #{ok_count} entries successfully")
+    end
   end
 end

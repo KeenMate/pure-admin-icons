@@ -6,6 +6,7 @@ defmodule PureAdminIconsWeb.IconSearchLive do
   alias PureAdminIcons.Icons
   alias PureAdminIcons.Icons.Icon
   alias PureAdminIcons.IconSets
+  alias PureAdminIcons.SearchMetricsCollector
   alias Phoenix.LiveView.JS
 
   import PureAdminIconsWeb.Components.PlatformIcons
@@ -165,6 +166,17 @@ defmodule PureAdminIconsWeb.IconSearchLive do
         [first | _] -> first.total_items
         [] -> 0
       end
+
+    if connected do
+      SearchMetricsCollector.record(
+        query,
+        List.first(sizes),
+        List.first(styles),
+        total_count,
+        "web",
+        List.first(icon_sets)
+      )
+    end
 
     total_pages = max(1, ceil(total_count / @per_page))
 

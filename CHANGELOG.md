@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-05-31 — Web search metrics + visible flush errors
+
+**Web searches now recorded.** `IconSearchLive.handle_params/3` was running `Icons.search/2` but never calling `SearchMetricsCollector.record/6`, so the "Hledání" column for `source=web` on `/stats` was permanently 0 even though `source=api` searches were flowing in fine. Added a `SearchMetricsCollector.record(query, size, style, count, "web", icon_set)` call right after the search runs, guarded by `connected?` so dead renders don't double-count. Filter changes and pagination each produce one record — same granularity as API requests.
+
+**Silent flush failures surfaced.** `SearchMetricsCollector.flush/1` previously called `DbContext.track_search` inside a bare `Enum.each` with no return-value check and no rescue. If the SP signature drifted or the connection blipped, every entry in the 30s batch was dropped silently and the only visible symptom was "stats not updating." Rewrote as `Enum.reduce` that traps both `{:error, reason}` returns and exceptions per-entry, then emits a `Logger.warning` with the dropped count, the offending entry, and the reason if anything failed (plus a `Logger.info` confirming how many succeeded). One bad row no longer poisons the whole batch.
+
+---
+
 ## 2026-05-02 — Theme & docs styling sync with pureadmin.io
 
 Brought the icons site visually in line with pureadmin.io (which had its day-theme palette and docs chrome reworked the same day). The two share the same `park-morning/day/evening/night` daisyUI themes, so any palette or panel-chrome change has to land on both or they drift.
