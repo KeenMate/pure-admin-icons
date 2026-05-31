@@ -144,6 +144,7 @@
   "stats.filters.api": "API",
   "stats.filters.byCopy": "Podle kopírování",
   "stats.filters.byDownload": "Podle stažení",
+  "stats.tooltips.copyUnavailableForApi": "Konzumenti API negenerují události kopírování",
   "stats.periods.today": "Dnes",
   "stats.periods.7d": "7 dní",
   "stats.periods.30d": "30 dní",

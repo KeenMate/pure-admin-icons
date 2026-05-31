@@ -144,6 +144,7 @@
   "stats.filters.api": "API",
   "stats.filters.byCopy": "Por copias",
   "stats.filters.byDownload": "Por descargas",
+  "stats.tooltips.copyUnavailableForApi": "Los consumidores de la API no generan eventos de copia",
   "stats.periods.today": "Hoy",
   "stats.periods.7d": "7 días",
   "stats.periods.30d": "30 días",

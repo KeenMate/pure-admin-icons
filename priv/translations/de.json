@@ -144,6 +144,7 @@
   "stats.filters.api": "API",
   "stats.filters.byCopy": "Nach Kopien",
   "stats.filters.byDownload": "Nach Downloads",
+  "stats.tooltips.copyUnavailableForApi": "API-Nutzer erzeugen keine Kopier-Events",
   "stats.periods.today": "Heute",
   "stats.periods.7d": "7 Tage",
   "stats.periods.30d": "30 Tage",

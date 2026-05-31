@@ -227,6 +227,7 @@ defmodule PureAdminIcons.Translations do
     "stats.filters.api" => "API",
     "stats.filters.byCopy" => "By copies",
     "stats.filters.byDownload" => "By downloads",
+    "stats.tooltips.copyUnavailableForApi" => "API consumers don't generate copy events",
     "stats.periods.today" => "Today",
     "stats.periods.7d" => "7 days",
     "stats.periods.30d" => "30 days",

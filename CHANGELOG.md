@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-05-31 — Stats popular-icons: disable "By copies" under API source
+
+Polish on top of the action toggle: when `source == "api"` the "By copies" button is now visually disabled (opacity, no-click cursor, `disabled` attribute) and gets a tooltip explaining why (`stats.tooltips.copyUnavailableForApi` in all 5 locales). Additionally, `set_source` event handler now flips `action` back to `"download"` if the user switches to API while "By copies" is selected — otherwise they'd be staring at a permanently empty list with no signal as to why.
+
+---
+
 ## 2026-05-31 — Stats page: drop API Copies column, add popular-icons action toggle
 
 Two cleanups on `/stats` now that the API surface is settled:

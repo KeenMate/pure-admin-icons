@@ -34,7 +34,12 @@ defmodule PureAdminIconsWeb.AdminStatsLive do
   @impl true
   def handle_event("set_source", %{"source" => source}, socket) do
     source = if source == "", do: nil, else: source
-    {:noreply, socket |> assign(source: source) |> load_breakdowns() |> load_popular()}
+    # API has no copy events, so switching to API while "By copies" is
+    # selected would leave the user staring at an empty list. Flip the
+    # action back to download in that case.
+    action = if source == "api" and socket.assigns.action == "copy", do: "download", else: socket.assigns.action
+
+    {:noreply, socket |> assign(source: source, action: action) |> load_breakdowns() |> load_popular()}
   end
 
   @impl true
@@ -220,15 +225,19 @@ defmodule PureAdminIconsWeb.AdminStatsLive do
             </div>
             <div class="view-toggle">
               <%= for {label, val} <- [{t("stats.filters.byDownload"), "download"}, {t("stats.filters.byCopy"), "copy"}] do %>
+                <% disabled = val == "copy" and @source == "api" %>
                 <button
                   phx-click="set_action"
                   phx-value-action={val}
+                  disabled={disabled}
+                  title={if disabled, do: t("stats.tooltips.copyUnavailableForApi"), else: nil}
                   class={[
                     "btn-action",
-                    if(@action == val,
-                      do: "bg-primary text-primary-content",
-                      else: "text-base-content/70 hover:text-base-content"
-                    )
+                    cond do
+                      disabled -> "opacity-40 cursor-not-allowed text-base-content/50"
+                      @action == val -> "bg-primary text-primary-content"
+                      true -> "text-base-content/70 hover:text-base-content"
+                    end
                   ]}
                 >
                   {label}
