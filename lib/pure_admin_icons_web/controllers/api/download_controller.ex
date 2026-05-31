@@ -16,13 +16,13 @@ defmodule PureAdminIconsWeb.API.DownloadController do
 
   require Logger
 
+  alias Database.DbContext
   alias PureAdminIcons.Icons
-  alias PureAdminIcons.Repo
   alias PureAdminIconsWeb.IconFileController
 
   def show(conn, %{"icon_set" => icon_set, "style" => style, "filename" => filename} = params) do
-    case resolve_icon(icon_set, style, filename) do
-      {:ok, icon_id, size} ->
+    case DbContext.get_icon_by_filename(icon_set, style, filename) do
+      {:ok, [%{icon_id: icon_id, size: size} | _]} ->
         case Icons.track_action(icon_id, "download", "api",
                size: size,
                surface: "direct",
@@ -37,38 +37,18 @@ defmodule PureAdminIconsWeb.API.DownloadController do
             )
         end
 
-      :not_found ->
-        # Don't fail the download just because tracking can't resolve the row —
-        # the user still gets their SVG (or 404 from IconFileController if it's
-        # genuinely missing). Log so signature drift / orphaned files surface.
+      {:ok, []} ->
+        # No matching icon row — log so orphaned files / new icon sets surface,
+        # but don't fail the request. IconFileController will still either serve
+        # the file or 404 as appropriate.
         Logger.info(
           "[api.download] icon not found for tracking: #{icon_set}/#{style}/#{filename}"
         )
+
+      {:error, reason} ->
+        Logger.warning("[api.download] get_icon_by_filename failed: #{inspect(reason)}")
     end
 
     IconFileController.show(conn, params)
-  end
-
-  # Looks up icon_id + size for a (set, style, filename) tuple.
-  # `filenames` is jsonb shaped like %{"24" => "pencil-24.svg"} or
-  # %{"0" => "scalable.svg"} for single-source icons. We unnest it via
-  # jsonb_each_text and match on value so the size comes back too.
-  defp resolve_icon(icon_set, style, filename) do
-    sql = """
-    SELECT i.icon_id, k.key::int AS size
-    FROM public.icon i
-    JOIN LATERAL jsonb_each_text(i.filenames) k(key, value) ON k.value = $3
-    WHERE i.icon_set_code = $1
-      AND i.style_code = $2
-    LIMIT 1
-    """
-
-    case Repo.query(sql, [icon_set, style, filename]) do
-      {:ok, %{rows: [[icon_id, size]]}} -> {:ok, icon_id, size}
-      {:ok, %{rows: []}} -> :not_found
-      {:error, reason} ->
-        Logger.warning("[api.download] resolve_icon SQL failed: #{inspect(reason)}")
-        :not_found
-    end
   end
 end

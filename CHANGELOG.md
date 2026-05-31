@@ -4,7 +4,7 @@
 
 Added `GET /api/download/:icon_set/:style/:filename` — an explicit, tracked alternative to the passive `/icons/:icon_set/:style/:filename` file serve. The existing `/icons/...` route stays untracked because browsers fetch it just to render `<img>` tags and a passive image render isn't a download. Hitting `/api/download/...` is treated as an intentional retrieval (the MCP server, scripts, anyone wanting their fetch counted) and records an `icon_metric` row with `action=download`, `source=api`, `surface=direct`, `format=svg`.
 
-The controller resolves `(set, style, filename) → icon_id` + size via a raw SQL query against `public.icon` (unnesting the `filenames` jsonb with `jsonb_each_text`), calls `Icons.track_action/4`, then delegates the actual SVG response to `IconFileController.show/2` so ETag/GitHub-fallback/404 logic stays in one place. If resolution or tracking fails, the user still gets their SVG — the failure is logged but never blocks the download.
+The controller resolves `(set, style, filename) → (icon_id, size)` via `DbContext.get_icon_by_filename/3` (new `public.get_icon_by_filename` SP in `../pure-admin-icons-database/`, regenerated via db-gen — added to the `db-gen.json` allowlist), calls `Icons.track_action/4`, then delegates the actual SVG response to `IconFileController.show/2` so ETag/GitHub-fallback/404 logic stays in one place. If resolution or tracking fails, the user still gets their SVG — the failure is logged but never blocks the download.
 
 MCP server change (in `../pure-admin-icons-mcp`) is the follow-up: swap the `get_icon_svg` fetch URL from `/icons/...` to `/api/download/...`. Search results still surface `/icons/...` URLs — only the explicit-download path moves.
 

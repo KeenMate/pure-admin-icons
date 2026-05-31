@@ -178,6 +178,46 @@ defmodule Database.DbContext do
 
 
   @doc """
+  Calls database function public.get_icon_by_filename
+  
+  Returns: {:ok, [%Models.GetIconByFilenameModel{}]} | {:error, any()}
+  
+  """
+  @spec get_icon_by_filename(String.t(), String.t(), String.t(), keyword()) :: {:ok, [%Models.GetIconByFilenameModel{}]} | {:error, any()}
+  def get_icon_by_filename(icon_set_code, style_code, filename, query_opts \\ []) do
+    Logger.debug("Calling database routine", routine_name: "get_icon_by_filename")
+
+    sql_params_str =
+      [
+        {"_icon_set_code", icon_set_code},
+        {"_style_code", style_code},
+        {"_filename", filename}
+      ]
+      |> Enum.filter(fn {_name, value} -> value != :eg_value_not_provided end)
+      |> Enum.with_index(1)
+      |> Enum.map(fn {_tuple, index} -> "$#{index}" end)
+      |> Enum.join(", ")
+
+    sql_query_params =
+      [
+        icon_set_code,
+        style_code,
+        filename
+      ]
+      |> Enum.filter(fn value -> value != :eg_value_not_provided end)
+
+    query(
+      "select * from public.get_icon_by_filename(#{sql_params_str})",
+      sql_query_params,
+      query_opts
+    )
+    
+    |> Processors.GetIconByFilenameProcessor.parse_result()
+    
+  end
+
+
+  @doc """
   Calls database function public.get_icon_count
   
   Returns: {:ok, [%Models.GetIconCountModel{}]} | {:error, any()}
