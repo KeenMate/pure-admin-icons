@@ -1,6 +1,6 @@
 {
   "version": "LOCAL",
-  "time": "2026-04-15T22:44:17.7562233+02:00",
+  "time": "2026-05-31T17:36:35.3819886+02:00",
   "routines": [
     {
       "RowNumber": 1,
@@ -2832,6 +2832,503 @@
           "IsOptional": false
         }
       ]
+    },
+    {
+      "RowNumber": 1,
+      "RoutineSchema": "public",
+      "RoutineNameWithParams": "pg_stat_statements(bool)",
+      "HasOverload": false,
+      "RoutineName": "pg_stat_statements",
+      "SpecificName": "",
+      "DataType": "record",
+      "UdtTypeScheme": "pg_catalog",
+      "UdtTypeName": "record",
+      "ParamCount": 50,
+      "FuncType": "function",
+      "InParameters": [
+        {
+          "OrdinalPosition": 1,
+          "Name": "showtext",
+          "Mode": "IN",
+          "UDTName": "bool",
+          "IsNullable": false,
+          "IsOptional": false
+        }
+      ],
+      "OutParameters": [
+        {
+          "OrdinalPosition": 2,
+          "Name": "userid",
+          "Mode": "OUT",
+          "UDTName": "oid",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 3,
+          "Name": "dbid",
+          "Mode": "OUT",
+          "UDTName": "oid",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 4,
+          "Name": "toplevel",
+          "Mode": "OUT",
+          "UDTName": "bool",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 5,
+          "Name": "queryid",
+          "Mode": "OUT",
+          "UDTName": "int8",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 6,
+          "Name": "query",
+          "Mode": "OUT",
+          "UDTName": "text",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 7,
+          "Name": "plans",
+          "Mode": "OUT",
+          "UDTName": "int8",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 8,
+          "Name": "total_plan_time",
+          "Mode": "OUT",
+          "UDTName": "float8",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 9,
+          "Name": "min_plan_time",
+          "Mode": "OUT",
+          "UDTName": "float8",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 10,
+          "Name": "max_plan_time",
+          "Mode": "OUT",
+          "UDTName": "float8",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 11,
+          "Name": "mean_plan_time",
+          "Mode": "OUT",
+          "UDTName": "float8",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 12,
+          "Name": "stddev_plan_time",
+          "Mode": "OUT",
+          "UDTName": "float8",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 13,
+          "Name": "calls",
+          "Mode": "OUT",
+          "UDTName": "int8",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 14,
+          "Name": "total_exec_time",
+          "Mode": "OUT",
+          "UDTName": "float8",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 15,
+          "Name": "min_exec_time",
+          "Mode": "OUT",
+          "UDTName": "float8",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 16,
+          "Name": "max_exec_time",
+          "Mode": "OUT",
+          "UDTName": "float8",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 17,
+          "Name": "mean_exec_time",
+          "Mode": "OUT",
+          "UDTName": "float8",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 18,
+          "Name": "stddev_exec_time",
+          "Mode": "OUT",
+          "UDTName": "float8",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 19,
+          "Name": "rows",
+          "Mode": "OUT",
+          "UDTName": "int8",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 20,
+          "Name": "shared_blks_hit",
+          "Mode": "OUT",
+          "UDTName": "int8",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 21,
+          "Name": "shared_blks_read",
+          "Mode": "OUT",
+          "UDTName": "int8",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 22,
+          "Name": "shared_blks_dirtied",
+          "Mode": "OUT",
+          "UDTName": "int8",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 23,
+          "Name": "shared_blks_written",
+          "Mode": "OUT",
+          "UDTName": "int8",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 24,
+          "Name": "local_blks_hit",
+          "Mode": "OUT",
+          "UDTName": "int8",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 25,
+          "Name": "local_blks_read",
+          "Mode": "OUT",
+          "UDTName": "int8",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 26,
+          "Name": "local_blks_dirtied",
+          "Mode": "OUT",
+          "UDTName": "int8",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 27,
+          "Name": "local_blks_written",
+          "Mode": "OUT",
+          "UDTName": "int8",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 28,
+          "Name": "temp_blks_read",
+          "Mode": "OUT",
+          "UDTName": "int8",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 29,
+          "Name": "temp_blks_written",
+          "Mode": "OUT",
+          "UDTName": "int8",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 30,
+          "Name": "shared_blk_read_time",
+          "Mode": "OUT",
+          "UDTName": "float8",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 31,
+          "Name": "shared_blk_write_time",
+          "Mode": "OUT",
+          "UDTName": "float8",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 32,
+          "Name": "local_blk_read_time",
+          "Mode": "OUT",
+          "UDTName": "float8",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 33,
+          "Name": "local_blk_write_time",
+          "Mode": "OUT",
+          "UDTName": "float8",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 34,
+          "Name": "temp_blk_read_time",
+          "Mode": "OUT",
+          "UDTName": "float8",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 35,
+          "Name": "temp_blk_write_time",
+          "Mode": "OUT",
+          "UDTName": "float8",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 36,
+          "Name": "wal_records",
+          "Mode": "OUT",
+          "UDTName": "int8",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 37,
+          "Name": "wal_fpi",
+          "Mode": "OUT",
+          "UDTName": "int8",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 38,
+          "Name": "wal_bytes",
+          "Mode": "OUT",
+          "UDTName": "numeric",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 39,
+          "Name": "jit_functions",
+          "Mode": "OUT",
+          "UDTName": "int8",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 40,
+          "Name": "jit_generation_time",
+          "Mode": "OUT",
+          "UDTName": "float8",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 41,
+          "Name": "jit_inlining_count",
+          "Mode": "OUT",
+          "UDTName": "int8",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 42,
+          "Name": "jit_inlining_time",
+          "Mode": "OUT",
+          "UDTName": "float8",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 43,
+          "Name": "jit_optimization_count",
+          "Mode": "OUT",
+          "UDTName": "int8",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 44,
+          "Name": "jit_optimization_time",
+          "Mode": "OUT",
+          "UDTName": "float8",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 45,
+          "Name": "jit_emission_count",
+          "Mode": "OUT",
+          "UDTName": "int8",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 46,
+          "Name": "jit_emission_time",
+          "Mode": "OUT",
+          "UDTName": "float8",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 47,
+          "Name": "jit_deform_count",
+          "Mode": "OUT",
+          "UDTName": "int8",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 48,
+          "Name": "jit_deform_time",
+          "Mode": "OUT",
+          "UDTName": "float8",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 49,
+          "Name": "stats_since",
+          "Mode": "OUT",
+          "UDTName": "timestamptz",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 50,
+          "Name": "minmax_stats_since",
+          "Mode": "OUT",
+          "UDTName": "timestamptz",
+          "IsNullable": false,
+          "IsOptional": false
+        }
+      ]
+    },
+    {
+      "RowNumber": 1,
+      "RoutineSchema": "public",
+      "RoutineNameWithParams": "pg_stat_statements_info()",
+      "HasOverload": false,
+      "RoutineName": "pg_stat_statements_info",
+      "SpecificName": "",
+      "DataType": "record",
+      "UdtTypeScheme": "pg_catalog",
+      "UdtTypeName": "record",
+      "ParamCount": 2,
+      "FuncType": "function",
+      "InParameters": null,
+      "OutParameters": [
+        {
+          "OrdinalPosition": 1,
+          "Name": "dealloc",
+          "Mode": "OUT",
+          "UDTName": "int8",
+          "IsNullable": false,
+          "IsOptional": false
+        },
+        {
+          "OrdinalPosition": 2,
+          "Name": "stats_reset",
+          "Mode": "OUT",
+          "UDTName": "timestamptz",
+          "IsNullable": false,
+          "IsOptional": false
+        }
+      ]
+    },
+    {
+      "RowNumber": 1,
+      "RoutineSchema": "public",
+      "RoutineNameWithParams": "pg_stat_statements_reset(oid,oid,int8,bool)",
+      "HasOverload": false,
+      "RoutineName": "pg_stat_statements_reset",
+      "SpecificName": "",
+      "DataType": "timestamp with time zone",
+      "UdtTypeScheme": "pg_catalog",
+      "UdtTypeName": "timestamptz",
+      "ParamCount": 4,
+      "FuncType": "function",
+      "InParameters": [
+        {
+          "OrdinalPosition": 1,
+          "Name": "userid",
+          "Mode": "IN",
+          "UDTName": "oid",
+          "IsNullable": false,
+          "IsOptional": true
+        },
+        {
+          "OrdinalPosition": 2,
+          "Name": "dbid",
+          "Mode": "IN",
+          "UDTName": "oid",
+          "IsNullable": false,
+          "IsOptional": true
+        },
+        {
+          "OrdinalPosition": 3,
+          "Name": "queryid",
+          "Mode": "IN",
+          "UDTName": "int8",
+          "IsNullable": false,
+          "IsOptional": true
+        },
+        {
+          "OrdinalPosition": 4,
+          "Name": "minmax_only",
+          "Mode": "IN",
+          "UDTName": "bool",
+          "IsNullable": false,
+          "IsOptional": true
+        }
+      ],
+      "OutParameters": null
     },
     {
       "RowNumber": 1,
