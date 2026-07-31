@@ -233,6 +233,31 @@ const DesignerExport = {
     return out
   },
 
+  // Intrinsic aspect ratio (w/h) of an SVG string, from its viewBox
+  // (falling back to width/height, then 1:1). Canvas drawImage stretches to
+  // the destination rect, so non-square icons (e.g. FontAwesome's narrow
+  // glyphs) come out distorted unless we fit them preserving aspect ratio.
+  svgAspect(svgText) {
+    const vb = /viewBox\s*=\s*["']([^"']+)["']/.exec(svgText)
+    if (vb) {
+      const p = vb[1].trim().split(/[\s,]+/).map(Number)
+      if (p.length === 4 && p[2] > 0 && p[3] > 0) return p[2] / p[3]
+    }
+    const w = /\bwidth\s*=\s*["']([\d.]+)/.exec(svgText)
+    const h = /\bheight\s*=\s*["']([\d.]+)/.exec(svgText)
+    if (w && h && +h[1] > 0) return +w[1] / +h[1]
+    return 1
+  },
+
+  // Fit a box of the given aspect ratio inside dest rect (x,y,w,h),
+  // centered ("contain"). Returns the drawImage destination rect.
+  fitContain(aspect, x, y, w, h) {
+    let dw = w, dh = h
+    if (aspect > w / h) dh = w / aspect
+    else dw = h * aspect
+    return { dx: x + (w - dw) / 2, dy: y + (h - dh) / 2, dw, dh }
+  },
+
   renderToCanvas(svgText, size, settings) {
     const { color, bg, padding, radius } = settings || this.getSettings()
     return new Promise((resolve) => {
@@ -252,12 +277,14 @@ const DesignerExport = {
       }
 
       const colorized = color ? this.colorizeSvg(svgText, color) : svgText
+      const aspect = this.svgAspect(colorized)
       const blob = new Blob([colorized], { type: 'image/svg+xml' })
       const url = URL.createObjectURL(blob)
       const img = new Image()
       img.onload = () => {
         const pad = padding * size
-        ctx.drawImage(img, pad, pad, size - pad * 2, size - pad * 2)
+        const { dx, dy, dw, dh } = this.fitContain(aspect, pad, pad, size - pad * 2, size - pad * 2)
+        ctx.drawImage(img, dx, dy, dw, dh)
         URL.revokeObjectURL(url)
         canvas.toBlob(blob => resolve(blob), 'image/png')
       }
@@ -1433,6 +1460,7 @@ Hooks.DownloadDesigner = {
 
     // Draw SVG with padding
     const svgText = color ? DesignerExport.colorizeSvg(this.rawSvg, color) : this.rawSvg
+    const aspect = DesignerExport.svgAspect(svgText)
     const blob = new Blob([svgText], { type: 'image/svg+xml' })
     const url = URL.createObjectURL(blob)
     const img = new Image()
@@ -1443,7 +1471,8 @@ Hooks.DownloadDesigner = {
         return
       }
       const pad = padding * s
-      ctx.drawImage(img, pad, pad, s - pad * 2, s - pad * 2)
+      const { dx, dy, dw, dh } = DesignerExport.fitContain(aspect, pad, pad, s - pad * 2, s - pad * 2)
+      ctx.drawImage(img, dx, dy, dw, dh)
 
       // Sample pixels so we can see what actually landed on the canvas.
       try {

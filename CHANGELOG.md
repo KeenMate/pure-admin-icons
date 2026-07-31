@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-07-31 — Download Designer: preserve aspect ratio in canvas render
+
+Non-square icons (e.g. FontAwesome's narrow "3", viewBox taller than wide) came out horizontally stretched in the Download Designer's live preview and exported PNGs. Both canvas paths — `DesignerExport.renderToCanvas` (PNG export, also used by the floating popover's quick download) and the `DownloadDesigner` hook's `renderPreview` (live preview) — drew the SVG into a *square* destination rect via `ctx.drawImage(img, pad, pad, size - pad*2, size - pad*2)`, forcing every glyph to a 1:1 aspect. The top inline-`<svg>` preview and the SVG-download path were unaffected because they respect the viewBox.
+
+Added two helpers to `DesignerExport` in `app.js`: `svgAspect(svgText)` reads the intrinsic w/h ratio from the viewBox (falling back to width/height, then 1:1), and `fitContain(aspect, x, y, w, h)` fits the icon into the padded box preserving aspect ratio, centered. Both render paths now compute the destination rect via `fitContain` instead of stretching, so non-square glyphs render correctly in the preview and in exported PNGs.
+
+---
+
 ## 2026-05-31 — Stats popular-icons: disable "By copies" under API source
 
 Polish on top of the action toggle: when `source == "api"` the "By copies" button is now visually disabled (opacity, no-click cursor, `disabled` attribute) and gets a tooltip explaining why (`stats.tooltips.copyUnavailableForApi` in all 5 locales). Additionally, `set_source` event handler now flips `action` back to `"download"` if the user switches to API while "By copies" is selected — otherwise they'd be staring at a permanently empty list with no signal as to why.
