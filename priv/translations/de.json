@@ -12,6 +12,10 @@
   "common.tableHeaders.set": "Set",
   "common.tableHeaders.style": "Stil",
   "common.pagination.pageOf": "Seite %{page} von %{total}",
+  "common.time.justNow": "gerade eben",
+  "common.time.minutesAgo": "vor %{count} Minuten",
+  "common.time.hoursAgo": "vor %{count} Stunden",
+  "common.time.daysAgo": "vor %{count} Tagen",
 
   "nav.buttons.docs": "Dokumentation",
   "nav.buttons.iconSets": "Symbolsets",
@@ -40,6 +44,7 @@
   "iconSets.labels.defaultSize": "Standardgröße",
   "iconSets.labels.sizes": "Größen",
   "iconSets.labels.vectorRaster": "Vektor / Raster",
+  "iconSets.labels.lastSynced": "Zuletzt synchronisiert",
   "iconSets.buttons.browseIcons": "Symbole durchsuchen",
   "iconSets.messages.summary": "%{count} Symbolsets aus Open-Source-Bibliotheken.",
   "iconSets.messages.helpText": "Klicken Sie auf die Links einer Karte, um die Originalseite oder das GitHub-Repository zu besuchen. Die „nativen Namen“ auf den Stil-Chips zeigen an, wie der Stil in der Quellbibliothek heißt.",

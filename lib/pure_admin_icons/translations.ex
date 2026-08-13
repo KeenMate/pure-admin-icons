@@ -69,6 +69,10 @@ defmodule PureAdminIcons.Translations do
     "common.tableHeaders.set" => "Set",
     "common.tableHeaders.style" => "Style",
     "common.pagination.pageOf" => "Page %{page} of %{total}",
+    "common.time.justNow" => "just now",
+    "common.time.minutesAgo" => "%{count} minutes ago",
+    "common.time.hoursAgo" => "%{count} hours ago",
+    "common.time.daysAgo" => "%{count} days ago",
 
     # ─────────────────────────── Navigation ───────────────────────
     "nav.buttons.docs" => "Docs",
@@ -105,6 +109,7 @@ defmodule PureAdminIcons.Translations do
     "iconSets.labels.defaultSize" => "Default size",
     "iconSets.labels.sizes" => "Sizes",
     "iconSets.labels.vectorRaster" => "Vector / raster",
+    "iconSets.labels.lastSynced" => "Last synced",
     "iconSets.buttons.browseIcons" => "Browse icons",
     "iconSets.messages.summary" => "%{count} icon sets aggregated from open-source libraries.",
     "iconSets.messages.helpText" =>

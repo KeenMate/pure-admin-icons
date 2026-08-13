@@ -12,6 +12,10 @@
   "common.tableHeaders.set": "Conjunto",
   "common.tableHeaders.style": "Estilo",
   "common.pagination.pageOf": "Página %{page} de %{total}",
+  "common.time.justNow": "justo ahora",
+  "common.time.minutesAgo": "hace %{count} minutos",
+  "common.time.hoursAgo": "hace %{count} horas",
+  "common.time.daysAgo": "hace %{count} días",
 
   "nav.buttons.docs": "Docs",
   "nav.buttons.iconSets": "Conjuntos",
@@ -40,6 +44,7 @@
   "iconSets.labels.defaultSize": "Tamaño por defecto",
   "iconSets.labels.sizes": "Tamaños",
   "iconSets.labels.vectorRaster": "Vector / ráster",
+  "iconSets.labels.lastSynced": "Última sincronización",
   "iconSets.buttons.browseIcons": "Explorar iconos",
   "iconSets.messages.summary": "%{count} conjuntos de iconos agregados de bibliotecas de código abierto.",
   "iconSets.messages.helpText": "Haz clic en los enlaces de una tarjeta para visitar la página principal o el repositorio de GitHub. Los «nombres nativos» que se muestran en las etiquetas de estilo indican cómo se llama ese estilo en la biblioteca original.",

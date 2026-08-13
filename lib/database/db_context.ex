@@ -398,6 +398,44 @@ defmodule Database.DbContext do
 
 
   @doc """
+  Calls database function public.get_icon_sets
+  
+  Returns: {:ok, [%Models.GetIconSetsModel{}]} | {:error, any()}
+  
+  """
+  @spec get_icon_sets(String.t() | :eg_value_not_provided, integer() | :eg_value_not_provided, keyword()) :: {:ok, [%Models.GetIconSetsModel{}]} | {:error, any()}
+  def get_icon_sets(display_language_code \\ :eg_value_not_provided, tenant_id \\ :eg_value_not_provided, query_opts \\ []) do
+    Logger.debug("Calling database routine", routine_name: "get_icon_sets")
+
+    sql_params_str =
+      [
+        {"_display_language_code", display_language_code},
+        {"_tenant_id", tenant_id}
+      ]
+      |> Enum.filter(fn {_name, value} -> value != :eg_value_not_provided end)
+      |> Enum.with_index(1)
+      |> Enum.map(fn {_tuple, index} -> "$#{index}" end)
+      |> Enum.join(", ")
+
+    sql_query_params =
+      [
+        display_language_code,
+        tenant_id
+      ]
+      |> Enum.filter(fn value -> value != :eg_value_not_provided end)
+
+    query(
+      "select * from public.get_icon_sets(#{sql_params_str})",
+      sql_query_params,
+      query_opts
+    )
+    
+    |> Processors.GetIconSetsProcessor.parse_result()
+    
+  end
+
+
+  @doc """
   Calls database function public.get_last_sync
   
   Returns: {:ok, [%Models.GetLastSyncModel{}]} | {:error, any()}

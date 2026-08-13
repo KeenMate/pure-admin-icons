@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-08-13 — Icon Sets docs: show "Last synced" per set
+
+The `/docs/icon-sets` page now shows when each set was last synced. The data already existed (every sync creates a job run tagged with `icon_set_code`, surfaced by `public.get_last_sync`), but the page only loaded `const.get_icon_sets`, whose result carries no timestamp.
+
+Database side added `public.get_icon_sets` — a superset of `const.get_icon_sets` returning two extra columns, `last_sync_started_at` and `last_synced_at`. Regenerated via db-gen (upgraded to v0.8.0-rc.4; added `public.get_icon_sets` to the `db-gen.json` allowlist), producing `DbContext.get_icon_sets/3` plus its model/processor. `Icons.list_icon_sets/1` now calls the `public` variant instead of `const`; since the model is a strict superset, all callers (home page, brand-color cache, API, docs) keep working and gain the timestamps. `const.get_icon_sets` is still generated but no longer used by app code.
+
+`IconSetsDocsLive` renders a new "Last synced" row on each set card: friendly relative time (`just now`, `3 hours ago`, `2 days ago`) with an absolute `YYYY-MM-DD HH:MM UTC` fallback for anything older than a week and a full-timestamp hover title; `—` for never-synced sets. Added `iconSets.labels.lastSynced` and reusable `common.time.{justNow,minutesAgo,hoursAgo,daysAgo}` keys in EN defaults + all 4 locale files (cs/de/es/fr).
+
+---
+
 ## 2026-07-31 — Download Designer: preserve aspect ratio in canvas render
 
 Non-square icons (e.g. FontAwesome's narrow "3", viewBox taller than wide) came out horizontally stretched in the Download Designer's live preview and exported PNGs. Both canvas paths — `DesignerExport.renderToCanvas` (PNG export, also used by the floating popover's quick download) and the `DownloadDesigner` hook's `renderPreview` (live preview) — drew the SVG into a *square* destination rect via `ctx.drawImage(img, pad, pad, size - pad*2, size - pad*2)`, forcing every glyph to a 1:1 aspect. The top inline-`<svg>` preview and the SVG-download path were unaffected because they respect the viewBox.

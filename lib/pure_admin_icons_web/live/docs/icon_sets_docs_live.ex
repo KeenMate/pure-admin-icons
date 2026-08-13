@@ -97,6 +97,18 @@ defmodule PureAdminIconsWeb.Docs.IconSetsDocsLive do
               <span class="text-warning">{t("iconSets.messages.raster")}</span>
             <% end %>
           </.info_row>
+          <.info_row label={t("iconSets.labels.lastSynced")}>
+            <%= if @set.last_synced_at do %>
+              <span
+                class="text-base-content/85"
+                title={Calendar.strftime(@set.last_synced_at, "%Y-%m-%d %H:%M:%S UTC")}
+              >
+                {format_sync_time(@set.last_synced_at)}
+              </span>
+            <% else %>
+              <span class="text-base-content/50">—</span>
+            <% end %>
+          </.info_row>
         </dl>
 
         <div class="mb-4">
@@ -198,6 +210,20 @@ defmodule PureAdminIconsWeb.Docs.IconSetsDocsLive do
     ]
     |> Enum.reject(&is_nil/1)
     |> Enum.join(" · ")
+  end
+
+  # Format a sync timestamp as friendly relative time, falling back to an
+  # absolute UTC date for anything older than a week.
+  defp format_sync_time(%DateTime{} = dt) do
+    diff_seconds = DateTime.diff(DateTime.utc_now(), dt, :second)
+
+    cond do
+      diff_seconds < 60 -> t("common.time.justNow")
+      diff_seconds < 3600 -> t("common.time.minutesAgo", %{count: div(diff_seconds, 60)})
+      diff_seconds < 86_400 -> t("common.time.hoursAgo", %{count: div(diff_seconds, 3600)})
+      diff_seconds < 604_800 -> t("common.time.daysAgo", %{count: div(diff_seconds, 86_400)})
+      true -> Calendar.strftime(dt, "%Y-%m-%d %H:%M UTC")
+    end
   end
 
   defp format_count(nil), do: "0"

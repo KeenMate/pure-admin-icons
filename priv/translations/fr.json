@@ -12,6 +12,10 @@
   "common.tableHeaders.set": "Collection",
   "common.tableHeaders.style": "Style",
   "common.pagination.pageOf": "Page %{page} sur %{total}",
+  "common.time.justNow": "à l'instant",
+  "common.time.minutesAgo": "il y a %{count} minutes",
+  "common.time.hoursAgo": "il y a %{count} heures",
+  "common.time.daysAgo": "il y a %{count} jours",
 
   "nav.buttons.docs": "Docs",
   "nav.buttons.iconSets": "Collections",
@@ -40,6 +44,7 @@
   "iconSets.labels.defaultSize": "Taille par défaut",
   "iconSets.labels.sizes": "Tailles",
   "iconSets.labels.vectorRaster": "Vecteur / tramé",
+  "iconSets.labels.lastSynced": "Dernière synchronisation",
   "iconSets.buttons.browseIcons": "Parcourir les icônes",
   "iconSets.messages.summary": "%{count} collections d'icônes agrégées depuis des bibliothèques open source.",
   "iconSets.messages.helpText": "Cliquez sur les liens d'une carte pour visiter la page d'accueil ou le dépôt GitHub. Les « noms natifs » affichés sur les puces de style indiquent comment ce style est appelé dans la bibliothèque source.",

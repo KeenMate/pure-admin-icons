@@ -92,7 +92,7 @@ defmodule PureAdminIcons.Icons do
   def list_icon_sets(locale \\ nil) do
     lang = locale || PureAdminIcons.Translations.Locale.get()
 
-    case DbContext.const_get_icon_sets(lang) do
+    case DbContext.get_icon_sets(lang) do
       {:ok, results} -> results
       {:error, _} -> []
     end

@@ -12,6 +12,10 @@
   "common.tableHeaders.set": "Sada",
   "common.tableHeaders.style": "Styl",
   "common.pagination.pageOf": "Strana %{page} z %{total}",
+  "common.time.justNow": "právě teď",
+  "common.time.minutesAgo": "před %{count} minutami",
+  "common.time.hoursAgo": "před %{count} hodinami",
+  "common.time.daysAgo": "před %{count} dny",
 
   "nav.buttons.docs": "Dokumentace",
   "nav.buttons.iconSets": "Sady ikon",
@@ -40,6 +44,7 @@
   "iconSets.labels.defaultSize": "Výchozí velikost",
   "iconSets.labels.sizes": "Velikosti",
   "iconSets.labels.vectorRaster": "Vektor / rastr",
+  "iconSets.labels.lastSynced": "Naposledy synchronizováno",
   "iconSets.buttons.browseIcons": "Procházet ikony",
   "iconSets.messages.summary": "%{count} sad ikon agregovaných z otevřených knihoven.",
   "iconSets.messages.helpText": "Pro návštěvu domovské stránky nebo GitHub repozitáře klikněte na odkazy karty. „Nativní názvy“ zobrazené v odznácích stylů ukazují, jak se styl jmenuje ve zdrojové knihovně.",

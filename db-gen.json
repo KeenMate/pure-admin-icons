@@ -31,6 +31,7 @@
         "get_icon_detail": true,
         "get_icon_primary_name": true,
         "get_last_sync": true,
+        "get_icon_sets": true,
         "track_icon_action": true,
         "track_search": true,
         "refresh_icon_metrics_cube": true,
